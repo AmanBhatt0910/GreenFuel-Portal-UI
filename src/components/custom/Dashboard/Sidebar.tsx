@@ -49,7 +49,7 @@ const Sidebar: React.FC<SidebarProps> = ({
     },
     {
       title: "Form",
-      href: "/dashboard/form",
+      href: "/form",
       icon: <FormInput className="h-5 w-5" />,
     },
   ];
