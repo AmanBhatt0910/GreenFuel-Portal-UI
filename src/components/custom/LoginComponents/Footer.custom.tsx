@@ -8,7 +8,7 @@ interface FooterLinksProps {
   }>;
 }
 
-export const FooterLinks: React.FC<FooterLinksProps> = ({ links }) => {
+export const FooterLinks: React.FC<FooterLinksProps> = () => {
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: {

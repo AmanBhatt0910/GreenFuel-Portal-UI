@@ -20,7 +20,7 @@ interface LoginFormProps {
   onSubmit: (email: string, password: string, rememberMe: boolean) => void;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
+export const LoginForm: React.FC<LoginFormProps> = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -60,6 +60,9 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
         ariaRequired={true}
         ariaDescribedBy="email-description"
       />
+      {
+        error && <p className="text-red-500">{error}</p>
+      }
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -76,6 +79,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
             Forgot password?
           </Link>
         </div>
+
+        {error && <p className="text-red-500">{error}</p>}
         <GreenFuelInput
           id="password"
           isPassword

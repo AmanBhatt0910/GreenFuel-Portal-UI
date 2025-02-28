@@ -37,7 +37,7 @@ export default function LoginPage() {
       login(email, password, rememberMe);
       console.log("Login attempt with:", { email, password, rememberMe });
       setError(null);
-    } catch (error: any) {
+    } catch (error) {
       setError("Login failed Please check your credentials");
       console.log("error", error);
     }
