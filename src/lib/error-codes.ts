@@ -1,0 +1,51 @@
+export const errorCodeMap: Record<number, string> = {
+  // Successful responses
+  200: "Request was successful.",
+  201: "Resource created successfully.",
+  202: "Request accepted, but not yet processed.",
+  204: "No content. The request was successful, but there is no content to return.",
+
+  // Client errors (4xx)
+  400: "Bad request. Please check your input data.",
+  401: "Unauthorized. Please log in to access this resource.",
+  402: "Payment required. The request could not be processed due to insufficient funds.",
+  403: "Forbidden. You do not have permission to access this resource.",
+  404: "Resource not found. The requested resource could not be found.",
+  405: "Method Not Allowed. The HTTP method is not supported for the requested resource.",
+  406: "Not Acceptable. The requested resource is not available in a format acceptable to the server.",
+  407: "Proxy Authentication Required. The request must be authenticated by a proxy server.",
+  408: "Request Timeout. The server timed out waiting for the request.",
+  409: "Conflict. There was a conflict with the current state of the resource.",
+  410: "Gone. The resource is no longer available and will not be available again.",
+  411: "Length Required. The request did not specify the length of its content.",
+  412: "Precondition Failed. One or more conditions in the request header failed.",
+  413: "Payload Too Large. The request is larger than the server is willing or able to process.",
+  414: "URI Too Long. The URI provided was too long for the server to process.",
+  415: "Unsupported Media Type. The media type of the request is not supported by the server.",
+  416: "Range Not Satisfiable. The server cannot provide the requested range for the resource.",
+  417: "Expectation Failed. The server cannot meet the expectations specified in the request header.",
+  418: "I'm a teapot. The server is a teapot, and it cannot brew coffee (an April Fools' joke in HTTP).",
+  422: "Unprocessable Entity. The server understands the content type, but the request was invalid.",
+  429: "Too Many Requests. You have sent too many requests in a given amount of time.",
+
+  // Server errors (5xx)
+  500: "Internal Server Error. Something went wrong on the server. Please try again later.",
+  501: "Not Implemented. The server does not support the functionality required to fulfill the request.",
+  502: "Bad Gateway. The server received an invalid response from the upstream server.",
+  503: "Service Unavailable. The server is temporarily unable to handle the request due to overload or maintenance.",
+  504: "Gateway Timeout. The server did not receive a timely response from the upstream server.",
+  505: "HTTP Version Not Supported. The server does not support the HTTP protocol version used in the request.",
+  507: "Insufficient Storage. The server is unable to store the representation needed to complete the request.",
+  508: "Loop Detected. The server detected an infinite loop while processing the request.",
+  510: "Not Extended. The server requires further extensions to fulfill the request.",
+
+  // Custom errors
+  520: "Unknown Error. The server returned an unknown error. Please try again later.",
+  521: "Web Server Is Down. The web server is down or unreachable.",
+  522: "Connection Timed Out. The server took too long to respond.",
+  523: "Origin Is Unreachable. The origin server is unreachable, possibly due to network issues.",
+  524: "Timeout Occurred. The server responded too slowly.",
+  525: "SSL Handshake Failed. The server failed to establish a secure connection.",
+  526: "Invalid SSL Certificate. The SSL certificate is invalid or expired.",
+  527: "Railgun Error. An internal error occurred in Cloudflare's Railgun service.",
+};
