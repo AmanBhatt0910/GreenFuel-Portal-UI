@@ -1,4 +1,5 @@
 "use client";
+
 import React, { useState } from 'react';
 import Sidebar from '@/components/custom/Dashboard/Sidebar';
 
@@ -10,7 +11,7 @@ const Layout = ({ children }: LayoutProps) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
-    <div className="min-h-screen flex bg-gradient-to-br from-[#C5B299] to-[#e9ecef] dark:from-[#1E1E2E] dark:to-[#2D2D3A]">
+    <div className="min-h-screen flex dark:from-[#1E1E2E] dark:to-[#2D2D3A]">
       <Sidebar 
         isCollapsed={isSidebarCollapsed} 
         onToggleCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)} 

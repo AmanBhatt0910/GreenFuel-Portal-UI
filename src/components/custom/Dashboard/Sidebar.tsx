@@ -8,6 +8,7 @@ import {
   ChevronLeft,
   ChevronRight,
   FormInput,
+  Lock,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -52,6 +53,11 @@ const Sidebar: React.FC<SidebarProps> = ({
       href: "/dashboard/form",
       icon: <FormInput className="h-5 w-5" />,
     },
+    {
+      title: "Credentials",
+      href: "/dashboard/credentials",
+      icon: <Lock className="h-5 w-5" />
+    }
   ];
 
   const sidebarWidth = isCollapsed ? "w-20" : "w-64";
