@@ -79,7 +79,7 @@ const TrackingTable: React.FC<TrackingTableProps> = ({
       animate={isLoaded ? "visible" : "hidden"}
       variants={tableVariants}
     >
-      <Card className="dark:bg-[#2D2D3A] dark:border-gray-700">
+      <Card className="bg-gradient-to-br from-white to-green-50 dark:from-gray-900 dark:to-gray-950/90 ">
         <CardHeader>
           <CardTitle>Recent Form Submissions</CardTitle>
           <div className="flex flex-col sm:flex-row gap-4 mt-2">
@@ -88,14 +88,14 @@ const TrackingTable: React.FC<TrackingTableProps> = ({
                 placeholder="Search forms..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="dark:bg-[#222231] dark:border-gray-700"
+                className="dark:bg-[#222231] dark:border-[#444654] border-[#E5E7EB] text-slate-700 dark:text-slate-300"
               />
             </div>
             <Select value={filter} onValueChange={setFilter}>
-              <SelectTrigger className="w-full sm:w-40 dark:bg-[#222231] dark:border-gray-700">
+              <SelectTrigger className="w-full sm:w-40 dark:bg-[#222231] dark:border-[#444654] border-[#E5E7EB] text-slate-700 dark:text-slate-300">
                 <SelectValue placeholder="Filter by" />
               </SelectTrigger>
-              <SelectContent className="dark:bg-[#222231]">
+              <SelectContent className="dark:bg-[#222231] border-[#E5E7EB] text-slate-700 dark:text-slate-300">
                 <SelectItem value="all">All Status</SelectItem>
                 <SelectItem value="approved">Approved</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
@@ -105,10 +105,10 @@ const TrackingTable: React.FC<TrackingTableProps> = ({
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border dark:border-gray-700">
-            <Table>
+          <div className="rounded-md border dark:border-[#444654] border-[#E5E7EB]">
+            <Table className="dark:bg-[#2D2D3A] dark:border-[#444654] border-[#E5E7EB] bg-white shadow-sm">
               <TableHeader className="bg-gray-100 dark:bg-[#222231]">
-                <TableRow className="hover:bg-gray-100 dark:hover:bg-[#222231]">
+                <TableRow className="hover:bg-gray-200 dark:hover:bg-[#292938]">
                   <TableHead className="w-[120px]">Form ID</TableHead>
                   <TableHead>Submitter</TableHead>
                   <TableHead>Department</TableHead>
@@ -117,11 +117,11 @@ const TrackingTable: React.FC<TrackingTableProps> = ({
                   <TableHead className="text-right">Last Updated</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody>
+              <TableBody >
                 {filteredForms.map((form) => (
                   <TableRow
                     key={form.id}
-                    className="hover:bg-gray-50 dark:hover:bg-[#292938]"
+                    className="dark:bg-[#2D2D3A] dark:border-[#444654] border-[#E5E7EB] bg-white shadow-sm"
                   >
                     <TableCell className="font-medium">{form.id}</TableCell>
                     <TableCell>{form.submitter}</TableCell>
@@ -136,7 +136,7 @@ const TrackingTable: React.FC<TrackingTableProps> = ({
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div className="w-full h-2 bg-gray-200 dark:bg-[#444654] rounded-full overflow-hidden">
                           <div
                             className={`h-full ${getProgressColorClass(
                               form.status

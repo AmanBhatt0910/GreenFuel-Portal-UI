@@ -18,7 +18,7 @@ export function CredentialDetails({
   const renderStatusBadge = (status: string) => {
     switch (status?.toLowerCase()) {
       case "active":
-        return <Badge className="bg-green-500">Active</Badge>;
+        return <Badge className="bg-green-500 ">Active</Badge>;
       case "inactive":
         return <Badge className="bg-gray-500">Inactive</Badge>;
       case "pending":
@@ -54,7 +54,7 @@ export function CredentialDetails({
   );
 
   return (
-    <Card className="w-full overflow-hidden border bg-background">
+    <Card className="w-full overflow-hidden border dark:bg-gray-900">
       <CardHeader className="bg-muted/40 pb-4">
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-xl font-semibold">{selectedUser.name || "Unnamed Employee"}</CardTitle>

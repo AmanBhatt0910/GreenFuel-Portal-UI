@@ -18,6 +18,21 @@ export const AssetForm: React.FC<AssetFormProps> = ({
       <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
           <Label htmlFor="assetTitle" className="text-sm font-medium">
+            Sap Item Code 
+          </Label>
+          <Input
+            id="assetTitle"
+            name="assetTitle"
+            value={currentAsset.sapItemCode}
+            autoFocus
+            onChange={(e) => handleCurrentAssetChange("sapItemCode", e.target.value)}
+            placeholder="Enter asset title"
+            className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="assetTitle" className="text-sm font-medium">
             Asset Title <span className="text-red-500">*</span>
           </Label>
           <Input
@@ -26,7 +41,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({
             value={currentAsset.title}
             onChange={(e) => handleCurrentAssetChange("title", e.target.value)}
             placeholder="Enter asset title"
-            className="h-10 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
           />
         </div>
 
@@ -40,7 +55,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({
             value={currentAsset.description}
             onChange={(e) => handleCurrentAssetChange("description", e.target.value)}
             placeholder="Enter asset specifications"
-            className="min-h-20 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="min-h-20 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
           />
         </div>
 
@@ -56,7 +71,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({
               value={currentAsset.quantity}
               onChange={(e) => handleCurrentAssetChange("quantity", e.target.value)}
               placeholder="Enter quantity"
-              className="h-10 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
             />
           </div>
 
@@ -71,7 +86,7 @@ export const AssetForm: React.FC<AssetFormProps> = ({
               value={currentAsset.pricePerUnit}
               onChange={(e) => handleCurrentAssetChange("pricePerUnit", e.target.value)}
               placeholder="Enter price per unit"
-              className="h-10 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
             />
           </div>
         </div>

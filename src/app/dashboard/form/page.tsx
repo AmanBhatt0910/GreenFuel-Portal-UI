@@ -87,6 +87,7 @@ export default function AssetRequestForm() {
     quantity: 1,
     pricePerUnit: 0,
     total: 0,
+    sapItemCode : ""
   });
   const [editingAssetIndex, setEditingAssetIndex] = useState<number | null>(
     null
@@ -153,6 +154,7 @@ export default function AssetRequestForm() {
       description: "",
       quantity: 1,
       pricePerUnit: 0,
+      sapItemCode: "",
       total: 0,
     });
   };
@@ -201,6 +203,7 @@ export default function AssetRequestForm() {
       description: "",
       quantity: 1,
       pricePerUnit: 0,
+      sapItemCode: "",
       total: 0,
     });
 
@@ -214,6 +217,7 @@ export default function AssetRequestForm() {
       description: "",
       quantity: 1,
       pricePerUnit: 0,
+      sapItemCode: "",
       total: 0,
     });
 
@@ -448,7 +452,7 @@ export default function AssetRequestForm() {
   const requestId = getRequestId();
 
   return (
-    <div className="container mx-auto py-6 max-w-[95%] bg-gradient-to-br from-green-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen">
+    <div className="container mx-auto py-6 max-w-[95%] bg-gradient from-green-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen">
       <CustomBreadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
@@ -789,17 +793,17 @@ export default function AssetRequestForm() {
             </div>
           </div>
 
-          <div className="bg-gradient-to-br from-white to-green-50 dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
+          <div className="bg-gradient-to-br from-white to-green-50 dark:bg-gray-950 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="grid grid-cols-12 min-h-[700px]">
               {/* Sidebar */}
-              <div className="col-span-12 p-6 md:col-span-4 lg:col-span-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-800 dark:to-green-900/20 border-r border-gray-200 dark:border-gray-700">
+              <div className="col-span-12 p-6 md:col-span-4 lg:col-span-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-900 border-r border-gray-200 dark:border-gray-700">
                 <div className="sticky top-6">
                   {/* Form Title */}
                   <div className="mb-8">
                     <h1 className="text-2xl font-bold text-gray-900   dark:text-white mb-1">
                       Asset Request Form
                     </h1>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">
+                    <p className="text-sm text-green-700 dark:text-green-400">
                       Complete all sections to submit your request
                     </p>
                   </div>
@@ -823,19 +827,12 @@ export default function AssetRequestForm() {
                     ))}
                   </div>
 
-                  {/* Summary Box */}
-                  <div className="p-4 bg-gradient-to-br from-green-200 to-green-300 dark:from-green-800/40 dark:to-green-700/40 rounded-lg shadow-sm border border-green-100 dark:border-green-900/30">
-                    <h3 className="font-medium text-gray-900 dark:text-white mb-2 flex items-center">
-                      <Leaf className="h-4 w-4 mr-2 text-green-600 dark:text-green-500" />
-                      Request Summary
-                    </h3>
-                  </div>
                 </div>
               </div>
 
               {/* Main content */}
-              <div className="col-span-12 md:col-span-8 lg:col-span-9 p-8">
-                <form className="max-w-3xl mx-auto">
+              <div className="col-span-12 md:col-span-8 lg:col-span-9 p-8 dark:bg-gray-900">
+                <form className="max-w-3xl mx-auto ">
                   <AnimatePresence mode="wait" custom={direction}>
                     {renderFormStep()}
                   </AnimatePresence>

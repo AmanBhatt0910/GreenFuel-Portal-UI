@@ -135,7 +135,7 @@ export function CredentialTable({
       <Table>
         <TableHeader className="sticky top-0 bg-white dark:bg-gray-950 z-10">
           <TableRow className="hover:bg-transparent border-b">
-            <TableHead className="w-[50px]">ID</TableHead>
+            <TableHead className="w-[100px]">ID</TableHead>
             <TableHead>Employee</TableHead>
             <TableHead>Department</TableHead>
             <TableHead>Designation</TableHead>

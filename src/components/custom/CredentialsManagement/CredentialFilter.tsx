@@ -68,12 +68,12 @@ export function CredentialFilter({
   return (
     <div className="flex flex-col md:flex-row gap-2 items-center">
       <div className="relative flex-1 w-full md:max-w-md">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-2.5 top-3 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Search by name, email, employee code..."
-          className="pl-9 w-full"
           value={localSearch}
           onChange={(e) => setLocalSearch(e.target.value)}
+          className="pl-9 w-full border-gray-300 h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
         />
         {localSearch && (
           <Button
@@ -90,8 +90,8 @@ export function CredentialFilter({
       <div className="flex items-center gap-2 w-full md:w-auto md:ml-auto">
         <Popover open={isFiltersOpen} onOpenChange={setIsFiltersOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-10 px-3 gap-1.5">
-              <Filter className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="h-10 px-4 gap-1.5 dark:bg-gray-900">
+              <Filter className="h-4 w-4 " />
               <span>Filters</span>
               {hasActiveFilters && (
                 <Badge variant="default" className="ml-1 rounded-full px-1.5 py-px text-xs">
@@ -102,15 +102,15 @@ export function CredentialFilter({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-72" align="end">
-            <div className="space-y-4 p-1">
+          <PopoverContent className="w-72 bg-gray-900" align="end">
+            <div className="space-y-4 p-1 ">
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Status</h4>
                 <Select value={localStatus} onValueChange={setLocalStatus}>
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-900">
                     <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
@@ -125,7 +125,7 @@ export function CredentialFilter({
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by department" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-900">
                     <SelectItem value="all">All Departments</SelectItem>
                     {departments.filter(dept => dept.name && dept.name.trim() !== "").map((dept) => (
                       <SelectItem key={dept.id} value={dept.name}>
@@ -142,7 +142,7 @@ export function CredentialFilter({
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by role" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="bg-gray-900">
                     <SelectItem value="all">All Roles</SelectItem>
                     {roles.filter(role => role.name && role.name.trim() !== "").map((role) => (
                       <SelectItem key={role.id} value={role.name}>

@@ -41,9 +41,10 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             id="employeeCode"
             name="employeeCode"
             value={formData.employeeCode}
+            autoFocus
             onChange={handleChange}
             placeholder="Enter your employee code"
-            className="h-10 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
           />
         </div>
 
@@ -60,7 +61,8 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             value={formData.employeeName}
             onChange={handleChange}
             placeholder="Enter your full name"
-            className="h-10 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
+
           />
         </div>
 
@@ -77,7 +79,8 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             value={formData.department}
             onChange={handleChange}
             placeholder="Enter your department"
-            className="h-10 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
+
           />
         </div>
 
@@ -94,7 +97,8 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             value={formData.designation}
             onChange={handleChange}
             placeholder="Enter your designation"
-            className="h-10 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
+
           />
         </div>
 
@@ -111,7 +115,8 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             value={formData.plant}
             onChange={handleChange}
             placeholder="Enter your plant"
-            className="h-10 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
+
           />
         </div>
 
@@ -125,7 +130,8 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             type="date"
             value={formData.date}
             onChange={handleChange}
-            className="h-10 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="h-10 rounded-md focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:focus:ring-blue-100 dark:focus:border-blue-100"
+
           />
         </div>
       </div>

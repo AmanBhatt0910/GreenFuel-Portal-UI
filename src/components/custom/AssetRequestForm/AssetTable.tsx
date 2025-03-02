@@ -1,5 +1,6 @@
 import React from "react";
 import { AssetTableProps } from "./types";
+import { DeleteIcon, EditIcon } from "lucide-react";
 
 export const AssetTable: React.FC<AssetTableProps> = ({
   assets,
@@ -53,16 +54,18 @@ export const AssetTable: React.FC<AssetTableProps> = ({
                   <button
                     type="button"
                     onClick={() => startEditingAsset(index)}
-                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4"
+                    className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 mr-4 cursor-pointer"
                   >
                     Edit
+                    {/* <EditIcon/> */}
                   </button>
                   <button
                     type="button"
                     onClick={() => removeAssetItem(index)}
-                    className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                    className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300 cursor-pointer"
                   >
                     Delete
+                    {/* <DeleteIcon/> */}
                   </button>
                 </td>
               </tr>

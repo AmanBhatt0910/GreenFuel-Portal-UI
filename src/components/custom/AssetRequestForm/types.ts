@@ -3,6 +3,7 @@ export interface AssetItem {
   description: string;
   quantity: number;
   pricePerUnit: number;
+  sapItemCode: string;
   total: number;
 }
 

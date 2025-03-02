@@ -40,7 +40,7 @@ const StatCard: React.FC<StatCardProps> = ({
       animate={isLoaded ? "visible" : "hidden"}
       variants={statCardVariants}
     >
-      <Card className="dark:bg-[#2D2D3A] dark:border-gray-700 overflow-hidden">
+      <Card className="bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 rounded-lg shadow-md p-6 hover:border-blue-500 dark:hover:border-blue-300 border-2 border-transparent">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
             {title}
@@ -85,7 +85,9 @@ const StatCard: React.FC<StatCardProps> = ({
                 )}
               </div>
             </div>
-            {icon}
+            <div className="flex items-center justify-center rounded-lg p-3 hover:bg-blue-50 dark:hover:bg-slate-700">
+              {icon}
+            </div>
           </div>
         </CardContent>
         {/* Decorative bottom line that animates in */}

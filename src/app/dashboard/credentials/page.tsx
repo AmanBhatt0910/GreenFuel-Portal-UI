@@ -274,11 +274,11 @@ export default function CredentialsPage() {
   }, [selectedUser, credentials.length]);
 
   return (
-    <div className="container px-4 py-4 mx-auto max-w-7xl bg-gradient-to-br from-green-50 to-white dark:from-gray-900 dark:to-gray-950">
+    <div className="container py-4 mx-auto max-w-[95%] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
       <CustomBreadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Employee Management", href: "/dashboard/credentials" },
+          { label: "Credentials", href: "/dashboard/credentials" },
         ]}
       />
 
@@ -302,7 +302,7 @@ export default function CredentialsPage() {
         </AlertDescription>
       </Alert>
 
-      <div className="mb-6 bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 p-5 rounded-xl shadow">
+      <div className="mb-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/90 p-5 rounded-xl shadow">
         <CredentialFilter 
           onFilterChange={handleFilterChange}
           departments={sampleDepartments} 
@@ -314,7 +314,7 @@ export default function CredentialsPage() {
         />
       </div>
 
-      <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 rounded-xl shadow overflow-hidden">
+      <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/90 rounded-xl shadow overflow-hidden">
         <CredentialTable
           credentials={credentials}
           onEdit={handleEdit}

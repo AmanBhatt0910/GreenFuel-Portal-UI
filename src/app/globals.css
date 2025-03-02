@@ -157,16 +157,16 @@
 [data-sonner-toast][data-type="success"] [data-icon] {
   color: #41a350 !important;
 }
-  
+
 [data-sonner-toast][data-type="error"] [data-icon] {
   color: #e74c3c !important;
 }
-  
+
 [data-sonner-toast][data-type="loading"] [data-icon],
 [data-sonner-toast][data-type="info"] [data-icon] {
   color: #6552D0 !important;
 }
-  
+
 [data-sonner-toast][data-type="warning"] [data-icon] {
   color: #f39c12 !important;
 }

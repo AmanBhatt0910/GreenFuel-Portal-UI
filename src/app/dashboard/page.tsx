@@ -233,7 +233,7 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-green-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen overflow-y-auto">
+    <div className="p-6 space-y-6  min-h-screen overflow-y-auto">
       {/* Dashboard Header */}
       <DashboardHeader currentDate={currentDate} onRefresh={handleRefresh} />
 
@@ -253,21 +253,9 @@ const DashboardPage: React.FC = () => {
         ))}
       </div>
 
-      {/* Charts and Tracking */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 p-5 rounded-xl shadow">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Weekly Activity</h2>
-          <WeeklyActivityChart data={weeklyData} isLoaded={isLoaded} />
-        </div>
-
-        <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 p-5 rounded-xl shadow">
-          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Approval Status by Level</h2>
-          <ApprovalStatusChart data={statusByLevel} isLoaded={isLoaded} />
-        </div>
-      </div>
 
       {/* Recent Forms */}
-      <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 rounded-xl shadow overflow-hidden">
+      <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-900 dark:to-gray-950 rounded-xl shadow overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Recent Asset Requests</h2>
           <p className="text-sm text-green-700 dark:text-green-400 mt-1">Track and monitor request status</p>
@@ -288,11 +276,6 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Process Tracker */}
-      <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 rounded-xl shadow p-6">
-        <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-white">Asset Request Process</h2>
-        <ProcessTracker processData={processData} />
-      </div>
     </div>
   );
 };
