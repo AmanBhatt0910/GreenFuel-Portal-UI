@@ -1,193 +1,216 @@
 "use client";
-import React, { useState } from "react";
-import Link from "next/link";
 
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { motion } from "framer-motion";
 import {
   Home,
+  FileText,
+  BarChart2,
+  Settings,
+  HelpCircle,
   LogOut,
   ChevronLeft,
   ChevronRight,
-  FormInput,
-  Lock,
+  Leaf,
 } from "lucide-react";
-import { usePathname } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarProps {
-  className?: string;
-  isCollapsed?: boolean;
-  onToggleCollapse?: () => void;
+  isCollapsed: boolean;
+  onToggleCollapse: () => void;
 }
 
-interface NavItem {
+interface SidebarItem {
   title: string;
-  href: string;
   icon: React.ReactNode;
+  href: string;
+  isActive?: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({
-  className,
-  isCollapsed: externalIsCollapsed,
-  onToggleCollapse: externalOnToggleCollapse,
-}) => {
-  const [internalIsCollapsed, setInternalIsCollapsed] = useState(false);
-
-  const isCollapsed =
-    externalIsCollapsed !== undefined
-      ? externalIsCollapsed
-      : internalIsCollapsed;
-  const toggleCollapse =
-    externalOnToggleCollapse ||
-    (() => setInternalIsCollapsed(!internalIsCollapsed));
-
+const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggleCollapse }) => {
   const pathname = usePathname();
-  const currentPath = pathname || "";
 
-  const navItems: NavItem[] = [
+  const sidebarItems: SidebarItem[] = [
     {
       title: "Dashboard",
-      href: "/dashboard",
       icon: <Home className="h-5 w-5" />,
+      href: "/dashboard",
+      isActive: pathname === "/dashboard",
     },
     {
-      title: "Form",
+      title: "Forms",
+      icon: <FileText className="h-5 w-5" />,
       href: "/dashboard/form",
-      icon: <FormInput className="h-5 w-5" />,
+      isActive: pathname.startsWith("/dashboard/form"),
     },
     {
-      title: "Credentials",
+      title: "credentials",
+      icon: <FileText className="h-5 w-5" />,
       href: "/dashboard/credentials",
-      icon: <Lock className="h-5 w-5" />
-    }
+      isActive: pathname.startsWith("/dashboard/credentials"),
+    },
   ];
 
-  const sidebarWidth = isCollapsed ? "w-20" : "w-64";
+  const sidebarVariants = {
+    expanded: { width: "16rem" },
+    collapsed: { width: "5rem" },
+  };
+
+  const sidebarContentVariants = {
+    expanded: { opacity: 1, transition: { delay: 0.2 } },
+    collapsed: { opacity: 0, transition: { duration: 0.1 } },
+  };
+
+  // Add responsive state for mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  // Handle window resize
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    // Initial check
+    handleResize();
+    
+    // Add event listener
+    window.addEventListener('resize', handleResize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   return (
-    <>
-      <div
-        className={`
-          fixed top-0 left-0 flex flex-col h-screen ${sidebarWidth} 
-          bg-white dark:bg-[#1D1D2A]
-          text-gray-800 dark:text-gray-100
-          shadow-lg dark:shadow-none
-          transition-all duration-300 ease-in-out
-          border-r border-gray-200 dark:border-gray-700
-          ${className || ""}
-        `}
-      >
-        <button
-          onClick={toggleCollapse}
-          className="
-            absolute 
-            top-4 
-            -right-4
-            bg-white dark:bg-gray-800
-            border 
-            border-gray-200 dark:border-gray-700
-            rounded-full 
-            w-8 
-            h-8 
-            flex 
-            items-center 
-            justify-center 
-            shadow-md 
-            z-10
-            hover:bg-gray-50 dark:hover:bg-gray-700
-            transition-all
-          "
+    <motion.div
+      className={`fixed left-0 top-0 h-screen bg-gradient-to-br from-green-50 to-green-100 dark:bg-[#1D1D2A] shadow-md dark:shadow-gray-900/20 z-20 flex flex-col ${
+        isMobile && !isCollapsed ? "w-full" : ""
+      }`}
+      initial={isCollapsed ? "collapsed" : "expanded"}
+      animate={isCollapsed ? "collapsed" : "expanded"}
+      variants={sidebarVariants}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
+    >
+      {/* Logo & Collapse Button */}
+      <div className="flex items-center justify-between p-4 border-b dark:border-gray-800">
+        <div className="flex items-center">
+          <Leaf className="h-6 w-6 text-green-600 dark:text-green-500" />
+          <motion.span
+            className="ml-2 font-semibold text-lg dark:text-white"
+            initial={isCollapsed ? "collapsed" : "expanded"}
+            animate={isCollapsed ? "collapsed" : "expanded"}
+            variants={sidebarContentVariants}
+          >
+            Green Fuel
+          </motion.span>
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={onToggleCollapse}
+          aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          className={`hover:bg-gray-100 dark:hover:bg-gray-800 rounded-full ${
+            isCollapsed
+              ? "absolute -right-3 top-20 h-6 w-6 bg-white dark:bg-[#1D1D2A] border shadow-sm z-30"
+              : ""
+          }`}
         >
           {isCollapsed ? (
-            <ChevronRight className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
           ) : (
-            <ChevronLeft className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            <ChevronLeft className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           )}
-        </button>
-
-        <div className="flex items-center mb-8 mt-4 px-4 h-16 border-b border-gray-200 dark:border-gray-700">
-          <div className="h-8 w-10 rounded-md bg-indigo-600 dark:bg-indigo-500 mr-3 flex items-center justify-center text-white font-bold text-xl">
-            GF
-          </div>
-          <div
-            className={`overflow-hidden transition-all duration-300 ease-in-out ${
-              isCollapsed ? "w-0 opacity-0" : "w-full opacity-100"
-            }`}
-          >
-            <h1 className="text-xl font-bold whitespace-nowrap">Green Fuel</h1>
-          </div>
-        </div>
-
-        <nav className="flex-1 space-y-1 overflow-y-auto px-2">
-          {navItems.map((item) => {
-            const isActive = currentPath === item.href;
-            return (
-              <Link href={item.href} key={item.href}>
-                <div
-                  className={`
-                  flex items-center ${
-                    isCollapsed ? "justify-center" : "px-4"
-                  } py-3 rounded-md 
-                  transition-colors cursor-pointer
-                  mb-1
-                  ${
-                    isActive
-                      ? "bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700/50"
-                  }
-                `}
-                >
-                  <div
-                    className={`
-                    ${
-                      isActive
-                        ? "text-indigo-600 dark:text-indigo-400"
-                        : "text-gray-500 dark:text-gray-400"
-                    }
-                  `}
-                  >
-                    {item.icon}
-                  </div>
-                  <div
-                    className={`ml-3 overflow-hidden transition-all duration-300 ease-in-out ${
-                      isCollapsed ? "w-0 opacity-0" : "w-full opacity-100"
-                    }`}
-                  >
-                    <span
-                      className={`${
-                        isActive ? "font-medium" : ""
-                      } whitespace-nowrap`}
-                    >
-                      {item.title}
-                    </span>
-                  </div>
-                </div>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="mt-auto mb-6 px-2">
-          <div
-            className={`
-            flex items-center ${
-              isCollapsed ? "justify-center" : "px-4"
-            } py-3 rounded-md 
-            text-red-500 dark:text-red-400
-            hover:bg-red-50 dark:hover:bg-red-900/20
-            transition-colors cursor-pointer
-          `}
-          >
-            <LogOut className="h-5 w-5" />
-            <div
-              className={`ml-3 overflow-hidden transition-all duration-300 ease-in-out ${
-                isCollapsed ? "w-0 opacity-0" : "w-full opacity-100"
-              }`}
-            >
-              <span className="whitespace-nowrap">Logout</span>
-            </div>
-          </div>
-        </div>
+        </Button>
       </div>
-    </>
+
+      {/* Navigation Menu */}
+      <nav className="flex-1 p-3 space-y-1">
+        <TooltipProvider>
+          {sidebarItems.map((item) => (
+            <Tooltip key={item.title} delayDuration={isCollapsed ? 300 : 1000}>
+              <TooltipTrigger asChild>
+                <Link href={item.href} passHref>
+                  <Button
+                    variant="ghost"
+                    className={`
+                      w-full justify-start mb-1 rounded-md cursor-pointer
+                      ${
+                        item.isActive
+                          ? "bg-gray-100 dark:bg-gray-800 text-green-600 dark:text-green-500"
+                          : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                      }
+                    `}
+                  >
+                    <div className="flex items-center">
+                      <div
+                        className={
+                          item.isActive
+                            ? "text-green-600 dark:text-green-500"
+                            : ""
+                        }
+                      >
+                        {item.icon}
+                      </div>
+                      <motion.span
+                        initial={isCollapsed ? "collapsed" : "expanded"}
+                        animate={isCollapsed ? "collapsed" : "expanded"}
+                        variants={sidebarContentVariants}
+                        className="ml-3 truncate"
+                      >
+                        {item.title}
+                      </motion.span>
+                    </div>
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent
+                side="right"
+                className={isCollapsed ? "block" : "hidden"}
+              >
+                {item.title}
+              </TooltipContent>
+            </Tooltip>
+          ))}
+        </TooltipProvider>
+      </nav>
+
+      {/* User & Logout */}
+      <div className="p-3 border-t dark:border-gray-800">
+        <TooltipProvider>
+          <Tooltip delayDuration={isCollapsed ? 300 : 1000}>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full justify-start text-red-600 dark:text-red-500 hover:bg-gray-100 dark:hover:bg-gray-800"
+              >
+                <LogOut className="h-5 w-5" />
+                <motion.span
+                  initial={isCollapsed ? "collapsed" : "expanded"}
+                  animate={isCollapsed ? "collapsed" : "expanded"}
+                  variants={sidebarContentVariants}
+                  className="ml-3"
+                >
+                  Logout
+                </motion.span>
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="right"
+              className={isCollapsed ? "block" : "hidden"}
+            >
+              Logout
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </div>
+    </motion.div>
   );
 };
 

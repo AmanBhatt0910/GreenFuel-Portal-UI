@@ -1,82 +1,26 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
 import {
   Activity,
   CheckCircle,
   XCircle,
   Clock,
   AlertCircle,
-  Calendar,
-  RefreshCw,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
+import ProcessTracker from "@/components/custom/dashboard/ProcessTracker";
+import TrackingTable from "@/components/custom/dashboard/TrackingTable";
+
+// Import the new dashboard components
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Legend,
-  BarChart as RechartsBarChart,
-  Bar,
-} from "recharts";
-import ProcessTracker from "@/components/custom/Dashboard/ProcessTracker";
-import TrackingTable from "@/components/custom/Dashboard/TrackingTable";
-
-// Types definitions
-interface FormStat {
-  total: number;
-  approved: number;
-  rejected: number;
-  pending: number;
-  weekChange: number;
-}
-
-interface WeeklyDataPoint {
-  name: string;
-  submitted: number;
-  approved: number;
-  rejected: number;
-}
-
-interface StatusLevel {
-  name: string;
-  approved: number;
-  pending: number;
-  rejected: number;
-}
-
-interface RecentForm {
-  id: string;
-  submitter: string;
-  department: string;
-  status: string;
-  level: number;
-  updatedAt: string;
-}
-
-interface StatCardProps {
-  title: string;
-  value: number;
-  subtitle?: string;
-  change?: number;
-  valueColor?: string;
-  icon: React.ReactNode;
-}
+  StatCard,
+  WeeklyActivityChart,
+  ApprovalStatusChart,
+  DashboardHeader,
+  FormStat,
+  WeeklyDataPoint,
+  StatusLevel,
+  RecentForm
+} from "@/components/custom/dashboard/DashboardComponents";
 
 // Sample data
 const formStats: FormStat = {
@@ -107,68 +51,88 @@ const statusByLevel: StatusLevel[] = [
 
 const recentForms: RecentForm[] = [
   {
-    id: "GF-2025-0027",
+    id: "REQ-2025-001",
     submitter: "John Doe",
-    department: "Sales",
+    department: "IT Department",
     status: "Approved",
-    level: 5,
-    updatedAt: "2 hours ago",
-  },
-  {
-    id: "GF-2025-0026",
-    submitter: "Jane Smith",
-    department: "Marketing",
-    status: "Pending",
     level: 3,
-    updatedAt: "4 hours ago",
+    updatedAt: "2025-02-28",
   },
   {
-    id: "GF-2025-0025",
-    submitter: "Mike Johnson",
-    department: "Operations",
-    status: "Rejected",
-    level: 2,
-    updatedAt: "6 hours ago",
-  },
-  {
-    id: "GF-2025-0024",
-    submitter: "Sarah Williams",
-    department: "HR",
-    status: "Approved",
-    level: 5,
-    updatedAt: "8 hours ago",
-  },
-  {
-    id: "GF-2025-0023",
-    submitter: "Alex Brown",
+    id: "REQ-2025-002",
+    submitter: "Jane Smith",
     department: "Finance",
     status: "Pending",
+    level: 2,
+    updatedAt: "2025-02-27",
+  },
+  {
+    id: "REQ-2025-003",
+    submitter: "Robert Johnson",
+    department: "HR",
+    status: "Rejected",
     level: 1,
-    updatedAt: "10 hours ago",
+    updatedAt: "2025-02-26",
+  },
+  {
+    id: "REQ-2025-004",
+    submitter: "Emily Williams",
+    department: "Marketing",
+    status: "Approved",
+    level: 4,
+    updatedAt: "2025-02-25",
+  },
+  {
+    id: "REQ-2025-005",
+    submitter: "Michael Brown",
+    department: "Operations",
+    status: "Pending",
+    level: 1,
+    updatedAt: "2025-02-24",
   },
 ];
 
-// Animation variants for Framer Motion
-const cardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.4 }
+const processData: {
+  id: string;
+  name: string;
+  stage: number;
+  totalStages: number;
+  status: "completed" | "in-progress" | "pending";
+  updatedAt: string;
+}[] = [
+  {
+    id: "REQ-2025-001",
+    name: "Laptop Request",
+    stage: 4,
+    totalStages: 5,
+    status: "in-progress",
+    updatedAt: "2025-02-28",
+  },
+  {
+    id: "REQ-2025-002",
+    name: "Software License",
+    stage: 2,
+    totalStages: 5,
+    status: "in-progress",
+    updatedAt: "2025-02-27",
+  },
+  {
+    id: "REQ-2025-003",
+    name: "Office Equipment",
+    stage: 5,
+    totalStages: 5,
+    status: "completed",
+    updatedAt: "2025-02-26",
+  },
+  {
+    id: "REQ-2025-004",
+    name: "Mobile Device",
+    stage: 1,
+    totalStages: 5,
+    status: "pending",
+    updatedAt: "2025-02-25",
   }
-};
-
-const statCardVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({ 
-    opacity: 1, 
-    y: 0,
-    transition: { 
-      delay: i * 0.1,
-      duration: 0.4 
-    }
-  })
-};
+];
 
 const DashboardPage: React.FC = () => {
   const [filter, setFilter] = useState<string>("all");
@@ -234,7 +198,7 @@ const DashboardPage: React.FC = () => {
     setTimeout(() => setIsLoaded(true), 100);
   }, []);
 
-  const statCards: StatCardProps[] = [
+  const statCardData = [
     {
       title: "Total Forms",
       value: formStats.total,
@@ -264,277 +228,71 @@ const DashboardPage: React.FC = () => {
     }
   ];
 
-  return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-[#1D1D2A] min-h-screen">
-      <motion.div 
-        className="flex justify-between items-center"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Form Approval Dashboard
-        </h1>
-        <div className="flex space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            className="dark:border-gray-700 dark:text-gray-300 flex items-center"
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            <span>{currentDate}</span>
-          </Button>
-          <motion.div 
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <Button
-              variant="outline"
-              size="sm"
-              className="dark:border-gray-700 dark:text-gray-300 cursor-pointer"
-              onClick={() => window.location.reload()}
-            >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </motion.div>
-        </div>
-      </motion.div>
+  const handleRefresh = () => {
+    window.location.reload();
+  };
 
+  return (
+    <div className="p-6 space-y-6 bg-gradient-to-br from-green-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen overflow-y-auto">
+      {/* Dashboard Header */}
+      <DashboardHeader currentDate={currentDate} onRefresh={handleRefresh} />
+
+      {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map((stat, index) => (
-          <motion.div
+        {statCardData.map((stat, index) => (
+          <StatCard
             key={stat.title}
-            custom={index}
-            initial="hidden"
-            animate={isLoaded ? "visible" : "hidden"}
-            variants={statCardVariants}
-          >
-            <Card className="dark:bg-[#2D2D3A] dark:border-gray-700 overflow-hidden">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                  {stat.title}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className={`text-3xl font-bold ${stat.valueColor || "text-gray-900 dark:text-white"}`}>
-                      {stat.value}
-                    </div>
-                    <div className="flex items-center mt-1">
-                      {stat.change ? (
-                        <>
-                          <Badge
-                            variant={stat.change > 0 ? "default" : "destructive"}
-                            className={
-                              stat.change > 0
-                                ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100"
-                                : "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-100"
-                            }
-                          >
-                            {stat.change > 0 ? (
-                              <ArrowUpRight className="h-3 w-3 mr-1" />
-                            ) : (
-                              <ArrowDownRight className="h-3 w-3 mr-1" />
-                            )}
-                            {Math.abs(stat.change)}%
-                          </Badge>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                            vs last week
-                          </span>
-                        </>
-                      ) : (
-                        <span className="text-sm text-gray-500 dark:text-gray-400">
-                          {stat.subtitle}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                  {stat.icon}
-                </div>
-              </CardContent>
-              {/* Decorative bottom line that animates in */}
-              <motion.div 
-                className={`h-1 ${stat.title === "Total Forms" ? "bg-blue-500" : 
-                  stat.title === "Approved" ? "bg-green-500" : 
-                  stat.title === "Rejected" ? "bg-red-500" : "bg-amber-500"}`}
-                initial={{ width: 0 }}
-                animate={{ width: "100%" }}
-                transition={{ delay: 0.5 + index * 0.1, duration: 0.5 }}
-              />
-            </Card>
-          </motion.div>
+            title={stat.title}
+            value={stat.value}
+            subtitle={stat.subtitle}
+            change={stat.change}
+            valueColor={stat.valueColor}
+            icon={stat.icon}
+            isLoaded={isLoaded}
+          />
         ))}
       </div>
 
+      {/* Charts and Tracking */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <motion.div
-          initial="hidden"
-          animate={isLoaded ? "visible" : "hidden"}
-          variants={cardVariants}
-        >
-          <Card className="dark:bg-[#2D2D3A] dark:border-gray-700 overflow-hidden">
-            <CardHeader>
-              <CardTitle>Weekly Form Activity</CardTitle>
-              <CardDescription className="dark:text-gray-400">
-                Overview of submissions, approvals and rejections
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={weeklyData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
-                    <defs>
-                      <linearGradient
-                        id="colorSubmitted"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="5%" stopColor="#6552D0" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#6552D0" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient
-                        id="colorApproved"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
-                      </linearGradient>
-                      <linearGradient
-                        id="colorRejected"
-                        x1="0"
-                        y1="0"
-                        x2="0"
-                        y2="1"
-                      >
-                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.8} />
-                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fill: "currentColor" }}
-                      className="text-gray-500 dark:text-gray-400"
-                    />
-                    <YAxis
-                      tick={{ fill: "currentColor" }}
-                      className="text-gray-500 dark:text-gray-400"
-                    />
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="stroke-gray-200 dark:stroke-gray-700"
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#2D2D3A",
-                        borderColor: "#4B5563",
-                        color: "#F9FAFB",
-                      }}
-                    />
-                    <Legend />
-                    <Area
-                      type="monotone"
-                      dataKey="submitted"
-                      stroke="#6552D0"
-                      fillOpacity={1}
-                      fill="url(#colorSubmitted)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="approved"
-                      stroke="#10B981"
-                      fillOpacity={1}
-                      fill="url(#colorApproved)"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="rejected"
-                      stroke="#EF4444"
-                      fillOpacity={1}
-                      fill="url(#colorRejected)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 p-5 rounded-xl shadow">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Weekly Activity</h2>
+          <WeeklyActivityChart data={weeklyData} isLoaded={isLoaded} />
+        </div>
 
-        <motion.div
-          initial="hidden"
-          animate={isLoaded ? "visible" : "hidden"}
-          variants={cardVariants}
-        >
-          <Card className="dark:bg-[#2D2D3A] dark:border-gray-700 overflow-hidden">
-            <CardHeader>
-              <CardTitle>Approval Status by Level</CardTitle>
-              <CardDescription className="dark:text-gray-400">
-                Form status distribution across all approval levels
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-80 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsBarChart
-                    data={statusByLevel}
-                    margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
-                  >
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      className="stroke-gray-200 dark:stroke-gray-700"
-                    />
-                    <XAxis
-                      dataKey="name"
-                      tick={{ fill: "currentColor" }}
-                      className="text-gray-500 dark:text-gray-400"
-                    />
-                    <YAxis
-                      tick={{ fill: "currentColor" }}
-                      className="text-gray-500 dark:text-gray-400"
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#2D2D3A",
-                        borderColor: "#4B5563",
-                        color: "#F9FAFB",
-                      }}
-                    />
-                    <Legend />
-                    <Bar dataKey="approved" stackId="a" fill="#10B981" />
-                    <Bar dataKey="pending" stackId="a" fill="#F59E0B" />
-                    <Bar dataKey="rejected" stackId="a" fill="#EF4444" />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
+        <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 p-5 rounded-xl shadow">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800 dark:text-white">Approval Status by Level</h2>
+          <ApprovalStatusChart data={statusByLevel} isLoaded={isLoaded} />
+        </div>
       </div>
 
-      {/* Render the TrackingTable component and pass props */}
-      <TrackingTable 
-        formStats={formStats}
-        recentForms={recentForms}
-        isLoaded={isLoaded}
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        filter={filter}
-        setFilter={setFilter}
-        getStatusIcon={getStatusIcon}
-        getStatusColor={getStatusColor}
-        getProgressColorClass={getProgressColorClass}
-      />
+      {/* Recent Forms */}
+      <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 rounded-xl shadow overflow-hidden">
+        <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Recent Asset Requests</h2>
+          <p className="text-sm text-green-700 dark:text-green-400 mt-1">Track and monitor request status</p>
+        </div>
+        <div className="overflow-x-auto">
+          <TrackingTable 
+            formStats={formStats}
+            recentForms={recentForms}
+            isLoaded={isLoaded}
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filter={filter}
+            setFilter={setFilter}
+            getStatusIcon={getStatusIcon}
+            getStatusColor={getStatusColor}
+            getProgressColorClass={getProgressColorClass}
+          />
+        </div>
+      </div>
 
-      <ProcessTracker />
+      {/* Process Tracker */}
+      <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-800 dark:to-gray-800/90 rounded-xl shadow p-6">
+        <h2 className="text-xl font-semibold mb-6 text-gray-800 dark:text-white">Asset Request Process</h2>
+        <ProcessTracker processData={processData} />
+      </div>
     </div>
   );
 };
