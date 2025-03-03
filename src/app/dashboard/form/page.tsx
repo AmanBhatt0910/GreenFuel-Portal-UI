@@ -34,7 +34,7 @@ import CustomBreadcrumb from "@/components/custom/CustomBreadcrumb";
 const formSteps = [
   {
     id: 1,
-    title: "Employee Information",
+    title: "Requestor Summary",
     description: "Your details and department",
     icon: "user",
   },
@@ -70,6 +70,12 @@ const getInitialFormData = (): FormData => ({
   assetAmount: "",
   reason: "",
   policyAgreement: false,
+  initiateDept: "",
+  currentStatus: "",
+  benefitToOrg: "",
+  approvalCategory: "",
+  approvalType: "",
+  notifyTo: "",
 });
 
 export default function AssetRequestForm() {
@@ -95,7 +101,7 @@ export default function AssetRequestForm() {
 
   // Handle form input changes
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({

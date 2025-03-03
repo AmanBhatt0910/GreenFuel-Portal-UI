@@ -6,6 +6,26 @@ import { Button } from "@/components/ui/button";
 import { slideVariants } from "./animations";
 import { AssetDetailsProps } from "./types";
 
+// Dummy data for dropdowns
+const approvalCategories = [
+  { value: "Capex", label: "Capex" },
+  { value: "Opex", label: "Opex" },
+  { value: "Service", label: "Service" },
+];
+
+const approvalTypes = [
+  { value: "Type A", label: "Type A" },
+  { value: "Type B", label: "Type B" },
+  { value: "Type C", label: "Type C" },
+];
+
+const notifyToOptions = [
+  { value: "Finance Manager", label: "Finance Manager" },
+  { value: "Operations Manager", label: "Operations Manager" },
+  { value: "Department Head", label: "Department Head" },
+  { value: "IT Manager", label: "IT Manager" },
+];
+
 export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   formData,
   handleChange,
@@ -110,14 +130,93 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
           <Textarea
             id="reason"
             name="reason"
-            value={formData.reason}
+            value={formData.reason || ""}
             onChange={handleChange}
             placeholder="Please provide the reason for requesting the assets"
             className="min-h-32 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
           />
         </div>
 
-        <div className="flex items-start">
+        <div className="space-y-2">
+          <Label
+            htmlFor="benefitToOrg"
+            className="text-sm font-medium"
+          >
+            Benefit to Organization <span className="text-red-500">*</span>
+          </Label>
+          <Textarea
+            id="benefitToOrg"
+            name="benefitToOrg"
+            value={formData.benefitToOrg || ""}
+            onChange={handleChange}
+            placeholder="Please explain how this request benefits the organization"
+            className="min-h-32 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <Label htmlFor="approvalCategory" className="text-sm font-medium">
+              Approval Category <span className="text-red-500">*</span>
+            </Label>
+            <select
+              id="approvalCategory"
+              name="approvalCategory"
+              value={formData.approvalCategory || ""}
+              onChange={handleChange}
+              className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-100 dark:focus:border-blue-100"
+            >
+              <option value="">Select Budget Approval Category</option>
+              {approvalCategories.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="approvalType" className="text-sm font-medium">
+              Approval Type <span className="text-red-500">*</span>
+            </Label>
+            <select
+              id="approvalType"
+              name="approvalType"
+              value={formData.approvalType || ""}
+              onChange={handleChange}
+              className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-100 dark:focus:border-blue-100"
+            >
+              <option value="">Select Approval Type</option>
+              {approvalTypes.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="notifyTo" className="text-sm font-medium">
+              Notify To <span className="text-red-500">*</span>
+            </Label>
+            <select
+              id="notifyTo"
+              name="notifyTo"
+              value={formData.notifyTo || ""}
+              onChange={handleChange}
+              className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-100 dark:focus:border-blue-100"
+            >
+              <option value="">Select Person to Notify</option>
+              {notifyToOptions.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="flex items-start mt-4">
           <input
             type="checkbox"
             id="policyAgreement"

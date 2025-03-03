@@ -31,24 +31,6 @@ const formStats: FormStat = {
   weekChange: 12.5,
 };
 
-const weeklyData: WeeklyDataPoint[] = [
-  { name: "Mon", submitted: 4, approved: 2, rejected: 1 },
-  { name: "Tue", submitted: 6, approved: 4, rejected: 0 },
-  { name: "Wed", submitted: 5, approved: 3, rejected: 1 },
-  { name: "Thu", submitted: 7, approved: 5, rejected: 0 },
-  { name: "Fri", submitted: 8, approved: 4, rejected: 2 },
-  { name: "Sat", submitted: 2, approved: 1, rejected: 0 },
-  { name: "Sun", submitted: 2, approved: 2, rejected: 1 },
-];
-
-const statusByLevel: StatusLevel[] = [
-  { approved: 18, rejected: 4, pending: 12, name: "Level 1" },
-  { approved: 16, rejected: 3, pending: 7, name: "Level 2" },
-  { approved: 14, rejected: 2, pending: 4, name: "Level 3" },
-  { approved: 12, rejected: 1, pending: 3, name: "Level 4" },
-  { approved: 10, rejected: 0, pending: 2, name: "Level 5" },
-];
-
 const recentForms: RecentForm[] = [
   {
     id: "REQ-2025-001",
@@ -92,47 +74,7 @@ const recentForms: RecentForm[] = [
   },
 ];
 
-const processData: {
-  id: string;
-  name: string;
-  stage: number;
-  totalStages: number;
-  status: "completed" | "in-progress" | "pending";
-  updatedAt: string;
-}[] = [
-  {
-    id: "REQ-2025-001",
-    name: "Laptop Request",
-    stage: 4,
-    totalStages: 5,
-    status: "in-progress",
-    updatedAt: "2025-02-28",
-  },
-  {
-    id: "REQ-2025-002",
-    name: "Software License",
-    stage: 2,
-    totalStages: 5,
-    status: "in-progress",
-    updatedAt: "2025-02-27",
-  },
-  {
-    id: "REQ-2025-003",
-    name: "Office Equipment",
-    stage: 5,
-    totalStages: 5,
-    status: "completed",
-    updatedAt: "2025-02-26",
-  },
-  {
-    id: "REQ-2025-004",
-    name: "Mobile Device",
-    stage: 1,
-    totalStages: 5,
-    status: "pending",
-    updatedAt: "2025-02-25",
-  }
-];
+
 
 const DashboardPage: React.FC = () => {
   const [filter, setFilter] = useState<string>("all");

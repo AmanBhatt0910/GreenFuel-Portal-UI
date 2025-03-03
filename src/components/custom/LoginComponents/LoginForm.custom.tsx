@@ -26,6 +26,7 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -39,10 +40,11 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
       setError(errorMessage);
       toast.error(errorMessage);
     } else {
+      setIsLoading(true);
       toast.success("Login successful! Redirecting to dashboard...");
       setTimeout(() => {
         router.push("/dashboard");
-      }, 100);
+      }, 1500); // Increased timeout to show loading state
     }
   };
 
@@ -60,9 +62,7 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
         ariaRequired={true}
         ariaDescribedBy="email-description"
       />
-      {
-        error && <p className="text-red-500">{error}</p>
-      }
+      {error && <p className="text-red-500">{error}</p>}
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
@@ -109,10 +109,12 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
         <GreenFuelButton
           type="submit"
           fullWidth
+          isLoading={isLoading}
+          disabled={isLoading}
           ariaLabel="Sign in to your dashboard"
           ariaDescribedBy="sign-in-description"
         >
-          Sign In to Dashboard
+          {isLoading ? "Signing in..." : "Sign In to Dashboard"}
         </GreenFuelButton>
       </div>
     </form>
