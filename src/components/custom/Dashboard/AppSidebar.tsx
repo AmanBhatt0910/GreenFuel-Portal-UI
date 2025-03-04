@@ -123,26 +123,30 @@ const AppSidebar = () => {
                         <Link
                           href={item.url}
                           className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
-                                    ${
-                                      isActive
-                                        ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium" // Active state
-                                        : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
-                                    }`}
-                        >
-                          <item.icon
-                            className={`h-4 w-4 ${
+                            ${
                               isActive
-                                ? "text-gray-700 dark:text-gray-200"
-                                : "text-gray-500 dark:text-gray-400"
+                                ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium" // Active state
+                                : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-green-900/20 dark:hover:text-green-400" // Hover state in dark mode
                             }`}
-                          />
-                          <span
-                            className={`${
-                              isActive ? "text-gray-700 dark:text-gray-200" : ""
-                            }`}
-                          >
-                            {item.title}
-                          </span>
+                        >
+                          <div className="flex items-center gap-3">
+                            <item.icon
+                              className={`h-4 w-4 ${
+                                isActive
+                                  ? "text-gray-700 dark:text-gray-200"
+                                  : "text-gray-500 dark:text-gray-400 dark:hover:text-green-400" // Icon color change to green on hover in dark mode
+                              }`}
+                            />
+                            <span
+                              className={`${
+                                isActive
+                                  ? "text-gray-700 dark:text-gray-200"
+                                  : "dark:hover:text-green-400" // Text color change to green on hover in dark mode
+                              }`}
+                            >
+                              {item.title}
+                            </span>
+                          </div>
                         </Link>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
@@ -327,8 +331,6 @@ const AppSidebar = () => {
             </SidebarGroupContent>
           </SidebarGroup>
         </div>
-
-
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto border-t dark:border-gray-700 bg-gray-100 dark:bg-gray-900">
