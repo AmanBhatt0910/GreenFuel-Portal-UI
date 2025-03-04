@@ -13,8 +13,12 @@ import {
   Leaf,
   FileText,
   Home,
+  Download,
+  FileDown,
 } from "lucide-react";
 import Link from "next/link";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel, Table, TableRow, TableCell, BorderStyle, WidthType, AlignmentType } from 'docx';
+import { saveAs } from 'file-saver';
 
 // Import our custom components
 import {
@@ -346,6 +350,293 @@ export default function AssetRequestForm() {
     }).format(amount);
   };
 
+  // Generate and download professional PDF-like document
+  const generateDetailedDocument = () => {
+    // Create table rows for assets
+    const assetRows = [];
+    
+    // Create header row
+    const headerRow = new TableRow({
+      tableHeader: true,
+      children: [
+        new TableCell({
+          width: {
+            size: 30,
+            type: WidthType.PERCENTAGE,
+          },
+          shading: {
+            fill: "F1F1F1",
+          },
+          children: [new Paragraph("Asset")],
+        }),
+        new TableCell({
+          width: {
+            size: 40,
+            type: WidthType.PERCENTAGE,
+          },
+          shading: {
+            fill: "F1F1F1",
+          },
+          children: [new Paragraph("Description")],
+        }),
+        new TableCell({
+          width: {
+            size: 10,
+            type: WidthType.PERCENTAGE,
+          },
+          shading: {
+            fill: "F1F1F1",
+          },
+          children: [new Paragraph({ text: "Quantity", alignment: AlignmentType.CENTER })],
+        }),
+        new TableCell({
+          width: {
+            size: 10,
+            type: WidthType.PERCENTAGE,
+          },
+          shading: {
+            fill: "F1F1F1",
+          },
+          children: [new Paragraph({ text: "Unit Price", alignment: AlignmentType.RIGHT })],
+        }),
+        new TableCell({
+          width: {
+            size: 10,
+            type: WidthType.PERCENTAGE,
+          },
+          shading: {
+            fill: "F1F1F1",
+          },
+          children: [new Paragraph({ text: "Total", alignment: AlignmentType.RIGHT })],
+        }),
+      ],
+    });
+    
+    assetRows.push(headerRow);
+    
+    // Add asset data rows
+    formData.assets.forEach((asset, index) => {
+      const dataRow = new TableRow({
+        children: [
+          new TableCell({
+            children: [new Paragraph(asset.title)],
+          }),
+          new TableCell({
+            children: [new Paragraph(asset.description || "-")],
+          }),
+          new TableCell({
+            children: [new Paragraph({ text: asset.quantity.toString(), alignment: AlignmentType.CENTER })],
+          }),
+          new TableCell({
+            children: [new Paragraph({ 
+              text: Number(asset.pricePerUnit).toLocaleString('en-IN', { 
+                style: 'currency', 
+                currency: 'INR',
+                maximumFractionDigits: 0
+              }),
+              alignment: AlignmentType.RIGHT 
+            })],
+          }),
+          new TableCell({
+            children: [new Paragraph({ 
+              text: Number(asset.total).toLocaleString('en-IN', { 
+                style: 'currency', 
+                currency: 'INR',
+                maximumFractionDigits: 0
+              }),
+              alignment: AlignmentType.RIGHT 
+            })],
+          }),
+        ],
+      });
+      
+      assetRows.push(dataRow);
+    });
+    
+    // Total row
+    const totalRow = new TableRow({
+      children: [
+        new TableCell({
+          columnSpan: 4,
+          children: [new Paragraph({ 
+            text: "Total Amount:", 
+            alignment: AlignmentType.RIGHT,
+            heading: HeadingLevel.HEADING_4
+          })],
+        }),
+        new TableCell({
+          children: [new Paragraph({ 
+            text: Number(formData.assetAmount).toLocaleString('en-IN', { 
+              style: 'currency', 
+              currency: 'INR',
+              maximumFractionDigits: 0
+            }),
+            alignment: AlignmentType.RIGHT,
+            heading: HeadingLevel.HEADING_4
+          })],
+        }),
+      ],
+    });
+    
+    assetRows.push(totalRow);
+    
+    // Create the document
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [
+            new Paragraph({
+              text: "GREEN FUEL ASSET REQUEST",
+              heading: HeadingLevel.TITLE,
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({
+              text: `Request #${getRequestId()}`,
+              heading: HeadingLevel.HEADING_1,
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({
+              text: `Submission Date: ${format(new Date(), "MMMM dd, yyyy")}`,
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({}),
+            new Paragraph({
+              text: "REQUESTOR INFORMATION",
+              heading: HeadingLevel.HEADING_2,
+            }),
+            new Paragraph({}),
+            new Table({
+              width: {
+                size: 100,
+                type: WidthType.PERCENTAGE,
+              },
+              rows: [
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      width: {
+                        size: 30,
+                        type: WidthType.PERCENTAGE,
+                      },
+                      children: [new Paragraph("Employee Name")],
+                    }),
+                    new TableCell({
+                      width: {
+                        size: 70,
+                        type: WidthType.PERCENTAGE,
+                      },
+                      children: [new Paragraph(formData.employeeName)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Employee Code")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(formData.employeeCode)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Department")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(formData.department)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Designation")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(formData.designation)],
+                    }),
+                  ],
+                }),
+                new TableRow({
+                  children: [
+                    new TableCell({
+                      children: [new Paragraph("Plant Location")],
+                    }),
+                    new TableCell({
+                      children: [new Paragraph(formData.plant)],
+                    }),
+                  ],
+                }),
+              ],
+            }),
+            new Paragraph({}),
+            new Paragraph({
+              text: "ASSET DETAILS",
+              heading: HeadingLevel.HEADING_2,
+            }),
+            new Paragraph({}),
+            new Table({
+              width: {
+                size: 100,
+                type: WidthType.PERCENTAGE,
+              },
+              rows: assetRows,
+            }),
+            new Paragraph({}),
+            new Paragraph({
+              text: "REQUEST REASON",
+              heading: HeadingLevel.HEADING_2,
+            }),
+            new Paragraph(formData.reason),
+            new Paragraph({}),
+            new Paragraph({
+              text: "ESTIMATED TIMELINE",
+              heading: HeadingLevel.HEADING_2,
+            }),
+            new Paragraph({}),
+            new Paragraph({
+              text: `Current Status: Pending Approval`,
+            }),
+            new Paragraph({
+              text: `Management Approval: Expected by ${getEstimatedTimeline().approval}`,
+            }),
+            new Paragraph({
+              text: `Processing & Procurement: Expected by ${getEstimatedTimeline().processing}`,
+            }),
+            new Paragraph({
+              text: `Delivery & Handover: Expected by ${getEstimatedTimeline().delivery}`,
+            }),
+            new Paragraph({}),
+            new Paragraph({
+              text: "IMPORTANT NOTE",
+              heading: HeadingLevel.HEADING_2,
+            }),
+            new Paragraph({
+              text: "Your asset request will be reviewed by your department head and the procurement team. You'll receive email notifications about the status updates."
+            }),
+            new Paragraph({}),
+            new Paragraph({
+              text: "Green Fuel Industries Ltd.",
+              alignment: AlignmentType.CENTER,
+            }),
+            new Paragraph({
+              text: " 2025 All Rights Reserved",
+              alignment: AlignmentType.CENTER,
+            }),
+          ],
+        },
+      ],
+    });
+
+    // Generate and save the document
+    Packer.toBlob(doc).then(blob => {
+      saveAs(blob, `GreenFuel_AssetRequest_${getRequestId()}.docx`);
+    });
+  };
+
   // Render form step content
   const renderFormStep = () => {
     switch (currentStep) {
@@ -489,282 +780,96 @@ export default function AssetRequestForm() {
             </p>
           </div>
 
-          {/* Submission Details Card */}
+          {/* Simplified Submission Details Card */}
           <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-100 dark:border-gray-700">
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
-              Submission Details
+              Request Summary
             </h3>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Submitted By
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.employeeName}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Employee Code
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.employeeCode}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Department
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.department}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Submission Date
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {format(new Date(), "MMMM dd, yyyy")}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Plant Location
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.plant}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Designation
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.designation}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Assets Summary */}
-            <div className="mt-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                Asset Summary
-              </h4>
-
-              {formData.assets.length > 0 ? (
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-800">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Asset
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Description
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Qty
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Unit Price
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Total
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {formData.assets.map((asset, index) => (
-                        <tr
-                          key={index}
-                          className={
-                            index % 2 === 0
-                              ? "bg-white dark:bg-gray-800"
-                              : "bg-gray-50 dark:bg-gray-700"
-                          }
-                        >
-                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                            {asset.title}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                            {asset.description || "-"}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
-                            {asset.quantity}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-right">
-                            {formatCurrency(Number(asset.pricePerUnit))}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-medium">
-                            {formatCurrency(Number(asset.total))}
-                          </td>
-                        </tr>
-                      ))}
-                      <tr className="bg-blue-50 dark:bg-blue-900/20 font-medium">
-                        <td
-                          colSpan={4}
-                          className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right"
-                        >
-                          Total Amount:
-                        </td>
-                        <td className="px-4 py-3 text-sm text-blue-700 dark:text-blue-400 text-right font-bold">
-                          {formatCurrency(Number(formData.assetAmount))}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400">
-                  No assets requested
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Submitted By
                 </p>
-              )}
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {formData.employeeName}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Submission Date
+                </p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {format(new Date(), "MMMM dd, yyyy")}
+                </p>
+              </div>
             </div>
 
-            {/* Request Reason */}
-            <div className="mt-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                Request Reason
-              </h4>
-              <p className="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
-                {formData.reason}
+            <div className="grid grid-cols-2 gap-4 mb-6">
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Department
+                </p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {formData.department}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  Total Amount
+                </p>
+                <p className="font-medium text-blue-700 dark:text-blue-400">
+                  {formatCurrency(Number(formData.assetAmount))}
+                </p>
+              </div>
+            </div>
+
+            {/* Current status card */}
+            <div className="flex items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-6">
+              <div className="flex items-center">
+                <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
+                <p className="text-sm text-blue-700 dark:text-blue-300">
+                  Current Status: <span className="font-medium">Pending Approval</span>
+                </p>
+              </div>
+              <p className="text-xs text-blue-700 dark:text-blue-300">
+                Expected approval by {timeline.approval}
               </p>
             </div>
 
-            {/* Timeline */}
-            <div className="mt-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-4">
-                Estimated Timeline
-              </h4>
-
-              <div className="relative">
-                {/* Timeline line */}
-                <div className="absolute left-8 top-0 h-full w-0.5 bg-gray-200 dark:bg-gray-700"></div>
-
-                {/* Current status */}
-                <div className="relative flex items-center mb-6">
-                  <div className="absolute left-8 -ml-3 h-6 w-6 rounded-full border-2 border-blue-500 bg-white dark:bg-gray-800 z-10"></div>
-                  <div className="absolute left-8 -ml-2.5 h-5 w-5 rounded-full bg-blue-500 animate-pulse z-20"></div>
-                  <div className="ml-12">
-                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      Current Status
-                    </p>
-                    <div className="flex items-center mt-1 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded">
-                      <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Pending Approval
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Upcoming stages */}
-                <div className="relative flex items-center mb-6">
-                  <div className="absolute left-8 -ml-2.5 h-5 w-5 rounded-full bg-gray-300 dark:bg-gray-600 z-10"></div>
-                  <div className="ml-12">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      Management Approval
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Expected by {timeline.approval}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative flex items-center mb-6">
-                  <div className="absolute left-8 -ml-2.5 h-5 w-5 rounded-full bg-gray-300 dark:bg-gray-600 z-10"></div>
-                  <div className="ml-12">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      Processing & Procurement
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Expected by {timeline.processing}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative flex items-center">
-                  <div className="absolute left-8 -ml-2.5 h-5 w-5 rounded-full bg-gray-300 dark:bg-gray-600 z-10"></div>
-                  <div className="ml-12">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      Delivery & Handover
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Expected by {timeline.delivery}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Request Note */}
-            <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <div className="flex">
-                <AlertCircle className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0 text-yellow-500 dark:text-yellow-400" />
-                <div>
-                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-400">
-                    Important Note
-                  </p>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                    Your asset request will be reviewed by your department head
-                    and the procurement team. You'll receive email notifications
-                    about the status updates.
-                  </p>
-                </div>
-              </div>
-            </div>
+            {/* See detailed info button */}
+            <button
+              onClick={generateDetailedDocument}
+              className="w-full flex items-center justify-center gap-2 p-3 font-medium text-gray-700 dark:text-gray-300 rounded-lg border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              <FileDown className="h-5 w-5" />
+              Download Detailed Request Document
+            </button>
           </div>
 
-          <p className="text-gray-600 dark:text-gray-300 mb-8 text-center max-w-2xl">
+          {/* Action buttons */}
+          <div className="flex space-x-4">
+            <Link href="/dashboard" className="inline-flex items-center">
+              <Button className="flex items-center gap-2">
+                <Home className="h-4 w-4" />
+                Return to Dashboard
+              </Button>
+            </Link>
+            <Link href="/dashboard/form" className="inline-flex items-center">
+              <Button variant="outline" className="flex items-center gap-2">
+                <FileText className="h-4 w-4" />
+                Create New Request
+              </Button>
+            </Link>
+          </div>
+
+          <p className="text-gray-600 dark:text-gray-300 mt-8 text-center max-w-2xl">
             Thank you for submitting your asset request. The request has been
             logged in our system and is now pending approval. You can track the
             status of your request using the reference number above.
           </p>
-
-          <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-xl">
-            <Button
-              onClick={resetForm}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md transition-all duration-200 flex items-center justify-center"
-            >
-              <FileCheck className="h-4 w-4 mr-2" />
-              Submit Another Request
-            </Button>
-
-            <Link href="/dashboard">
-              <Button
-                variant="outline"
-                className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 flex items-center justify-center"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
         </div>
       ) : (
         <div className="mt-4">
