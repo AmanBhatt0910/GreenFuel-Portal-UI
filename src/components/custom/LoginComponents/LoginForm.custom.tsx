@@ -1,51 +1,42 @@
+"use client";
 import React, { useState } from "react";
 import Link from "next/link";
 import { GreenFuelInput } from "../ui/Input.custom";
-import { GreenFuelCheckbox } from "../ui/CheckBox";
 import { GreenFuelButton } from "../ui/Button.custom";
 import { z } from "zod";
 import { toast } from "@/lib/toast-util";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 const LoginSchema = z.object({
-  email: z.string().email().min(1, "Email is required"),
-  password: z
-    .string()
-    .min(6, "Password must be of 6 length")
-    .min(1, "Password is required"),
-  rememberme: z.boolean().optional(),
+  email: z.string().email("Invalid email format").min(1, "Email is required"),
+  password: z.string().min(1, "Password is required"),
 });
 
 interface LoginFormProps {
-  onSubmit: (email: string, password: string, rememberMe: boolean) => void;
+  onSubmit: (email: string, password: string) => Promise<void>;
+  isLoading: boolean;
 }
 
-export const LoginForm: React.FC<LoginFormProps> = () => {
+export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => { // 🔥 Accept loading state
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const result = LoginSchema.safeParse({ email, password, rememberMe });
+    setError(null);
 
+    const result = LoginSchema.safeParse({ email, password });
     if (!result.success) {
-      const errorMessage = result.error.errors
-        .map((err) => err.message)
-        .join(", ");
+      const errorMessage = result.error.errors.map((err) => err.message).join(", ");
       setError(errorMessage);
       toast.error(errorMessage);
-    } else {
-      setIsLoading(true);
-      toast.success("Login successful! Redirecting to dashboard...");
-      setTimeout(() => {
-        router.push("/dashboard");
-      }, 1500); // Increased timeout to show loading state
+      return;
     }
+
+    await onSubmit(email, password); 
   };
 
   return (
@@ -58,18 +49,11 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
         value={email}
         onChange={(e) => setEmail(e.target.value)}
         required
-        ariaLabel="Enter your company email"
-        ariaRequired={true}
-        ariaDescribedBy="email-description"
       />
-      {error && <p className="text-red-500">{error}</p>}
 
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <label
-            htmlFor="password"
-            className="text-black dark:text-[#41a350] font-medium"
-          >
+          <label htmlFor="password" className="text-black dark:text-[#41a350] font-medium">
             Password
           </label>
           <Link
@@ -80,7 +64,6 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
           </Link>
         </div>
 
-        {error && <p className="text-red-500">{error}</p>}
         <GreenFuelInput
           id="password"
           isPassword
@@ -90,30 +73,13 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
           required
-          ariaLabel="Enter your password"
-          ariaRequired={true}
-          ariaDescribedBy="password-description"
         />
+
+        {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
       </div>
 
-      <GreenFuelCheckbox
-        id="remember"
-        label="Keep me signed in"
-        checked={rememberMe}
-        onCheckedChange={setRememberMe}
-        ariaLabel="Keep me signed in for future visits"
-        ariaRequired={false}
-      />
-
       <div className="pt-2">
-        <GreenFuelButton
-          type="submit"
-          fullWidth
-          isLoading={isLoading}
-          disabled={isLoading}
-          ariaLabel="Sign in to your dashboard"
-          ariaDescribedBy="sign-in-description"
-        >
+        <GreenFuelButton type="submit" fullWidth isLoading={isLoading} disabled={isLoading}>
           {isLoading ? "Signing in..." : "Sign In to Dashboard"}
         </GreenFuelButton>
       </div>

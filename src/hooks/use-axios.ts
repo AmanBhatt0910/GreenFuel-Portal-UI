@@ -1,47 +1,91 @@
-import { useState, useEffect } from "react";
-import axiosInstance from "../lib/axios";
+"use client";
+import axios, { AxiosInstance, AxiosResponse, InternalAxiosRequestConfig, Method } from "axios";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/lib/toast-util";
 import { errorCodeMap } from "@/lib/error-codes";
 
-interface UseAxiosResponse<T> {
-  data: T | null;
-  error: string | null;
-  loading: boolean;
-  refetch: () => void;
-}
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
 
-export const useAxios = <T>(
-  url: string,
-  method: "GET" | "POST" | "PUT" | "DELETE" = "GET",
-  body: any = null
-): UseAxiosResponse<T> => {
-  const [data, setData] = useState<T | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState<boolean>(false);
+const useAxios = () => {
+  const { authToken, setTokens, isAuthenticated } = useAuth();
+  const router = useRouter();
 
-  const fetchData = async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
+  const axiosInstance: AxiosInstance = axios.create({
+    baseURL: BASE_URL,
+    headers: {
+      "Content-Type": "application/json",
+    },
+    timeout: 10000, 
+  });
 
+  axiosInstance.interceptors.request.use(
+    async (req: InternalAxiosRequestConfig) => {
+      // Skip auth check for login endpoint
+      if (req.url && (req.url.includes('/auth/login') || req.url.includes('/auth/token'))) {
+        return req;
+      }
+      
+      // Redirect to login if not authenticated for protected endpoints
+      if (!isAuthenticated) {
+        router.push("/login");
+        return Promise.reject("No auth token available");
+      }
+
+      if (authToken?.accessToken) {
+        req.headers.Authorization = `Bearer ${authToken.accessToken}`;
+      }
+      return req;
+    },
+    (error) => Promise.reject(error)
+  );
+
+  axiosInstance.interceptors.response.use(
+    (response: AxiosResponse) => response,
+    async (error) => {
+      const originalRequest = error.config;
+      if (error.response?.status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
+        try {
+          if (authToken?.refreshToken) {
+            const response = await axios.post(`${BASE_URL}/auth/refresh-token`, {
+              refresh: authToken.refreshToken,
+            });
+            
+            // Adjust this based on your actual API response format
+            const { access, refresh } = response.data;
+            setTokens(access, refresh);
+            
+            originalRequest.headers.Authorization = `Bearer ${access}`;
+            return axiosInstance(originalRequest);
+          }
+        } catch (refreshError) {
+          router.push("/login");
+          toast.error("Your session has expired. Please log in again.");
+        }
+      }
+      
+      toast.error(errorCodeMap[error.response?.status] || "An unknown error occurred.");
+      return Promise.reject(error);
+    }
+  );
+
+  const request = async <T>(url: string, method: Method = "get", data?: any, config = {}): Promise<T> => {
     try {
       const response = await axiosInstance({
-        method,
         url,
-        data: body,
+        method,
+        data,
+        ...config,
       });
-      setData(response.data);
-    } catch (err: any) {
-      setError(err.message || "An error occurred");
-      const status = err?.response?.status;
-      const mappedError = errorCodeMap[status] || "An unknown error occurred.";
-      setError(mappedError);
-    } finally {
-      setLoading(false);
+      return response.data;
+    } catch (error) {
+      console.error("API request failed:", error);
+      throw error;
     }
   };
 
-  useEffect(() => {
-    fetchData();
-  }, [url, method, body]);
-
-  return { data, error, loading, refetch: fetchData };
+  return request;
 };
+
+export default useAxios;
