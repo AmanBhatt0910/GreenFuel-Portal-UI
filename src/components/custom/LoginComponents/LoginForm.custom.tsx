@@ -5,8 +5,7 @@ import { GreenFuelInput } from "../ui/Input.custom";
 import { GreenFuelButton } from "../ui/Button.custom";
 import { z } from "zod";
 import { toast } from "@/lib/toast-util";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/context/AuthContext";
+
 
 const LoginSchema = z.object({
   email: z.string().email("Invalid email format").min(1, "Email is required"),

@@ -92,7 +92,7 @@ axiosInstance.interceptors.response.use(
 
         // Redirect to login page if in browser context
         if (typeof window !== "undefined") {
-          window.location.href = "/login";
+          window.location.href = "/auth/login";
         }
       }
     }
