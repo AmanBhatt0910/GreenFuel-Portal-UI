@@ -1,97 +1,96 @@
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  Dispatch,
-  SetStateAction,
-} from "react";
+"use client";
+import { createContext, ReactNode, useState } from "react";
 
-interface User {
-  email: string;
-  name: string;
-}
-
-interface AuthToken {
-  accessToken: string | null;
-  refreshToken: string | null;
-}
+import { Dispatch, SetStateAction } from "react";
+import { useRouter } from "next/navigation";
 
 interface UserInfoType {
-  email: string;
+  id: number;
   name: string;
+  email: string;
+  phone_no: string;
+  user_id: string;
+  user_type: string;
+  email_verified: boolean;
+  phone_verified: boolean;
+  aadhar_verified: boolean;
+  pan_verified: boolean;
+  p_address: string;
+  date_joined: string;
+  last_login: string;
+  status: boolean;
+  referral: any;
+  VendorInfo: any;
 }
 
-interface AuthContextType {
-  user: User | null;
-  authToken: AuthToken;
-  login: (email: string, password: string, rememberMe: boolean) => void;
+interface AccessTokenType {
+  access: string;
+  refresh: string;
+}
+
+interface GFContextType {
+  authToken: AccessTokenType | null;
+  setAuthToken: Dispatch<SetStateAction<AccessTokenType | null>>;
   logout: () => void;
   baseURL: string;
   userInfo: UserInfoType | null;
   setUserInfo: Dispatch<SetStateAction<UserInfoType | null>>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export type { GFContextType };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [authToken, setAuthToken] = useState<AuthToken>({
-    accessToken: null,
-    refreshToken: null,
-  });
-  const [userInfo, setUserInfo] = useState<UserInfoType | null>(null);
-  const baseURL = "https://api.greenfuel.com"; // Change to your actual API URL
+const GFContext = createContext<GFContextType>({
+  authToken: null,
+  setAuthToken: () => {},
+  logout: () => {},
+  baseURL: "",
+  userInfo: null,
+  setUserInfo: () => {},
+});
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem("authToken");
-    const storedUser = localStorage.getItem("user");
+const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const baseURL = "http://127.0.0.1:8000";
 
-    if (storedToken && storedUser) {
-      setAuthToken(JSON.parse(storedToken));
-      setUser(JSON.parse(storedUser));
-    }
-  }, []);
+  let router = useRouter();
+  let [authToken, setAuthToken] = useState<AccessTokenType | null>(
+    typeof window !== "undefined" && localStorage.getItem("accessToken")
+      ? JSON.parse(
+          (typeof window !== "undefined" &&
+            localStorage.getItem("accessToken")) ||
+            "{}"
+        )
+      : null
+  );
 
-  const login = (email: string, password: string, rememberMe: boolean) => {
-    const dummyAccessToken = "dummy-access-token";
-    const dummyRefreshToken = "dummy-refresh-token";
+  let [userInfo, setUserInfo] = useState<UserInfoType | null>(
+    typeof window !== "undefined" && localStorage.getItem("userInfo")
+      ? JSON.parse(
+          (typeof window !== "undefined" && localStorage.getItem("userInfo")) ||
+            "{}"
+        )
+      : null
+  );
 
-    setAuthToken({
-      accessToken: dummyAccessToken,
-      refreshToken: dummyRefreshToken,
-    });
 
-    const userInfo = { email, name: "John Doe" };
-
-    setUser(userInfo);
-
-    if (rememberMe) {
-      localStorage.setItem("authToken", JSON.stringify({ accessToken: dummyAccessToken, refreshToken: dummyRefreshToken }));
-      localStorage.setItem("user", JSON.stringify(userInfo));
-    }
+  let userLogout = () => {
+    setAuthToken(null);
+    typeof window !== "undefined" && localStorage.removeItem("accessToken");
+    typeof window !== "undefined" && localStorage.removeItem("userInfo");
+    router.push("/auth/login");
   };
 
-  const logout = () => {
-    setUser(null);
-    setAuthToken({ accessToken: null, refreshToken: null });
-    localStorage.removeItem("user");
-    localStorage.removeItem("authToken");
+  let ContextData: GFContextType = {
+    authToken,
+    setAuthToken,
+    logout: userLogout,
+    baseURL,
+    userInfo,
+    setUserInfo,
   };
 
   return (
-    <AuthContext.Provider value={{ user, authToken, login, logout, baseURL, userInfo, setUserInfo }}>
-      {children}
-    </AuthContext.Provider>
+    <GFContext.Provider value={ContextData}>{children}</GFContext.Provider>
   );
 };
 
-export const useAuth = (): AuthContextType => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
-};
+export { GFContext, GFProvider };

@@ -1,8 +1,9 @@
 "use client"
 import React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { AuthProvider } from "@/context/AuthContext";
+import  {GFProvider}  from "@/context/AuthContext";
 import { GreenFuelToaster } from "@/components/custom/Toaster/Toaster.custom";
+
 
 interface ProviderProps {
   children: React.ReactNode;
@@ -10,8 +11,7 @@ interface ProviderProps {
 
 const Provider = ({ children }: ProviderProps) => {
   return (
-    <AuthProvider>
-      
+    <GFProvider>
         <NextThemesProvider
           attribute="class"
           defaultTheme="light"
@@ -22,7 +22,7 @@ const Provider = ({ children }: ProviderProps) => {
           <GreenFuelToaster/>
         </NextThemesProvider>
       
-    </AuthProvider>
+    </GFProvider>
   );
 };
 

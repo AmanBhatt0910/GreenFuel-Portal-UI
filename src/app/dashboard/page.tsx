@@ -18,7 +18,7 @@ import {
   FormStat,
   WeeklyDataPoint,
   StatusLevel,
-  RecentForm
+  RecentForm,
 } from "@/components/custom/Dashboard/DashboardComponents";
 
 const formStats: FormStat = {
@@ -72,8 +72,6 @@ const recentForms: RecentForm[] = [
   },
 ];
 
-
-
 const DashboardPage: React.FC = () => {
   const [filter, setFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -125,11 +123,11 @@ const DashboardPage: React.FC = () => {
 
   const getFormattedDate = (): string => {
     const now = new Date();
-    return now.toLocaleDateString('en-US', { 
-      weekday: 'long',
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
+    return now.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
     });
   };
 
@@ -143,29 +141,33 @@ const DashboardPage: React.FC = () => {
       title: "Total Forms",
       value: formStats.total,
       change: formStats.weekChange,
-      icon: <Activity className="h-10 w-10 text-blue-500 dark:text-blue-400" />
+      icon: <Activity className="h-10 w-10 text-blue-500 dark:text-blue-400" />,
     },
     {
       title: "Approved",
       value: formStats.approved,
-      subtitle: `${Math.round((formStats.approved / formStats.total) * 100)}% approval rate`,
+      subtitle: `${Math.round(
+        (formStats.approved / formStats.total) * 100
+      )}% approval rate`,
       valueColor: "text-green-600 dark:text-green-400",
-      icon: <CheckCircle className="h-10 w-10 text-green-500 dark:text-green-400" />
+      icon: <CheckCircle className="h-10 w-10 text-green-500 dark:text-green-400" />,
     },
     {
       title: "Rejected",
       value: formStats.rejected,
-      subtitle: `${Math.round((formStats.rejected / formStats.total) * 100)}% rejection rate`,
+      subtitle: `${Math.round(
+        (formStats.rejected / formStats.total) * 100
+      )}% rejection rate`,
       valueColor: "text-red-600 dark:text-red-400",
-      icon: <XCircle className="h-10 w-10 text-red-500 dark:text-red-400" />
+      icon: <XCircle className="h-10 w-10 text-red-500 dark:text-red-400" />,
     },
     {
       title: "Pending",
       value: formStats.pending,
       subtitle: "Across all approval levels",
       valueColor: "text-amber-600 dark:text-amber-400",
-      icon: <Clock className="h-10 w-10 text-amber-500 dark:text-amber-400" />
-    }
+      icon: <Clock className="h-10 w-10 text-amber-500 dark:text-amber-400" />,
+    },
   ];
 
   const handleRefresh = () => {
@@ -173,7 +175,7 @@ const DashboardPage: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6  min-h-screen overflow-y-auto">
+    <div className="p-6 space-y-6 min-h-screen overflow-y-auto">
       <DashboardHeader currentDate={currentDate} onRefresh={handleRefresh} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -191,14 +193,17 @@ const DashboardPage: React.FC = () => {
         ))}
       </div>
 
-
       <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-900 dark:to-gray-950 rounded-xl shadow overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Recent Asset Requests</h2>
-          <p className="text-sm text-green-700 dark:text-green-400 mt-1">Track and monitor request status</p>
+          <h2 className="text-xl font-semibold text-gray-800 dark:text-white">
+            Recent Asset Requests
+          </h2>
+          <p className="text-sm text-green-700 dark:text-green-400 mt-1">
+            Track and monitor request status
+          </p>
         </div>
         <div className="overflow-x-auto">
-          <TrackingTable 
+          <TrackingTable
             formStats={formStats}
             recentForms={recentForms}
             isLoaded={isLoaded}
@@ -212,7 +217,6 @@ const DashboardPage: React.FC = () => {
           />
         </div>
       </div>
-
     </div>
   );
 };

@@ -9,7 +9,6 @@ import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import useAxios from "@/app/hooks/use-axios";
 
-// LoginPage component
 export default function LoginPage() {
   const { setAuthToken , authToken, baseURL } = useContext(GFContext);
   const [error, setError] = useState<string | null>(null);
@@ -17,7 +16,6 @@ export default function LoginPage() {
   const router = useRouter();
   const api = useAxios();
 
-  // Animation variants for Framer Motion
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -29,14 +27,12 @@ export default function LoginPage() {
     },
   };
 
-  // Check if user is already authenticated and redirect
   useEffect(() => {
     if (authToken) {
       router.push("/");
     }
   }, [authToken, router]);
 
-  // Handle login submission
   const handleLogin = async (email: string, password: string) => {
     setIsLoading(true);
     setError(null);
@@ -55,7 +51,6 @@ export default function LoginPage() {
         console.log("Login response:", data);
         localStorage.setItem("access" , data.access);
         localStorage.setItem("refresh" , data.refresh);
-        // Handle successful login
       } else {
         console.error("Unexpected response structure:", response);
         setError("Login failed. Please check your credentials.");
