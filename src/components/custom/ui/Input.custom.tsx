@@ -41,7 +41,7 @@ export const GreenFuelInput = forwardRef<HTMLInputElement, GreenFuelInputProps>(
     return (
       <motion.div variants={itemVariants} className="space-y-2">
         {label && (
-          <Label htmlFor={props.id} className="text-black dark:text-[#41a350] font-medium">
+          <Label htmlFor={props.id} className="text-black dark:text-[#243B55] font-medium">
             {label}
           </Label>
         )}
@@ -52,7 +52,7 @@ export const GreenFuelInput = forwardRef<HTMLInputElement, GreenFuelInputProps>(
             aria-label={ariaLabel || label}
             aria-describedby={ariaDescribedBy}
             aria-required={ariaRequired ? "true" : "false"}
-            className="border-[#A5A5A5]/30 focus-visible:ring-[#41a350] h-11"
+            className="border-[#A5A5A5]/30 focus-visible:ring-[#243B55] h-11"
             type={
               isPassword ? (showPassword ? "text" : "password") : props.type
             }

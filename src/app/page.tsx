@@ -1,12 +1,6 @@
 "use client";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-} from "@/components/ui/card";
 import { GreenFuelLogo } from "@/components/custom/ui/Logo.custom";
 import { GreenFuelTitle } from "@/components/custom/ui/Title.custom";
 import { LoginForm } from "@/components/custom/LoginComponents/LoginForm.custom";
@@ -22,24 +16,20 @@ export default function LoginPage() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
-        delayChildren: 0.2,
+        staggerChildren: 0.15,
+        delayChildren: 0.25,
       },
     },
   };
 
-  const handleLogin = (
-    email: string,
-    password: string,
-    rememberMe: boolean
-  ) => {
+  const handleLogin = (email: string, password: string, rememberMe: boolean) => {
     try {
       login(email, password, rememberMe);
-      console.log("Login attempt with:", { email, password, rememberMe });
+      console.log("Login attempt:", { email, password, rememberMe });
       setError(null);
     } catch (error) {
-      setError("Login failed Please check your credentials");
-      console.log("error", error);
+      setError("Login failed. Please check your credentials.");
+      console.error("Login error:", error);
     }
   };
 
@@ -49,36 +39,44 @@ export default function LoginPage() {
   ];
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#C5B299] to-[#e9ecef] dark:from-[#1E1E2E] dark:to-[#2D2D3A]">
-      <div className="absolute top-0 right-0 w-1/3 h-screen bg-[#6552D0]/5 -skew-x-12 transform origin-top-right" />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] to-[#1E293B] font-poppins p-4">
+      <div className="w-full max-w-5xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row">
+        <div className="md:w-1/2 bg-gradient-to-br from-[#0F172A] to-[#1E293B] p-10 text-white flex flex-col justify-center items-center text-center md:text-left">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+          >
+            <h1 className="text-4xl font-bold mb-4">Welcome to GreenFuel</h1>
+            <p className="text-lg mb-6 max-w-md">
+              Empowering a sustainable future with innovative energy solutions.
+            </p>
+            <button
+              onClick={() => window.open("https://greenfuelenergy.in/", "_blank", "noopener,noreferrer")}
+              className="px-6 py-2 bg-transparent border-2 border-white rounded-full text-white hover:bg-white hover:text-[#0F172A] transition-all duration-300"
+            >
+              Learn More
+            </button>
+          </motion.div>
+        </div>
 
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={containerVariants}
-        className="w-full max-w-md px-4 z-10"
-      >
-        <Card className="border-[#6552D0]/10 shadow-xl overflow-hidden relative dark:bg-[#2D2D3F] dark:border-[#6552D0]/20">
-          <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#6552D0] to-[#41a350]"></div>
-
-          <CardHeader className="space-y-1 pb-6">
-            <GreenFuelLogo size="md" />
-            <GreenFuelTitle
-              title="Welcome to GreenFuel"
-              subtitle="Employee Portal Access"
-            />
-          </CardHeader>
-
-          <CardContent>
-            {error && <p className="text-red-500 text-center">{error}</p>}
+        <div className="md:w-1/2 p-10 flex flex-col justify-center items-center w-full">
+          <motion.div
+            initial="hidden"
+            animate="visible"
+            variants={containerVariants}
+            className="w-full max-w-md"
+          >
+            <div className="flex justify-center mb-4">
+              <GreenFuelLogo size="md" />
+            </div>
+            <GreenFuelTitle title="Welcome Back" subtitle="Sign in to your account" />
             <LoginForm onSubmit={handleLogin} />
-          </CardContent>
-
-          <CardFooter className="flex flex-col space-y-4">
+            {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             <FooterLinks links={companyLinks} />
-          </CardFooter>
-        </Card>
-      </motion.div>
+          </motion.div>
+        </div>
+      </div>
     </div>
   );
 }

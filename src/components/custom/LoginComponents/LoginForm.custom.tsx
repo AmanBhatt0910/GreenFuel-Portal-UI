@@ -11,7 +11,7 @@ const LoginSchema = z.object({
   email: z.string().email().min(1, "Email is required"),
   password: z
     .string()
-    .min(6, "Password must be of 6 length")
+    .min(6, "Password must be at least 6 characters long")
     .min(1, "Password is required"),
   rememberme: z.boolean().optional(),
 });
@@ -47,40 +47,29 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <GreenFuelInput
-        id="email"
-        type="email"
-        label="Company Email"
-        placeholder="name@greenfuel.com"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        required
-        ariaLabel="Enter your company email"
-        ariaRequired={true}
-        ariaDescribedBy="email-description"
-      />
-      {
-        error && <p className="text-red-500">{error}</p>
-      }
+    <form onSubmit={handleSubmit} className="space-y-6 max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg">
+      <div>
+        <label htmlFor="email" className="block text-[#141E30] dark:text-[#243B55] font-medium mb-1">
+          Company Email
+        </label>
+        <GreenFuelInput
+          id="email"
+          type="email"
+          placeholder="name@greenfuel.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          required
+          ariaLabel="Enter your company email"
+          ariaRequired={true}
+          ariaDescribedBy="email-description"
+        />
+      </div>
+      {error && <p className="text-red-500 text-sm">{error}</p>}
 
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <label
-            htmlFor="password"
-            className="text-black dark:text-[#41a350] font-medium"
-          >
-            Password
-          </label>
-          <Link
-            href="/forgot-password"
-            className="text-sm font-medium text-[#6552D0] dark:text-[#41a350] dark:hover:text-[#6552D0] hover:text-[#41a350] transition-colors"
-          >
-            Forgot password?
-          </Link>
-        </div>
-
-        {error && <p className="text-red-500">{error}</p>}
+      <div>
+        <label htmlFor="password" className="block text-[#141E30] dark:text-[#243B55] font-medium mb-1">
+          Password
+        </label>
         <GreenFuelInput
           id="password"
           isPassword
@@ -94,6 +83,14 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
           ariaRequired={true}
           ariaDescribedBy="password-description"
         />
+        <div className="text-right mt-2">
+          <Link
+            href="/request-to-admin"
+            className="text-sm font-medium text-[#243B55] hover:text-[#141E30] transition-colors"
+          >
+            Forgot password?
+          </Link>
+        </div>
       </div>
 
       <GreenFuelCheckbox
@@ -105,12 +102,13 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
         ariaRequired={false}
       />
 
-      <div className="pt-2">
+      <div className="pt-4">
         <GreenFuelButton
           type="submit"
           fullWidth
           ariaLabel="Sign in to your dashboard"
           ariaDescribedBy="sign-in-description"
+          className="bg-gradient-to-br from-[#141E30] to-[#243B55] text-white hover:from-[#243B55] hover:to-[#141E30]"
         >
           Sign In to Dashboard
         </GreenFuelButton>

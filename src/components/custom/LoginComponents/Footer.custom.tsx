@@ -8,7 +8,7 @@ interface FooterLinksProps {
   }>;
 }
 
-export const FooterLinks: React.FC<FooterLinksProps> = () => {
+export const FooterLinks: React.FC<FooterLinksProps> = ({ links }) => {
   const itemVariants = {
     hidden: { y: 20, opacity: 0 },
     visible: {
@@ -19,24 +19,10 @@ export const FooterLinks: React.FC<FooterLinksProps> = () => {
   };
 
   return (
-    <>
-      <motion.div variants={itemVariants} className="relative w-full">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-[#A5A5A5]/20"></span>
-        </div>
-      </motion.div>
-
-      
-
-      <motion.div
-        variants={itemVariants}
-        className="text-center text-sm text-[#A5A5A5] pt-2"
-      >
-        <p>
-          © {new Date().getFullYear()} GreenFuel Corporation. All rights
-          reserved.
-        </p>
-      </motion.div>
-    </>
+    <motion.div variants={itemVariants} className="text-center text-sm text-[#6C757D] mt-6">
+      <p>
+        © {new Date().getFullYear()} GreenFuel Corporation. All rights reserved.
+      </p>
+    </motion.div>
   );
 };

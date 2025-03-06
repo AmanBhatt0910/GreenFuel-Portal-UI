@@ -7,10 +7,9 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import ProcessTracker from "@/components/custom/dashboard/ProcessTracker";
-import TrackingTable from "@/components/custom/dashboard/TrackingTable";
+import ProcessTracker from "@/components/custom/Dashboard/ProcessTracker";
+import TrackingTable from "@/components/custom/Dashboard/TrackingTable";
 
-// Import the new dashboard components
 import {
   StatCard,
   WeeklyActivityChart,
@@ -20,9 +19,8 @@ import {
   WeeklyDataPoint,
   StatusLevel,
   RecentForm
-} from "@/components/custom/dashboard/DashboardComponents";
+} from "@/components/custom/Dashboard/DashboardComponents";
 
-// Sample data
 const formStats: FormStat = {
   total: 34,
   approved: 21,
@@ -234,10 +232,8 @@ const DashboardPage: React.FC = () => {
 
   return (
     <div className="p-6 space-y-6  min-h-screen overflow-y-auto">
-      {/* Dashboard Header */}
       <DashboardHeader currentDate={currentDate} onRefresh={handleRefresh} />
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCardData.map((stat, index) => (
           <StatCard
@@ -254,7 +250,6 @@ const DashboardPage: React.FC = () => {
       </div>
 
 
-      {/* Recent Forms */}
       <div className="bg-gradient-to-br from-white to-green-50 dark:from-gray-900 dark:to-gray-950 rounded-xl shadow overflow-hidden">
         <div className="border-b border-gray-200 dark:border-gray-700 px-6 py-4">
           <h2 className="text-xl font-semibold text-gray-800 dark:text-white">Recent Asset Requests</h2>

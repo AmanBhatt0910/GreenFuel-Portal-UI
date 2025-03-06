@@ -29,9 +29,9 @@ export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
   };
 
   return (
-    <motion.div className="flex justify-center mb-6" variants={logoVariants}>
+    <motion.div className="flex justify-center mb-6" initial="hidden" animate="visible" variants={logoVariants}>
       <div
-        className={`${sizes[size].container} rounded-full bg-gradient-to-br from-[#41a350] to-[#6552D0] flex items-center justify-center shadow-lg`}
+        className={`${sizes[size].container} rounded-full bg-gradient-to-br from-[#0F172A] to-[#1E293B] flex items-center justify-center shadow-xl`}
       >
         <Leaf className={`${sizes[size].icon} text-white`} />
       </div>

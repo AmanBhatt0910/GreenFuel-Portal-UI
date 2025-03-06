@@ -1,8 +1,8 @@
 "use client";
 import React from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import AppSidebar from '@/components/custom/dashboard/AppSidebar';
-import AppHeader from '@/components/custom/dashboard/AppHeader';
+import AppSidebar from '@/components/custom/Dashboard/AppSidebar';
+import AppHeader from '@/components/custom/Dashboard/AppHeader';
 
 interface LayoutProps {
   children: React.ReactNode

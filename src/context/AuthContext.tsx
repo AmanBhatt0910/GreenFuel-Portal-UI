@@ -1,14 +1,18 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
+
+interface User {
+  email: string;
+  name: string;
+}
+
+interface AuthToken {
+  accessToken: string | null;
+  refreshToken: string | null;
+}
 
 interface AuthContextType {
-  user: {
-    email: string;
-    name: string;
-  } | null;
-  authToken: {
-    accessToken: string | null;
-    refreshToken: string | null;
-  };
+  user: User | null;
+  authToken: AuthToken;
   login: (email: string, password: string, rememberMe: boolean) => void;
   logout: () => void;
   isAuthenticated: boolean;
@@ -19,13 +23,8 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [user, setUser] = useState<{ email: string; name: string } | null>(
-    null
-  );
-  const [authToken, setAuthToken] = useState<{
-    accessToken: string | null;
-    refreshToken: string | null;
-  }>({
+  const [user, setUser] = useState<User | null>(null);
+  const [authToken, setAuthToken] = useState<AuthToken>({
     accessToken: null,
     refreshToken: null,
   });
@@ -35,40 +34,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
-      const parsedToken = JSON.parse(storedToken);
-      const parsedUser = JSON.parse(storedUser);
+      try {
+        const parsedToken = JSON.parse(storedToken) as AuthToken;
+        const parsedUser = JSON.parse(storedUser) as User;
 
-      setAuthToken(parsedToken);
-      setUser(parsedUser);
+        setAuthToken(parsedToken);
+        setUser(parsedUser);
+      } catch (error) {
+        console.error("Failed to parse stored authentication data:", error);
+        logout();
+      }
     }
   }, []);
 
-  const login = (email: string, password: string, rememberMe: boolean) => {
-    const dummyAccessToken = "dummy-access-token";
-    const dummyRefreshToken = "dummy-refresh-token";
+  const login = useCallback(
+    (email: string, password: string, rememberMe: boolean) => {
+      const dummyAccessToken = "dummy-access-token";
+      const dummyRefreshToken = "dummy-refresh-token";
 
-    setAuthToken({
-      accessToken: dummyAccessToken,
-      refreshToken: dummyRefreshToken,
-    });
+      const userInfo = { email, name: "John Doe" };
 
-    const userInfo = { email, name: "John Doe" };
+      setAuthToken({
+        accessToken: dummyAccessToken,
+        refreshToken: dummyRefreshToken,
+      });
+      setUser(userInfo);
 
-    setUser(userInfo);
+      if (rememberMe) {
+        localStorage.setItem(
+          "authToken",
+          JSON.stringify({
+            accessToken: dummyAccessToken,
+            refreshToken: dummyRefreshToken,
+          })
+        );
+        localStorage.setItem("user", JSON.stringify(userInfo));
+      } else {
+        sessionStorage.setItem(
+          "authToken",
+          JSON.stringify({
+            accessToken: dummyAccessToken,
+            refreshToken: dummyRefreshToken,
+          })
+        );
+        sessionStorage.setItem("user", JSON.stringify(userInfo));
+      }
+    },
+    []
+  );
 
-    if (rememberMe) {
-      localStorage.setItem(
-        "authToken",
-        JSON.stringify({
-          accessToken: dummyAccessToken,
-          refreshToken: dummyRefreshToken,
-        })
-      );
-      localStorage.setItem("user", JSON.stringify(userInfo));
-    }
-  };
-
-  const logout = () => {
+  const logout = useCallback(() => {
     setUser(null);
     setAuthToken({
       accessToken: null,
@@ -77,7 +92,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
-  };
+    sessionStorage.removeItem("user");
+    sessionStorage.removeItem("authToken");
+  }, []);
 
   const isAuthenticated = authToken.accessToken !== null;
 
