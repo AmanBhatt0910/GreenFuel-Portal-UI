@@ -18,11 +18,17 @@ export interface FormData {
   assetAmount: string;
   reason: string;
   policyAgreement: boolean;
+  initiateDept: string;
+  currentStatus: string;
+  benefitToOrg: string;
+  approvalCategory: string;
+  approvalType: string;
+  notifyTo: string;
 }
 
 export interface FormStepProps {
   formData: FormData;
-  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  handleChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
   handleCheckboxChange?: (checked: boolean | string) => void;
   direction: number;
 }
@@ -56,8 +62,4 @@ export interface FormNavigationProps {
   goToNextStep: () => void;
   isSubmitting: boolean;
   isStepValid: () => boolean;
-}
-
-export interface AssetDetailsProps extends FormStepProps {
-  navigateToStep: (step: number) => void;
 }

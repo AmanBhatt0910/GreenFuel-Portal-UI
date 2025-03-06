@@ -28,13 +28,13 @@ import {
   SidebarItem,
 } from "@/components/custom/AssetRequestForm";
 import { Button } from "@/components/ui/button";
-import CustomBreadcrumb from "@/components/custom/CustomBreadcrumb";
+import { CustomBreadcrumb } from '@/components/custom/ui/Breadcrumb.custom';
 
 // Form steps with enhanced descriptions
 const formSteps = [
   {
     id: 1,
-    title: "Employee Information",
+    title: "Requestor Summary",
     description: "Your details and department",
     icon: "user",
   },
@@ -70,6 +70,12 @@ const getInitialFormData = (): FormData => ({
   assetAmount: "",
   reason: "",
   policyAgreement: false,
+  initiateDept: "",
+  currentStatus: "",
+  benefitToOrg: "",
+  approvalCategory: "",
+  approvalType: "",
+  notifyTo: "",
 });
 
 export default function AssetRequestForm() {
@@ -95,7 +101,7 @@ export default function AssetRequestForm() {
 
   // Handle form input changes
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -452,13 +458,22 @@ export default function AssetRequestForm() {
   const requestId = getRequestId();
 
   return (
-    <div className="container mx-auto py-6 max-w-[95%] bg-gradient from-green-50 to-white dark:from-gray-900 dark:to-gray-950 min-h-screen">
+    <div className="container py-4 mx-auto max-w-[95%] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
       <CustomBreadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
-          { label: "Asset Request", href: "/dashboard/form" },
+          { label: "Forms", href: "/dashboard/form" },
         ]}
       />
+      
+      <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6 mt-4">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Form Management</h1>
+          <p className="text-green-700 dark:text-green-400 text-sm font-medium mt-1">
+            Create and manage your custom forms
+          </p>
+        </div>
+      </div>
 
       {isSubmitted ? (
         <div className="flex flex-col items-center justify-center max-w-4xl mx-auto p-6 rounded-xl bg-gradient-to-b from-white to-green-50 dark:from-gray-800 dark:to-green-900/40 shadow-lg border border-green-100 dark:border-green-900/50">
@@ -785,13 +800,13 @@ export default function AssetRequestForm() {
             </div>
           </div>
 
-          <div className="bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 px-4 py-3 rounded-lg mb-6 border border-amber-200 dark:border-amber-800/50 flex items-start">
+          {/* <div className="bg-amber-50 text-amber-800 dark:bg-amber-900/20 dark:text-amber-300 px-4 py-3 rounded-lg mb-6 border border-amber-200 dark:border-amber-800/50 flex items-start">
             <AlertCircle className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0 text-amber-500 dark:text-amber-400" />
             <div>
               <p className="font-medium">Important Information</p>
               <p className="text-sm mt-1">All asset requests require approval from your department head. Standard processing time is 5-7 business days after approval.</p>
             </div>
-          </div>
+          </div> */}
 
           <div className="bg-gradient-to-br from-white to-green-50 dark:bg-gray-950 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div className="grid grid-cols-12 min-h-[700px]">

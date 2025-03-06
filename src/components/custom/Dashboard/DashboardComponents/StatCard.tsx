@@ -74,9 +74,6 @@ const StatCard: React.FC<StatCardProps> = ({
                       )}
                       {Math.abs(change)}%
                     </Badge>
-                    <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
-                      vs last week
-                    </span>
                   </>
                 ) : (
                   <span className="text-sm text-gray-500 dark:text-gray-400">

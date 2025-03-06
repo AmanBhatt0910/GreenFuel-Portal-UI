@@ -28,14 +28,12 @@ export const LoginForm: React.FC<LoginFormProps> = () => {
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = LoginSchema.safeParse({ email, password, rememberMe });
 
     if (!result.success) {
-      const errorMessage = result.error.errors
-        .map((err) => err.message)
-        .join(", ");
+      const errorMessage = result.error.errors.map((err) => err.message).join(", ");
       setError(errorMessage);
       toast.error(errorMessage);
     } else {

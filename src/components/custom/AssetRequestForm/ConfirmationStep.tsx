@@ -79,6 +79,22 @@ export const ConfirmationStep: React.FC<FormStepProps> = ({
               {formData.designation}
             </span>
           </div>
+          <div>
+            <span className="text-sm text-gray-500 dark:text-gray-400 block">
+              Initiate Department
+            </span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              {formData.initiateDept}
+            </span>
+          </div>
+          <div>
+            <span className="text-sm text-gray-500 dark:text-gray-400 block">
+              Current Status
+            </span>
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
+              {formData.currentStatus}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -134,13 +150,51 @@ export const ConfirmationStep: React.FC<FormStepProps> = ({
           </table>
         </div>
         
-        <div className="space-y-2">
-          <span className="text-sm text-gray-500 dark:text-gray-400 block">
-            Reason for Request
-          </span>
-          <p className="text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-900 p-3 rounded-md">
-            {formData.reason}
-          </p>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400 block">
+              Reason for Request
+            </span>
+            <p className="text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-900 p-3 rounded-md">
+              {formData.reason}
+            </p>
+          </div>
+          
+          <div className="space-y-2">
+            <span className="text-sm text-gray-500 dark:text-gray-400 block">
+              Benefit to Organization
+            </span>
+            <p className="text-sm text-gray-900 dark:text-white bg-white dark:bg-gray-900 p-3 rounded-md">
+              {formData.benefitToOrg}
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div>
+              <span className="text-sm text-gray-500 dark:text-gray-400 block">
+                Approval Category
+              </span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {formData.approvalCategory}
+              </span>
+            </div>
+            <div>
+              <span className="text-sm text-gray-500 dark:text-gray-400 block">
+                Approval Type
+              </span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {formData.approvalType}
+              </span>
+            </div>
+            <div>
+              <span className="text-sm text-gray-500 dark:text-gray-400 block">
+                Notify To
+              </span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">
+                {formData.notifyTo}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 

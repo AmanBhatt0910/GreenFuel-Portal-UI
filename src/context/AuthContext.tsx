@@ -1,4 +1,11 @@
-import { createContext, useContext, useState, useEffect, useCallback } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  Dispatch,
+  SetStateAction,
+} from "react";
 
 interface User {
   email: string;
@@ -10,12 +17,19 @@ interface AuthToken {
   refreshToken: string | null;
 }
 
+interface UserInfoType {
+  email: string;
+  name: string;
+}
+
 interface AuthContextType {
   user: User | null;
   authToken: AuthToken;
   login: (email: string, password: string, rememberMe: boolean) => void;
   logout: () => void;
-  isAuthenticated: boolean;
+  baseURL: string;
+  userInfo: UserInfoType | null;
+  setUserInfo: Dispatch<SetStateAction<UserInfoType | null>>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,80 +42,47 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     accessToken: null,
     refreshToken: null,
   });
+  const [userInfo, setUserInfo] = useState<UserInfoType | null>(null);
+  const baseURL = "https://api.greenfuel.com"; // Change to your actual API URL
 
   useEffect(() => {
     const storedToken = localStorage.getItem("authToken");
     const storedUser = localStorage.getItem("user");
 
     if (storedToken && storedUser) {
-      try {
-        const parsedToken = JSON.parse(storedToken) as AuthToken;
-        const parsedUser = JSON.parse(storedUser) as User;
-
-        setAuthToken(parsedToken);
-        setUser(parsedUser);
-      } catch (error) {
-        console.error("Failed to parse stored authentication data:", error);
-        logout();
-      }
+      setAuthToken(JSON.parse(storedToken));
+      setUser(JSON.parse(storedUser));
     }
   }, []);
 
-  const login = useCallback(
-    (email: string, password: string, rememberMe: boolean) => {
-      const dummyAccessToken = "dummy-access-token";
-      const dummyRefreshToken = "dummy-refresh-token";
+  const login = (email: string, password: string, rememberMe: boolean) => {
+    const dummyAccessToken = "dummy-access-token";
+    const dummyRefreshToken = "dummy-refresh-token";
 
-      const userInfo = { email, name: "John Doe" };
-
-      setAuthToken({
-        accessToken: dummyAccessToken,
-        refreshToken: dummyRefreshToken,
-      });
-      setUser(userInfo);
-
-      if (rememberMe) {
-        localStorage.setItem(
-          "authToken",
-          JSON.stringify({
-            accessToken: dummyAccessToken,
-            refreshToken: dummyRefreshToken,
-          })
-        );
-        localStorage.setItem("user", JSON.stringify(userInfo));
-      } else {
-        sessionStorage.setItem(
-          "authToken",
-          JSON.stringify({
-            accessToken: dummyAccessToken,
-            refreshToken: dummyRefreshToken,
-          })
-        );
-        sessionStorage.setItem("user", JSON.stringify(userInfo));
-      }
-    },
-    []
-  );
-
-  const logout = useCallback(() => {
-    setUser(null);
     setAuthToken({
-      accessToken: null,
-      refreshToken: null,
+      accessToken: dummyAccessToken,
+      refreshToken: dummyRefreshToken,
     });
 
+    const userInfo = { email, name: "John Doe" };
+
+    setUser(userInfo);
+
+    if (rememberMe) {
+      localStorage.setItem("authToken", JSON.stringify({ accessToken: dummyAccessToken, refreshToken: dummyRefreshToken }));
+      localStorage.setItem("user", JSON.stringify(userInfo));
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setAuthToken({ accessToken: null, refreshToken: null });
     localStorage.removeItem("user");
     localStorage.removeItem("authToken");
-    sessionStorage.removeItem("user");
-    sessionStorage.removeItem("authToken");
-  }, []);
-
-  const isAuthenticated = authToken.accessToken !== null;
+  };
 
   return (
-    <AuthContext.Provider
-      value={{ user, authToken, login, logout, isAuthenticated }}
-    >
+    <AuthContext.Provider value={{ user, authToken, login, logout, baseURL, userInfo, setUserInfo }}>
       {children}
     </AuthContext.Provider>
   );

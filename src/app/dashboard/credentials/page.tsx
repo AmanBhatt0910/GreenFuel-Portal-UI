@@ -15,7 +15,7 @@ import { CredentialDetails } from "@/components/custom/CredentialsManagement/Cre
 import { CredentialFilter } from "@/components/custom/CredentialsManagement/CredentialFilter";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import CustomBreadcrumb from "@/components/custom/CustomBreadcrumb";
+import { CustomBreadcrumb } from '@/components/custom/ui/Breadcrumb.custom';
 import { Button } from "@/components/ui/button";
 import { Plus, AlertTriangle, Info } from "lucide-react";
 
@@ -281,12 +281,12 @@ export default function CredentialsPage() {
           { label: "Credentials", href: "/dashboard/credentials" },
         ]}
       />
-
+      
       <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6 mt-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Employees Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Credentials Management</h1>
           <p className="text-green-700 dark:text-green-400 text-sm font-medium mt-1">
-            Manage employee accounts, roles, and access permissions.
+            Manage your API keys and credentials securely
           </p>
         </div>
         <Button onClick={handleAddNew} className="md:w-auto w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white">
