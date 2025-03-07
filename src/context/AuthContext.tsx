@@ -35,6 +35,7 @@ interface GFContextType {
   baseURL: string;
   userInfo: UserInfoType | null;
   setUserInfo: Dispatch<SetStateAction<UserInfoType | null>>;
+  login: (email: string, password: string) => void;
 }
 
 export type { GFContextType };
@@ -46,13 +47,14 @@ const GFContext = createContext<GFContextType>({
   baseURL: "",
   userInfo: null,
   setUserInfo: () => {},
+  login: () => {},
 });
 
 const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const baseURL = "http://127.0.0.1:8000";
 
-  let router = useRouter();
-  let [authToken, setAuthToken] = useState<AccessTokenType | null>(
+  const router = useRouter();
+  const [authToken, setAuthToken] = useState<AccessTokenType | null>(
     typeof window !== "undefined" && localStorage.getItem("accessToken")
       ? JSON.parse(
           (typeof window !== "undefined" &&
@@ -62,7 +64,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       : null
   );
 
-  let [userInfo, setUserInfo] = useState<UserInfoType | null>(
+  const [userInfo, setUserInfo] = useState<UserInfoType | null>(
     typeof window !== "undefined" && localStorage.getItem("userInfo")
       ? JSON.parse(
           (typeof window !== "undefined" && localStorage.getItem("userInfo")) ||
@@ -71,21 +73,38 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       : null
   );
 
+  const userLogin = async (email: string, password: string) => {
+    const response = await fetch(baseURL + `/auth/token/`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, password }),
+    });
+    if (response.status == 200) {
+      const data = await response.json();
+      setAuthToken(data);
+      localStorage.setItem("accessToken", JSON.stringify(data));
+    } else {
+      console.error("Unexpected response structure:", response);
+    }
+  };
 
-  let userLogout = () => {
+  const userLogout = () => {
     setAuthToken(null);
     typeof window !== "undefined" && localStorage.removeItem("accessToken");
     typeof window !== "undefined" && localStorage.removeItem("userInfo");
     router.push("/auth/login");
   };
 
-  let ContextData: GFContextType = {
+  const ContextData: GFContextType = {
     authToken,
     setAuthToken,
     logout: userLogout,
     baseURL,
     userInfo,
     setUserInfo,
+    login: userLogin,
   };
 
   return (

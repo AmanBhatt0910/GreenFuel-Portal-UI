@@ -9,7 +9,7 @@ import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useContext } from "react";
-import {GFContext} from "@/context/AuthContext";
+import { GFContext } from "@/context/AuthContext";
 // import { toast } from "sonner";
 
 type AuthToken = {
@@ -18,7 +18,7 @@ type AuthToken = {
 };
 
 const useAxios = (): AxiosInstance => {
-  const { authToken, baseURL , setAuthToken } = useContext(GFContext)
+  const { authToken, baseURL, setAuthToken } = useContext(GFContext);
   const router = useRouter();
 
   const axiosInstance: AxiosInstance = axios.create({
@@ -27,8 +27,6 @@ const useAxios = (): AxiosInstance => {
       Authorization: `Bearer ${authToken?.access}`,
     },
   });
-
-  console.log("kuch to ayega ")
 
   axiosInstance.interceptors.request.use(
     async (req: InternalAxiosRequestConfig) => {
@@ -73,15 +71,14 @@ const useAxios = (): AxiosInstance => {
       console.error("Axios Error:", error);
       if (error.response && error.response.status === 401) {
         router.push("/auth/login");
-      }
-      else if (error.response && error.response.status) {
+      } else if (error.response && error.response.status) {
         toast.error(`An error (${error.response.status}) occurred`);
       } else {
         toast.error("Something Went Wrong");
       }
       return error.response;
     }
-  )
+  );
 
   return axiosInstance;
 };
