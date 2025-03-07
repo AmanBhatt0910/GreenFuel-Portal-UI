@@ -10,7 +10,7 @@ import { GFContext } from "@/context/AuthContext";
 import { LoaderCircle } from "lucide-react";
 
 export default function LoginPage() {
-  const { authToken, setAuthToken, logout } = useContext(GFContext);
+  const { authToken, setAuthToken, logout, login } = useContext(GFContext);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -32,12 +32,14 @@ export default function LoginPage() {
     },
   };
 
-  const handleLogin = async (email: string, password: string, rememberMe: boolean) => {
+  const handleLogin = async (
+    email: string,
+    password: string,
+    rememberMe: boolean
+  ) => {
     try {
       setIsLoading(true);
-      const token = await fakeLoginRequest(email, password, rememberMe);
-      localStorage.setItem("accessToken", JSON.stringify(token));
-      setAuthToken(token);
+      login(email, password);
       setError(null);
     } catch (error) {
       setError("Login failed. Please check your credentials.");
@@ -47,16 +49,22 @@ export default function LoginPage() {
     }
   };
 
-  const fakeLoginRequest = async (email: string, password: string, rememberMe: boolean) => {
-    return new Promise<{ access: string; refresh: string }>((resolve, reject) => {
-      setTimeout(() => {
-        if (email === "test@example.com" && password === "password") {
-          resolve({ access: "fakeAccessToken", refresh: "fakeRefreshToken" });
-        } else {
-          reject("Invalid credentials");
-        }
-      }, 1000);
-    });
+  const fakeLoginRequest = async (
+    email: string,
+    password: string,
+    rememberMe: boolean
+  ) => {
+    return new Promise<{ access: string; refresh: string }>(
+      (resolve, reject) => {
+        setTimeout(() => {
+          if (email === "test@example.com" && password === "password") {
+            resolve({ access: "fakeAccessToken", refresh: "fakeRefreshToken" });
+          } else {
+            reject("Invalid credentials");
+          }
+        }, 1000);
+      }
+    );
   };
 
   const companyLinks = [
@@ -69,7 +77,9 @@ export default function LoginPage() {
       <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
         <div className="animate-pulse flex flex-col items-center justify-center">
           <LoaderCircle className="h-12 w-12 animate-spin text-green-600 dark:text-green-500" />
-          <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">Redirecting...</p>
+          <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
+            Redirecting...
+          </p>
         </div>
       </div>
     );
@@ -89,7 +99,13 @@ export default function LoginPage() {
               Empowering a sustainable future with innovative energy solutions.
             </p>
             <button
-              onClick={() => window.open("https://greenfuelenergy.in/", "_blank", "noopener,noreferrer")}
+              onClick={() =>
+                window.open(
+                  "https://greenfuelenergy.in/",
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
               className="px-6 py-2 bg-transparent border-2 border-white rounded-full text-white hover:bg-white hover:text-[#0F172A] transition-all duration-300"
             >
               Learn More
@@ -107,8 +123,12 @@ export default function LoginPage() {
             <div className="flex justify-center mb-4">
               <GreenFuelLogo size="md" />
             </div>
-            <GreenFuelTitle title="Welcome Back" subtitle="Sign in to your account" />
-            <LoginForm onSubmit={handleLogin} isLoading={isLoading} />  {/* Login form */}
+            <GreenFuelTitle
+              title="Welcome Back"
+              subtitle="Sign in to your account"
+            />
+            <LoginForm onSubmit={handleLogin} isLoading={isLoading} />{" "}
+            {/* Login form */}
             {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
             <FooterLinks links={companyLinks} />
           </motion.div>

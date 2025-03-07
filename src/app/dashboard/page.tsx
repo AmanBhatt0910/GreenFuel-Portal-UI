@@ -20,6 +20,7 @@ import {
   StatusLevel,
   RecentForm,
 } from "@/components/custom/Dashboard/DashboardComponents";
+import useAxios from "../hooks/use-axios";
 
 const formStats: FormStat = {
   total: 34,
@@ -78,6 +79,17 @@ const DashboardPage: React.FC = () => {
   const [currentDate, setCurrentDate] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
+  const api = useAxios();
+
+  const getUserData = async () => {
+    try {
+      const response = await api.get("/userInfo/");
+      console.log(response.data);
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  };
+
   const getStatusColor = (status: string): string => {
     switch (status.toLowerCase()) {
       case "approved":
@@ -132,6 +144,7 @@ const DashboardPage: React.FC = () => {
   };
 
   useEffect(() => {
+    getUserData();
     setCurrentDate(getFormattedDate());
     setTimeout(() => setIsLoaded(true), 100);
   }, []);
@@ -150,7 +163,9 @@ const DashboardPage: React.FC = () => {
         (formStats.approved / formStats.total) * 100
       )}% approval rate`,
       valueColor: "text-green-600 dark:text-green-400",
-      icon: <CheckCircle className="h-10 w-10 text-green-500 dark:text-green-400" />,
+      icon: (
+        <CheckCircle className="h-10 w-10 text-green-500 dark:text-green-400" />
+      ),
     },
     {
       title: "Rejected",
