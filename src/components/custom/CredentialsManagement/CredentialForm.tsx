@@ -155,12 +155,6 @@ function CredentialFormContent({
         if (designations.length > 0) {
           setLoadedDesignations(designations);
         } else {
-          // Fetch designations if not provided
-          // const designationsResponse = await fetch('/api/designations/');
-          // if (designationsResponse.ok) {
-          //   const data = await designationsResponse.json();
-          //   setLoadedDesignations(data);
-          // }
           const res = await api.get('designations/');
           console.log(res.data)
           setLoadedDesignations(res.data)
@@ -169,13 +163,6 @@ function CredentialFormContent({
         if (businessUnits.length > 0) {
           setLoadedBusinessUnits(businessUnits);
         } else {
-          // Fetch business units if not provided
-          // const businessUnitsResponse = await fetch('/api/business-units/');
-          // if (businessUnitsResponse.ok) {
-          //   const data = await businessUnitsResponse.json();
-          //   setLoadedBusinessUnits(data);
-          // }
-
           const res = await api.get('business-units/');
           console.log(res.data)
           setLoadedBusinessUnits(res.data)
@@ -196,10 +183,15 @@ function CredentialFormContent({
   // Initialize form data when selectedUser changes or component mounts
   useEffect(() => {
     if (selectedUser) {
+      // Combine first_name and last_name into name for UI display
+      const combinedName = [selectedUser.first_name, selectedUser.last_name]
+        .filter(Boolean)
+        .join(" ");
+        
       setFormData({
         username: selectedUser.username || "",
         email: selectedUser.email || "",
-        name: selectedUser.name,
+        name: combinedName || selectedUser.name || "",
         employee_code: selectedUser.employee_code,
         department: selectedUser.department,
         designation: selectedUser.designation,
@@ -243,13 +235,28 @@ function CredentialFormContent({
     }
   }, [selectedUser, isOpen]);
 
-  // Use useCallback to memoize event handlers
+  // Handle input changes including special handling for the name field
   const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    if (name === 'name') {
+      // When name changes, split it into first_name and last_name
+      const nameParts = value.trim().split(/\s+/);
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ');
+      
+      setFormData(prev => ({
+        ...prev,
+        name: value,
+        first_name: firstName,
+        last_name: lastName
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   }, []);
 
   const handleSelectChange = useCallback((name: string, value: string) => {
@@ -284,6 +291,12 @@ function CredentialFormContent({
 
     if (!isValidEmail(formData.email)) {
       toast.error("Please enter a valid email address");
+      return false;
+    }
+
+    // Validate name is provided
+    if (!formData.name) {
+      toast.error("Please provide a name");
       return false;
     }
 
@@ -342,23 +355,15 @@ function CredentialFormContent({
         placeholder="Same as email if left empty"
       />
 
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          label="First Name"
-          name="first_name"
-          value={formData.first_name}
-          onChange={handleInputChange}
-          placeholder="John"
-        />
-
-        <FormField
-          label="Last Name"
-          name="last_name"
-          value={formData.last_name}
-          onChange={handleInputChange}
-          placeholder="Doe"
-        />
-      </div>
+      {/* Replaced first_name and last_name fields with a single name field */}
+      <FormField
+        label="Full Name"
+        name="name"
+        value={formData.name}
+        onChange={handleInputChange}
+        placeholder="John Doe"
+        required
+      />
 
       <FormField
         label="Employee Code"
@@ -419,7 +424,6 @@ function CredentialFormContent({
         placeholder="e.g. IT, HR, Finance"
       />
 
-      {/* Changed from FormField to SelectField */}
       <SelectField
         label="Business Unit"
         name="business_unit"
@@ -429,7 +433,6 @@ function CredentialFormContent({
         placeholder="Select Business Unit"
       />
 
-      {/* Changed from FormField to SelectField */}
       <SelectField
         label="Designation"
         name="designation"

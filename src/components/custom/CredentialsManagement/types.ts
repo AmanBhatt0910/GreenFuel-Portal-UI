@@ -90,8 +90,6 @@ export interface CredentialTableProps {
   onEdit: (user: Credential) => void;
   onDelete: (id: number) => void;
   onView: (user: Credential) => void;
-  designations = [],
-  businessUnits = [],
   onResetPassword: (id: number) => void;
   filter?: {
     searchValue?: string;
