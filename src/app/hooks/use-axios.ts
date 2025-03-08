@@ -31,7 +31,7 @@ const useAxios = (): AxiosInstance => {
   axiosInstance.interceptors.request.use(
     async (req: InternalAxiosRequestConfig) => {
       if (!authToken) {
-        router.push("/auth/login");
+        router.push("/");
         return Promise.reject("No auth token available");
       }
 

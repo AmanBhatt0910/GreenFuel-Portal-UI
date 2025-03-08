@@ -33,7 +33,10 @@ export default function LoginPage() {
   const handleLogin = async (email: string, password: string) => {
     try {
       setIsLoading(true);
-      login(email, password);
+      const response = await login(email, password);
+      if (!response.success) {
+        setError(response.message);
+      }
       setError(null);
     } catch (error) {
       setError("Login failed. Please check your credentials.");

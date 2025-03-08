@@ -14,8 +14,7 @@ const DashboardProvider = ({ children }: LayoutProps) => {
       <div className="flex h-screen overflow-hidden bg-slate-50 dark:bg-slate-950 w-full">
         {/* Sidebar */}
         <AppSidebar />
-        
-        {/* Main Content - will automatically adjust to available space */}
+
         <div className="flex flex-col flex-1 w-full overflow-hidden">
           <AppHeader />
           

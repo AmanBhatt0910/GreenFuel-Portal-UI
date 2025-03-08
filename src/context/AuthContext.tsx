@@ -1,4 +1,3 @@
-"use client";
 import { createContext, ReactNode, useState } from "react";
 import { Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
@@ -27,6 +26,11 @@ interface AccessTokenType {
   refresh: string;
 }
 
+interface LoginResponseType {
+  success: boolean;
+  message: string;
+}
+
 interface GFContextType {
   authToken: AccessTokenType | null;
   setAuthToken: Dispatch<SetStateAction<AccessTokenType | null>>;
@@ -34,10 +38,10 @@ interface GFContextType {
   baseURL: string;
   userInfo: UserInfoType | null;
   setUserInfo: Dispatch<SetStateAction<UserInfoType | null>>;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<LoginResponseType>;
 }
 
-export type { GFContextType, UserInfoType };
+export type { GFContextType, UserInfoType, LoginResponseType };
 
 const GFContext = createContext<GFContextType>({
   authToken: null,
@@ -46,12 +50,12 @@ const GFContext = createContext<GFContextType>({
   baseURL: "",
   userInfo: null,
   setUserInfo: () => {},
-  login: async () => {},
+  login: async () => ({ success: false, message: "" }),
 });
 
 const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  // const baseURL = "http://192.168.1.3:8000";
-  const baseURL = "http://127.0.0.1:8000";
+  const baseURL = "http://192.168.1.3:8000";
+  // const baseURL = "http://127.0.0.1:8000";
   
   const router = useRouter();
   const [authToken, setAuthToken] = useState<AccessTokenType | null>(
@@ -73,7 +77,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       : null
   );
 
-  const userLogin = async (email: string, password: string) => {
+  const userLogin = async (email: string, password: string): Promise<LoginResponseType> => {
     try {
       const response = await fetch(baseURL + `/auth/token/`, {
         method: "POST",
@@ -101,12 +105,26 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         }
         
         router.push("/dashboard");
+        return { success: true, message: "Login successful" };
       } else {
-        throw new Error("Login failed");
+        if (response.status === 401) {
+          return { success: false, message: "Invalid email or password" };
+        } else if (response.status === 403) {
+          return { success: false, message: "Your account is inactive" };
+        } else {
+          const errorData = await response.json().catch(() => ({}));
+          return { 
+            success: false, 
+            message: errorData.detail || "Login failed. Please try again." 
+          };
+        }
       }
     } catch (error) {
       console.error("Login error:", error);
-      throw error;
+      return { 
+        success: false, 
+        message: "Network error. Please check your connection." 
+      };
     }
   };
 
