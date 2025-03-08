@@ -4,7 +4,6 @@ import { useRouter } from "next/navigation";
 
 interface UserInfoType {
   id: number;
-  password: string;
   last_login: string;
   is_superuser: boolean;
   username: string;
@@ -15,6 +14,7 @@ interface UserInfoType {
   date_joined: string;
   email: string;
   dob: string | null;
+  department: string | null;
   employee_code: string | null;
   designation: string | null;
   groups: any[];

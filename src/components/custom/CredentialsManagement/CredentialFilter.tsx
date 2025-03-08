@@ -22,37 +22,54 @@ import { useState, useEffect, useCallback } from "react";
 export function CredentialFilter({
   onFilterChange,
   departments,
+  businessUnits,
   roles,
   searchValue = "",
   department = "",
+  business_unit = "",
   role = "",
-  status = "",
+  status,
 }: CredentialFilterProps) {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [localSearch, setLocalSearch] = useState(searchValue);
   const [localDepartment, setLocalDepartment] = useState(department);
+  const [localBusinessUnit, setLocalBusinessUnit] = useState(business_unit);
   const [localRole, setLocalRole] = useState(role);
-  const [localStatus, setLocalStatus] = useState(status);
+  const [localStatus, setLocalStatus] = useState(status === undefined ? null : status.toString());
   
   // Initialize local state from props
   useEffect(() => {
     setLocalSearch(searchValue);
     setLocalDepartment(department);
+    setLocalBusinessUnit(business_unit);
     setLocalRole(role);
-    setLocalStatus(status);
-  }, [searchValue, department, role, status]);
+    setLocalStatus(status === undefined ? null : status.toString());
+  }, [searchValue, department, business_unit, role, status]);
   
-  const hasActiveFilters = localStatus !== "all" && localStatus || localDepartment !== "all" && localDepartment || localRole !== "all" && localRole;
+  const hasActiveFilters = (localStatus !== null && localStatus !== "all") || 
+                          (localDepartment !== "" && localDepartment !== "all") || 
+                          (localBusinessUnit !== "" && localBusinessUnit !== "all") || 
+                          (localRole !== "" && localRole !== "all");
   
   // Memoize the filter change function to prevent re-renders
   const applyFilters = useCallback(() => {
     if (typeof onFilterChange === 'function') {
       onFilterChange('searchValue', localSearch);
       onFilterChange('department', localDepartment === "all" ? "" : localDepartment);
+      onFilterChange('business_unit', localBusinessUnit === "all" ? "" : localBusinessUnit);
       onFilterChange('role', localRole === "all" ? "" : localRole);
-      onFilterChange('status', localStatus === "all" ? "" : localStatus);
+      
+      // Convert 'active'/'inactive' string to boolean
+      if (localStatus === "active") {
+        onFilterChange('status', true);
+      } else if (localStatus === "inactive") {
+        onFilterChange('status', false);
+      } else {
+        // For 'all' or any other value, pass null or undefined
+        onFilterChange('status', "");
+      }
     }
-  }, [localSearch, localDepartment, localRole, localStatus, onFilterChange]);
+  }, [localSearch, localDepartment, localBusinessUnit, localRole, localStatus, onFilterChange]);
   
   // Apply filters whenever they change
   useEffect(() => {
@@ -61,6 +78,7 @@ export function CredentialFilter({
   
   const clearFilters = () => {
     setLocalDepartment("all");
+    setLocalBusinessUnit("all");
     setLocalRole("all");
     setLocalStatus("all");
   };
@@ -95,18 +113,19 @@ export function CredentialFilter({
               <span>Filters</span>
               {hasActiveFilters && (
                 <Badge variant="default" className="ml-1 rounded-full px-1.5 py-px text-xs">
-                  {(localStatus !== "all" ? 1 : 0) +
-                    (localDepartment !== "all" ? 1 : 0) +
-                    (localRole !== "all" ? 1 : 0)}
+                  {(localStatus !== "all" && localStatus !== null ? 1 : 0) +
+                    (localDepartment !== "all" && localDepartment !== "" ? 1 : 0) +
+                    (localBusinessUnit !== "all" && localBusinessUnit !== "" ? 1 : 0) +
+                    (localRole !== "all" && localRole !== "" ? 1 : 0)}
                 </Badge>
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-72 bg-gray-900" align="end">
+          <PopoverContent className="w-72 dark:bg-gray-900 bg-gray-100" align="end">
             <div className="space-y-4 p-1 ">
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Status</h4>
-                <Select value={localStatus} onValueChange={setLocalStatus}>
+                <Select value={localStatus || "all"} onValueChange={setLocalStatus}>
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by status" />
                   </SelectTrigger>
@@ -114,18 +133,17 @@ export function CredentialFilter({
                     <SelectItem value="all">All Statuses</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
                     <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Department</h4>
-                <Select value={localDepartment} onValueChange={setLocalDepartment}>
+                <Select value={localDepartment || "all"} onValueChange={setLocalDepartment}>
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by department" />
                   </SelectTrigger>
-                  <SelectContent className="bg-gray-900">
+                  <SelectContent className="dark:bg-gray-900 bg-gray-100">
                     <SelectItem value="all">All Departments</SelectItem>
                     {departments.filter(dept => dept.name && dept.name.trim() !== "").map((dept) => (
                       <SelectItem key={dept.id} value={dept.name}>
@@ -136,9 +154,28 @@ export function CredentialFilter({
                 </Select>
               </div>
 
+              {businessUnits && businessUnits.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="font-medium text-sm">Business Unit</h4>
+                  <Select value={localBusinessUnit || "all"} onValueChange={setLocalBusinessUnit}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Filter by business unit" />
+                    </SelectTrigger>
+                    <SelectContent className="dark:bg-gray-900 bg-gray-100">
+                      <SelectItem value="all">All Business Units</SelectItem>
+                      {businessUnits.filter(unit => unit.name && unit.name.trim() !== "").map((unit) => (
+                        <SelectItem key={unit.id} value={unit.name}>
+                          {unit.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <h4 className="font-medium text-sm">Role</h4>
-                <Select value={localRole} onValueChange={setLocalRole}>
+                <Select value={localRole || "all"} onValueChange={setLocalRole}>
                   <SelectTrigger>
                     <SelectValue placeholder="Filter by role" />
                   </SelectTrigger>

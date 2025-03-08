@@ -78,9 +78,9 @@ const DashboardPage: React.FC = () => {
 
   const api = useAxios();
 
-  const getUserData = async () => {
+  const getUserDashboardData = async () => {
     try {
-      const response = await api.get("/userInfo/");
+      const response = await api.get("/userInfo/?self=true");
       // console.log(response.data);
       setUserInfo(response.data);
     } catch (error) {
@@ -143,7 +143,7 @@ const DashboardPage: React.FC = () => {
   };
 
   useEffect(() => {
-    getUserData();
+    getUserDashboardData();
     setCurrentDate(getFormattedDate());
     setTimeout(() => setIsLoaded(true), 100);
   }, []);
