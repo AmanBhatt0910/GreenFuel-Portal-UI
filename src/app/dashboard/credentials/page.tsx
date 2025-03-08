@@ -3,9 +3,11 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "@/lib/toast-util";
 import { 
+  BusinessUnit,
   Credential, 
   CredentialFormData,
   Department,
+  Designation,
   Role
 } from "@/components/custom/CredentialsManagement/types";
 import { CredentialTable } from "@/components/custom/CredentialsManagement/CredentialTable";
@@ -18,140 +20,28 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CustomBreadcrumb } from '@/components/custom/ui/Breadcrumb.custom';
 import { Button } from "@/components/ui/button";
 import { Plus, AlertTriangle, Info } from "lucide-react";
+import useAxios from "@/app/hooks/use-axios";
 
-// Sample data for demonstration
-const sampleCredentials: Credential[] = [
-  {
-    id: "1",
-    name: "John Doe",
-    email: "john.doe@greenfuel.com",
-    employeeCode: "EMP-12345",
-    department: "Engineering",
-    designation: "Senior Developer",
-    role: "Developer",
-    status: "active",
-    joiningDate: "2022-01-15",
-    contactNumber: "+91 9876543210",
-    dob: "1990-05-20",
-  },
-  {
-    id: "2",
-    name: "Jane Smith",
-    email: "jane.smith@greenfuel.com",
-    employeeCode: "EMP-23456",
-    department: "Design",
-    designation: "UI/UX Designer",
-    role: "Designer",
-    status: "active",
-    joiningDate: "2022-03-10",
-    contactNumber: "+91 9876543211",
-  },
-  {
-    id: "3",
-    name: "Michael Johnson",
-    email: "michael.johnson@greenfuel.com",
-    employeeCode: "EMP-34567",
-    department: "Product",
-    designation: "Product Manager",
-    role: "Manager",
-    status: "active",
-    joiningDate: "2021-11-20",
-  },
-  {
-    id: "4",
-    name: "Emily Davis",
-    email: "emily.davis@greenfuel.com",
-    employeeCode: "EMP-45678",
-    department: "Marketing",
-    designation: "Marketing Specialist",
-    role: "Specialist",
-    status: "inactive",
-    joiningDate: "2022-05-05",
-  },
-  {
-    id: "5",
-    name: "Robert Brown",
-    email: "robert.brown@greenfuel.com",
-    employeeCode: "EMP-56789",
-    department: "HR",
-    designation: "HR Manager",
-    role: "Manager",
-    status: "pending",
-    joiningDate: "2022-06-15",
-  },
-];
-
-// Sample departments for demonstration
-const sampleDepartments: Department[] = [
-  {
-    id: "1",
-    name: "Engineering",
-    description: "Software development and technical operations"
-  },
-  {
-    id: "2",
-    name: "Design",
-    description: "UI/UX and graphic design"
-  },
-  {
-    id: "3",
-    name: "Product",
-    description: "Product management and strategy"
-  },
-  {
-    id: "4",
-    name: "Marketing",
-    description: "Marketing and communications"
-  },
-  {
-    id: "5",
-    name: "HR",
-    description: "Human resources and people operations"
-  },
-  {
-    id: "6",
-    name: "Finance",
-    description: "Financial operations and accounting"
-  },
-];
-
-// Sample roles for demonstration
-const sampleRoles: Role[] = [
-  {
-    id: "1",
-    name: "Developer",
-    description: "Software developer",
-    permissions: ["read", "write"]
-  },
-  {
-    id: "2",
-    name: "Designer",
-    description: "UI/UX designer",
-    permissions: ["read", "write"]
-  },
-  {
-    id: "3",
-    name: "Manager",
-    description: "Team manager",
-    permissions: ["read", "write", "manage"]
-  },
-  {
-    id: "4",
-    name: "Admin",
-    description: "System administrator",
-    permissions: ["read", "write", "manage", "admin"]
-  },
-  {
-    id: "5",
-    name: "Specialist",
-    description: "Domain specialist",
-    permissions: ["read"]
-  },
-];
 
 export default function CredentialsPage() {
   // State
-  const [credentials, setCredentials] = useState<Credential[]>(sampleCredentials);
+  const [credentials, setCredentials] = useState<Credential[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([
+    { id: "1", name: "Human Resources" },
+    { id: "2", name: "Engineering" },
+    { id: "3", name: "Sales" },
+    { id: "4", name: "Marketing" },
+    { id: "5", name: "Finance" },
+    { id: "6", name: "Customer Support" },
+    { id: "7", name: "IT & Security" },
+    { id: "8", name: "Legal" },
+    { id: "9", name: "Operations" },
+    { id: "10", name: "Product Management" },
+  ]);
+  const [roles, setRoles] = useState<Role[]>([]);
+  const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
+  const [designations, setDesignations] = useState<Designation[]>([]);
+  
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Credential | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -161,9 +51,13 @@ export default function CredentialsPage() {
   const [filter, setFilter] = useState({
     searchValue: "",
     department: "all",
+    business_unit: "all",
     role: "all",
-    status: "all"
+    status: "all",
   });
+  const [isLoading, setIsLoading] = useState(false);
+  const api = useAxios();
+
 
   // Handle filter changes
   const handleFilterChange = useCallback((name: string, value: string) => {
@@ -173,22 +67,21 @@ export default function CredentialsPage() {
     }));
   }, []);
 
-  // API integration will go here
-  // useEffect(() => {
-  //   // Fetch credentials from API
-  //   async function fetchCredentials() {
-  //     try {
-  //       const response = await fetch('/api/credentials');
-  //       const data = await response.json();
-  //       setCredentials(data);
-  //     } catch (error) {
-  //       console.error('Error fetching credentials:', error);
-  //       toast.error('Failed to load employee data');
-  //     }
-  //   }
-  //   
-  //   fetchCredentials();
-  // }, []);
+  // Fetch employees
+  const fetchCredentials = useCallback(async () => {
+    try {
+      const response = await api.get('/userInfo/');
+      console.log('Fetched:', response.data);
+      setCredentials(response.data);
+    } catch (error) {
+      console.error('Error fetching credentials:', error);
+      toast.error('Failed to load employee data');
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchCredentials();
+  }, [fetchCredentials]);
 
   const handleAddNew = useCallback(() => {
     setSelectedUser(null);
@@ -200,23 +93,57 @@ export default function CredentialsPage() {
     setIsFormOpen(true);
   };
 
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // const [designationsResponse, businessUnitsResponse] = await Promise.all([
+        //   fetch('/api/designations/'),
+        //   fetch('/api/business-units/')
+        // ]);
+        
+        // if (designationsResponse.ok && businessUnitsResponse.ok) {
+        //   const designationsData = await designationsResponse.json();
+        //   const businessUnitsData = await businessUnitsResponse.json();
+          
+        //   setDesignations(designationsData);
+        //   setBusinessUnits(businessUnitsData);
+        // }
+        const res = await api.get('designations/');
+        setDesignations(res.data);
+        const response = await api.get('business-units/')
+        setBusinessUnits(response.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      }
+    };
+    
+    fetchData();
+  }, []);
+
   const handleDelete = (id: string) => {
     setUserIdToDelete(id);
     setIsDeleteDialogOpen(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (userIdToDelete) {
-      // API call will go here
-      // In the future, this will make an API call to delete the user
-      // Example: await fetch(`/api/credentials/${userIdToDelete}`, { method: 'DELETE' });
-      
-      setCredentials((prev) => 
-        prev.filter((user) => user.id !== userIdToDelete)
-      );
-      toast.success("Employee deleted successfully");
-      setIsDeleteDialogOpen(false);
-      setUserIdToDelete(null);
+      try {
+        setIsLoading(true);
+        // Uncomment when API endpoint is ready
+        // await api.delete(`userInfo/${userIdToDelete}`);
+        
+        setCredentials((prev) => 
+          prev.filter((user) => user.id !== userIdToDelete)
+        );
+        toast.success("Employee deleted successfully");
+      } catch (error) {
+        console.error('Error deleting employee:', error);
+        toast.error('Failed to delete employee');
+      } finally {
+        setIsLoading(false);
+        setIsDeleteDialogOpen(false);
+        setUserIdToDelete(null);
+      }
     }
   };
 
@@ -224,54 +151,59 @@ export default function CredentialsPage() {
     setDetailUser(user);
     setShowDetails(true);
   };
-
-  const handleResetPassword = (userId: string) => {
-    // API call to trigger password reset email would go here
-    // Example: await fetch(`/api/credentials/${userId}/reset-password`, { method: 'POST' });
-    toast.success("Password reset link sent to user's email");
+  
+  const handleResetPassword = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      // Uncomment when API endpoint is ready
+      // await api.post(`userInfo/${userId}/reset-password`);
+      toast.success("Password reset link sent to user's email");
+    } catch (error) {
+      console.error('Error resetting password:', error);
+      toast.error('Failed to send password reset link');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleFormSubmit = useCallback((formData: CredentialFormData) => {
-    if (selectedUser) {
-      // Update existing user
-      // API call will go here
-      // Example: await fetch(`/api/credentials/${selectedUser.id}`, { 
-      //   method: 'PUT', 
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // });
+  const handleFormSubmit = useCallback(async (formData: CredentialFormData) => {
+    try {
+      setIsLoading(true);
+      console.log('Form data submitted:', formData);
       
-      setCredentials((prev) =>
-        prev.map((user) =>
-          user.id === selectedUser.id
-            ? {
-                ...user,
-                ...formData,
-              }
-            : user
-        )
-      );
-      toast.success("Employee updated successfully");
-    } else {
-      // Create new user
-      // API call will go here
-      // Example: await fetch('/api/credentials', { 
-      //   method: 'POST', 
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify(formData)
-      // });
+      if (selectedUser) {
+        // Update existing user
+        // await api.put(`userInfo/${selectedUser.id}/`, formData);
+        
+        // setCredentials((prev) =>
+        //   prev.map((user) =>
+        //     user.id === selectedUser.id
+        //       ? {
+        //           ...user,
+        //           ...formData,
+        //         }
+        //       : user
+        //   )
+        // );
+        toast.success("Employee updated successfully");
+      } else {
+        // Create new user
+        const response = await api.post('/register/', formData);
+        console.log('New user created:', response.data);
+        
+        // Add the new user to the list
+        await fetchCredentials(); // Refresh the entire list to get proper data
+        toast.success("Employee added successfully");
+      }
       
-      // For now, create a temporary ID
-      const newUser: Credential = {
-        id: (credentials.length + 1).toString(),
-        ...formData,
-      };
-      setCredentials((prev) => [...prev, newUser]);
-      toast.success("Employee added successfully");
+      setIsFormOpen(false);
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      toast.error(selectedUser ? 'Failed to update employee' : 'Failed to create employee');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsFormOpen(false);
-  }, [selectedUser, credentials.length]);
+  }, [selectedUser, api, fetchCredentials]);
 
   return (
     <div className="container py-4 mx-auto max-w-[95%] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
@@ -289,7 +221,11 @@ export default function CredentialsPage() {
             Manage your API keys and credentials securely
           </p>
         </div>
-        <Button onClick={handleAddNew} className="md:w-auto w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white">
+        <Button 
+          onClick={handleAddNew} 
+          className="md:w-auto w-full bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+          disabled={isLoading}
+        >
           <Plus className="mr-2 h-4 w-4" /> Add Employee
         </Button>
       </div>
@@ -303,15 +239,15 @@ export default function CredentialsPage() {
       </Alert>
 
       <div className="mb-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/90 p-5 rounded-xl shadow">
-        <CredentialFilter 
+        {/* <CredentialFilter 
           onFilterChange={handleFilterChange}
-          departments={sampleDepartments} 
-          roles={sampleRoles}
+          departments={departments} 
+          roles={roles}
           status={filter.status}
           searchValue={filter.searchValue}
           department={filter.department}
           role={filter.role}
-        />
+        /> */}
       </div>
 
       <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/90 rounded-xl shadow overflow-hidden">
@@ -322,6 +258,9 @@ export default function CredentialsPage() {
           onView={handleViewDetails}
           onResetPassword={handleResetPassword}
           filter={filter}
+          designations={designations}
+      businessUnits={businessUnits}
+          // isLoading={isLoading}
         />
       </div>
 
@@ -329,8 +268,9 @@ export default function CredentialsPage() {
         isOpen={isFormOpen}
         onClose={() => setIsFormOpen(false)}
         selectedUser={selectedUser}
-        departments={sampleDepartments}
-        roles={sampleRoles}
+        departments={departments}
+        businessUnits={businessUnits}
+        designations={designations}
         onSubmit={handleFormSubmit}
       />
 
@@ -339,6 +279,7 @@ export default function CredentialsPage() {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDeleteConfirm}
         userId={userIdToDelete}
+        // isLoading={isLoading}
       />
 
       {showDetails && detailUser && (
@@ -352,6 +293,7 @@ export default function CredentialsPage() {
                 handleEdit(user);
               }}
               onReset={handleResetPassword}
+              // isLoading={isLoading}
             />
           </div>
         </div>

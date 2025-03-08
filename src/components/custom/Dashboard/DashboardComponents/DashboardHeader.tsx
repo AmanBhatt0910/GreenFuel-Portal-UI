@@ -16,7 +16,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
       transition={{ duration: 0.5 }}
     >
       <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-        Form Approval Dashboard
+        Greenfuel Dashboard
       </h1>
       <div className="flex space-x-2">
         <Button

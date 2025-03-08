@@ -465,16 +465,7 @@ export default function AssetRequestForm() {
           { label: "Forms", href: "/dashboard/form" },
         ]}
       />
-      
-      <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6 mt-4">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Form Management</h1>
-          <p className="text-green-700 dark:text-green-400 text-sm font-medium mt-1">
-            Create and manage your custom forms
-          </p>
-        </div>
-      </div>
-
+  
       {isSubmitted ? (
         <div className="flex flex-col items-center justify-center max-w-4xl mx-auto p-6 rounded-xl bg-gradient-to-b from-white to-green-50 dark:from-gray-800 dark:to-green-900/40 shadow-lg border border-green-100 dark:border-green-900/50">
           <div className="relative mb-8">

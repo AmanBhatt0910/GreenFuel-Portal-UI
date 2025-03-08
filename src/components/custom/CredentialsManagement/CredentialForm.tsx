@@ -19,13 +19,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CredentialFormData } from "./types";
+import { Credential, CredentialFormData, CredentialFormProps, Designation, BusinessUnit } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/lib/toast-util";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import useAxios from "@/app/hooks/use-axios";
 
-// Individual pure form field components to prevent unnecessary re-renders
 const FormField = memo(({ 
   label, 
   name, 
@@ -77,9 +77,9 @@ const SelectField = memo(({
 }: {
   label: string;
   name: string;
-  value: string;
+  value: string | number;
   onChange: (name: string, value: string) => void;
-  options: Array<{ id: string; name: string }>;
+  options: Array<{ id: string | number; name: string }>;
   placeholder?: string;
   required?: boolean;
 }) => {
@@ -89,7 +89,7 @@ const SelectField = memo(({
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
       <Select
-        value={value || ""}
+        value={value ? value.toString() : ""}
         onValueChange={(value) => onChange(name, value)}
       >
         <SelectTrigger className="w-full">
@@ -97,7 +97,7 @@ const SelectField = memo(({
         </SelectTrigger>
         <SelectContent>
           {options.filter(option => option.name && option.name.trim() !== "").map((option) => (
-            <SelectItem key={option.id} value={option.name}>
+            <SelectItem key={option.id.toString()} value={option.id.toString()}>
               {option.name}
             </SelectItem>
           ))}
@@ -108,118 +108,137 @@ const SelectField = memo(({
 });
 SelectField.displayName = "SelectField";
 
-// Notes field component
-const NotesField = memo(({ 
-  value, 
-  onChange
-}: {
-  value: string; 
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-}) => (
-  <div className="space-y-2">
-    <Label htmlFor="notes" className="text-sm font-medium">
-      Additional Notes
-    </Label>
-    <Textarea
-      id="notes"
-      name="notes"
-      value={value || ""}
-      onChange={onChange}
-      placeholder="Any additional information about the employee..."
-      className="min-h-[80px]"
-    />
-  </div>
-));
-NotesField.displayName = "NotesField";
-
-// Update the props to remove formData and onChange
-interface NewCredentialFormProps {
-  isOpen: boolean;
-  onClose: () => void;
-  selectedUser: any | null;
-  onSubmit: (formData: CredentialFormData) => void;
-  departments: Array<{ id: string; name: string }>;
-  roles: Array<{ id: string; name: string }>;
-}
-
 function CredentialFormContent({
   isOpen,
   onClose,
   selectedUser,
   onSubmit,
   departments,
-  roles,
-}: NewCredentialFormProps) {
-  // Internal form state management
+  businessUnits = [],
+  designations = [],
+}: CredentialFormProps) {
+  // Internal form state management aligned with API response
   const [formData, setFormData] = useState<CredentialFormData>({
-    name: "",
+    username: "",
     email: "",
-    employeeCode: "",
-    department: "",
-    designation: "",
-    role: "",
-    status: "active",
-    joiningDate: "",
-    dob: "",
-    contactNumber: "",
-    emergencyContact: "",
-    address: "",
-    city: "",
-    state: "",
-    country: "",
-    postalCode: "",
-    reportingManager: "",
-    notes: "",
+    name: "",
+    employee_code: "",
+    department: null,
+    designation: null,
+    business_unit: null,
+    status: true,
+    dob: null,
+    contact: null,
+    address: null,
+    city: null,
+    state: null,
+    country: null,
+    first_name: "",
+    last_name: "",
+    is_active: true,
+    is_staff: false,
+    is_superuser: false
   });
-  
+
   const [activeTab, setActiveTab] = useState("basic");
-  const [requirePasswordChange, setRequirePasswordChange] = useState(true);
-  const [sendWelcomeEmail, setSendWelcomeEmail] = useState(true);
+  const [loadedDesignations, setLoadedDesignations] = useState<Designation[]>([]);
+  const [loadedBusinessUnits, setLoadedBusinessUnits] = useState<BusinessUnit[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const api = useAxios();
+
+  // Fetch designations and business units
+  useEffect(() => {
+    const fetchData = async () => {
+      setIsLoading(true);
+      try {
+        // Use existing designations and businessUnits if provided as props
+        if (designations.length > 0) {
+          setLoadedDesignations(designations);
+        } else {
+          // Fetch designations if not provided
+          // const designationsResponse = await fetch('/api/designations/');
+          // if (designationsResponse.ok) {
+          //   const data = await designationsResponse.json();
+          //   setLoadedDesignations(data);
+          // }
+          const res = await api.get('designations/');
+          console.log(res.data)
+          setLoadedDesignations(res.data)
+        }
+
+        if (businessUnits.length > 0) {
+          setLoadedBusinessUnits(businessUnits);
+        } else {
+          // Fetch business units if not provided
+          // const businessUnitsResponse = await fetch('/api/business-units/');
+          // if (businessUnitsResponse.ok) {
+          //   const data = await businessUnitsResponse.json();
+          //   setLoadedBusinessUnits(data);
+          // }
+
+          const res = await api.get('business-units/');
+          console.log(res.data)
+          setLoadedBusinessUnits(res.data)
+        }
+      } catch (error) {
+        console.error("Error fetching form data:", error);
+        toast.error("Failed to load form data. Please try again.");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isOpen) {
+      fetchData();
+    }
+  }, [isOpen, designations, businessUnits]);
 
   // Initialize form data when selectedUser changes or component mounts
   useEffect(() => {
     if (selectedUser) {
       setFormData({
-        name: selectedUser.name || "",
+        username: selectedUser.username || "",
         email: selectedUser.email || "",
-        employeeCode: selectedUser.employeeCode || "",
-        department: selectedUser.department || "",
-        designation: selectedUser.designation || "",
-        role: selectedUser.role || "",
-        status: selectedUser.status || "active",
-        joiningDate: selectedUser.joiningDate || "",
-        dob: selectedUser.dob || "",
-        contactNumber: selectedUser.contactNumber || "",
-        emergencyContact: selectedUser.emergencyContact || "",
-        address: selectedUser.address || "",
-        city: selectedUser.city || "",
-        state: selectedUser.state || "",
-        country: selectedUser.country || "",
-        postalCode: selectedUser.postalCode || "",
-        reportingManager: selectedUser.reportingManager || "",
-        notes: selectedUser.notes || "",
+        name: selectedUser.name,
+        employee_code: selectedUser.employee_code,
+        department: selectedUser.department,
+        designation: selectedUser.designation,
+        business_unit: selectedUser.business_unit,
+        status: selectedUser.status !== undefined ? selectedUser.status : true,
+        dob: selectedUser.dob,
+        address: selectedUser.address,
+        contact: selectedUser.contact,
+        city: selectedUser.city,
+        state: selectedUser.state,
+        country: selectedUser.country,
+        first_name: selectedUser.first_name || "",
+        last_name: selectedUser.last_name || "",
+        is_active: selectedUser.is_active !== undefined ? selectedUser.is_active : true,
+        is_staff: selectedUser.is_staff || false,
+        is_superuser: selectedUser.is_superuser || false
       });
     } else {
       // Reset form when adding a new user
       setFormData({
-        name: "",
+        username: "",
         email: "",
-        employeeCode: "",
-        department: "",
-        designation: "",
-        role: "",
-        status: "active",
-        joiningDate: "",
-        dob: "",
-        contactNumber: "",
-        emergencyContact: "",
-        address: "",
-        city: "",
-        state: "",
-        country: "",
-        postalCode: "",
-        reportingManager: "",
-        notes: "",
+        name: "",
+        employee_code: "",
+        department: null,
+        designation: null,
+        business_unit: null,
+        status: true,
+        dob: null,
+        contact: null,
+        address: null,
+        city: null,
+        state: null,
+        country: null,
+        first_name: "",
+        last_name: "",
+        is_active: true,
+        is_staff: false,
+        is_superuser: false
       });
     }
   }, [selectedUser, isOpen]);
@@ -229,14 +248,26 @@ function CredentialFormContent({
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: value,
     }));
   }, []);
 
   const handleSelectChange = useCallback((name: string, value: string) => {
+    // Convert string value to number for IDs
+    const processedValue = name === 'designation' || name === 'business_unit' 
+      ? parseInt(value, 10)
+      : value;
+      
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: processedValue,
+    }));
+  }, []);
+
+  const handleSwitchChange = useCallback((name: string, checked: boolean) => {
+    setFormData(prev => ({
+      ...prev,
+      [name]: checked,
     }));
   }, []);
 
@@ -245,17 +276,19 @@ function CredentialFormContent({
   }, []);
 
   const validateForm = useCallback(() => {
-    if (!formData.email || !formData.name || !formData.employeeCode || !formData.department || !formData.role) {
-      toast.error("Please fill in all required fields");
+    // Basic info validation
+    if (!formData.email) {
+      toast.error("Please provide an email address");
       return false;
     }
 
-    if (formData.email && !isValidEmail(formData.email)) {
+    if (!isValidEmail(formData.email)) {
       toast.error("Please enter a valid email address");
       return false;
     }
 
-    if (formData.employeeCode && !formData.employeeCode.match(/^EMP-\d+$/)) {
+    // Only validate employee code if it's provided
+    if (formData.employee_code && !formData.employee_code.match(/^EMP-\d+$/)) {
       toast.error("Employee code must be in format EMP-#####");
       return false;
     }
@@ -266,7 +299,14 @@ function CredentialFormContent({
   const handleSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    onSubmit(formData);
+
+    // Set username to email if not provided
+    const dataForSubmit = {
+      ...formData,
+      username: formData.username || formData.email
+    };
+    
+    onSubmit(dataForSubmit);
   }, [validateForm, onSubmit, formData]);
 
   const handleTabChange = useCallback((value: string) => {
@@ -274,7 +314,7 @@ function CredentialFormContent({
   }, []);
 
   const navigateTab = useCallback((direction: 'next' | 'prev') => {
-    const tabs = ["basic", "contact", "role"];
+    const tabs = ["basic", "contact"];
     const currentIndex = tabs.indexOf(activeTab);
     const newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
     if (newIndex >= 0 && newIndex < tabs.length) {
@@ -282,18 +322,8 @@ function CredentialFormContent({
     }
   }, [activeTab]);
 
-  // Memoize the tab content to prevent unnecessary re-renders
   const basicTabContent = useMemo(() => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <FormField
-        label="Full Name"
-        name="name"
-        value={formData.name}
-        onChange={handleInputChange}
-        placeholder="John Doe"
-        required
-      />
-
       <FormField
         label="Email Address"
         name="email"
@@ -305,12 +335,37 @@ function CredentialFormContent({
       />
 
       <FormField
+        label="Username"
+        name="username"
+        value={formData.username}
+        onChange={handleInputChange}
+        placeholder="Same as email if left empty"
+      />
+
+      <div className="grid grid-cols-2 gap-4">
+        <FormField
+          label="First Name"
+          name="first_name"
+          value={formData.first_name}
+          onChange={handleInputChange}
+          placeholder="John"
+        />
+
+        <FormField
+          label="Last Name"
+          name="last_name"
+          value={formData.last_name}
+          onChange={handleInputChange}
+          placeholder="Doe"
+        />
+      </div>
+
+      <FormField
         label="Employee Code"
-        name="employeeCode"
-        value={formData.employeeCode}
+        name="employee_code"
+        value={formData.employee_code || ""}
         onChange={handleInputChange}
         placeholder="EMP-12345"
-        required
         helperText="Format: EMP-#####"
       />
 
@@ -318,71 +373,87 @@ function CredentialFormContent({
         label="Date of Birth"
         name="dob"
         type="date"
-        value={formData.dob}
+        value={formData.dob || ""}
         onChange={handleInputChange}
       />
 
-      <FormField
-        label="Joining Date"
-        name="joiningDate"
-        type="date"
-        value={formData.joiningDate}
-        onChange={handleInputChange}
-        required
-      />
+      <div className="col-span-1">
+        <div className="flex items-center space-x-2">
+          <Switch 
+            id="is_active" 
+            checked={formData.is_active} 
+            onCheckedChange={(checked) => handleSwitchChange('is_active', checked)} 
+          />
+          <Label htmlFor="is_active">Account Active</Label>
+        </div>
+      </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="status" className="text-sm font-medium">
-          Status <span className="text-red-500">*</span>
-        </Label>
-        <Select
-          value={formData.status}
-          onValueChange={(value) => handleSelectChange("status", value)}
-        >
-          <SelectTrigger className="w-full">
-            <SelectValue placeholder="Select status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="active">Active</SelectItem>
-            <SelectItem value="inactive">Inactive</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="col-span-1">
+        <div className="flex items-center space-x-2">
+          <Switch 
+            id="is_staff" 
+            checked={formData.is_staff} 
+            onCheckedChange={(checked) => handleSwitchChange('is_staff', checked)} 
+          />
+          <Label htmlFor="is_staff">Staff Account</Label>
+        </div>
       </div>
     </div>
-  ), [formData.name, formData.email, formData.employeeCode, formData.dob, formData.joiningDate, formData.status, handleInputChange, handleSelectChange]);
+  ), [formData, handleInputChange, handleSwitchChange]);
 
   const contactTabContent = useMemo(() => (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <FormField
         label="Contact Number"
-        name="contactNumber"
-        value={formData.contactNumber}
+        name="contact"
+        value={formData.contact || ""}
         onChange={handleInputChange}
         placeholder="+91 9876543210"
       />
 
       <FormField
-        label="Emergency Contact"
-        name="emergencyContact"
-        value={formData.emergencyContact}
+        label="Department"
+        name="department"
+        value={formData.department || ""}
         onChange={handleInputChange}
-        placeholder="+91 9876543210"
+        placeholder="e.g. IT, HR, Finance"
       />
 
-      <FormField
-        label="Address"
-        name="address"
-        value={formData.address}
-        onChange={handleInputChange}
-        placeholder="123 Main St"
+      {/* Changed from FormField to SelectField */}
+      <SelectField
+        label="Business Unit"
+        name="business_unit"
+        value={formData.business_unit || ""}
+        onChange={handleSelectChange}
+        options={loadedBusinessUnits}
+        placeholder="Select Business Unit"
       />
+
+      {/* Changed from FormField to SelectField */}
+      <SelectField
+        label="Designation"
+        name="designation"
+        value={formData.designation || ""}
+        onChange={handleSelectChange}
+        options={loadedDesignations}
+        placeholder="Select Designation"
+      />
+
+      <div className="col-span-2">
+        <FormField
+          label="Address"
+          name="address"
+          value={formData.address || ""}
+          onChange={handleInputChange}
+          placeholder="123 Main St"
+        />
+      </div>
 
       <div className="grid grid-cols-2 gap-4">
         <FormField
           label="City"
           name="city"
-          value={formData.city}
+          value={formData.city || ""}
           onChange={handleInputChange}
           placeholder="Mumbai"
         />
@@ -390,111 +461,21 @@ function CredentialFormContent({
         <FormField
           label="State"
           name="state"
-          value={formData.state}
+          value={formData.state || ""}
           onChange={handleInputChange}
           placeholder="Maharashtra"
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          label="Country"
-          name="country"
-          value={formData.country}
-          onChange={handleInputChange}
-          placeholder="India"
-        />
-
-        <FormField
-          label="Postal Code"
-          name="postalCode"
-          value={formData.postalCode}
-          onChange={handleInputChange}
-          placeholder="400001"
-        />
-      </div>
-
-      <NotesField 
-        value={formData.notes}
+      <FormField
+        label="Country"
+        name="country"
+        value={formData.country || ""}
         onChange={handleInputChange}
+        placeholder="India"
       />
     </div>
-  ), [formData.contactNumber, formData.emergencyContact, formData.address, formData.city, formData.state, formData.country, formData.postalCode, formData.notes, handleInputChange]);
-
-  const roleTabContent = useMemo(() => (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <SelectField
-          label="Department"
-          name="department"
-          value={formData.department}
-          onChange={handleSelectChange}
-          options={departments}
-          placeholder="Select department"
-          required
-        />
-
-        <FormField
-          label="Designation"
-          name="designation"
-          value={formData.designation}
-          onChange={handleInputChange}
-          placeholder="Senior Engineer"
-          required
-        />
-
-        <SelectField
-          label="Role"
-          name="role"
-          value={formData.role}
-          onChange={handleSelectChange}
-          options={roles}
-          placeholder="Select role"
-          required
-        />
-
-        <FormField
-          label="Reporting Manager"
-          name="reportingManager"
-          value={formData.reportingManager}
-          onChange={handleInputChange}
-          placeholder="Jane Smith"
-        />
-      </div>
-
-      {!selectedUser && (
-        <div className="pt-4 space-y-4 mt-4">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="pwd-change">Require Password Change</Label>
-              <div className="text-xs text-muted-foreground">
-                User will be prompted to change password on first login
-              </div>
-            </div>
-            <Switch
-              id="pwd-change"
-              checked={requirePasswordChange}
-              onCheckedChange={setRequirePasswordChange}
-            />
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <Label htmlFor="welcome-email">Send Welcome Email</Label>
-              <div className="text-xs text-muted-foreground">
-                Send account details to the user's email address
-              </div>
-            </div>
-            <Switch
-              id="welcome-email"
-              checked={sendWelcomeEmail}
-              onCheckedChange={setSendWelcomeEmail}
-            />
-          </div>
-        </div>
-      )}
-    </>
-  ), [formData.department, formData.designation, formData.role, formData.reportingManager, handleInputChange, handleSelectChange, departments, roles, selectedUser, requirePasswordChange, sendWelcomeEmail]);
+  ), [formData, handleInputChange, handleSelectChange, loadedBusinessUnits, loadedDesignations]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -510,68 +491,67 @@ function CredentialFormContent({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-6 py-4">
-          <Tabs 
-            defaultValue="basic" 
-            value={activeTab} 
-            onValueChange={handleTabChange} 
-            className="w-full"
-          >
-            <TabsList className="grid grid-cols-3 mb-6">
-              <TabsTrigger value="basic">Basic Info</TabsTrigger>
-              <TabsTrigger value="contact">Contact Details</TabsTrigger>
-              <TabsTrigger value="role">Role & Access</TabsTrigger>
-            </TabsList>
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <div className="space-y-6 py-4">
+            <Tabs value={activeTab} onValueChange={handleTabChange}>
+              <TabsList className="grid grid-cols-2 mb-6">
+                <TabsTrigger value="basic">Basic Info</TabsTrigger>
+                <TabsTrigger value="contact">Contact & Organization</TabsTrigger>
+              </TabsList>
 
-            <TabsContent value="basic" className="space-y-4">
-              {basicTabContent}
-            </TabsContent>
+              <TabsContent value="basic" className="space-y-4">
+                {basicTabContent}
+              </TabsContent>
 
-            <TabsContent value="contact" className="space-y-4">
-              {contactTabContent}
-            </TabsContent>
+              <TabsContent value="contact" className="space-y-4">
+                {contactTabContent}
+              </TabsContent>
+            </Tabs>
 
-            <TabsContent value="role" className="space-y-4">
-              {roleTabContent}
-            </TabsContent>
-          </Tabs>
-
-          <DialogFooter className="flex justify-between w-full mt-6">
-            <div>
-              {activeTab !== "basic" && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigateTab('prev')}
-              >
-                Previous
-              </Button>
-              )}
-            </div>
-            <div className="flex gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onClose}
-              >
-                Cancel
-              </Button>
-              
-              {activeTab !== "role" ? (
+            <DialogFooter className="flex justify-between w-full mt-6">
+              <div>
+                {activeTab !== "basic" && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => navigateTab('prev')}
+                  >
+                    Previous
+                  </Button>
+                )}
+              </div>
+              <div className="flex gap-2">
                 <Button
                   type="button"
-                  onClick={() => navigateTab('next')}
+                  variant="outline"
+                  onClick={onClose}
                 >
-                  Next
+                  Cancel
                 </Button>
-              ) : (
-                <Button type="submit">
-                  {selectedUser ? "Save Changes" : "Create Employee"}
-                </Button>
-              )}
-            </div>
-          </DialogFooter>
-        </form>
+
+                {activeTab !== "contact" ? (
+                  <Button
+                    type="button"
+                    onClick={() => navigateTab('next')}
+                  >
+                    Next
+                  </Button>
+                ) : (
+                  <Button 
+                    type="button"
+                    onClick={(e) => handleSubmit(e as React.FormEvent)}
+                  >
+                    {selectedUser ? "Save Changes" : "Create Employee"}
+                  </Button>
+                )}
+              </div>
+            </DialogFooter>
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );
@@ -579,6 +559,6 @@ function CredentialFormContent({
 CredentialFormContent.displayName = "CredentialFormContent";
 
 // Export as a regular function component
-export function CredentialForm(props: NewCredentialFormProps) {
+export function CredentialForm(props: CredentialFormProps) {
   return <CredentialFormContent {...props} />;
 }

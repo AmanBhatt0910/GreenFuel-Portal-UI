@@ -1,65 +1,71 @@
-// Credential management types
 export interface Credential {
-  id: string;
-  name: string;
+  id: number;
+  password: string;
+  last_login: string | null;
+  is_superuser: boolean;
+  username: string;
+  first_name: string;
+  last_name: string;
+  is_staff: boolean;
+  is_active: boolean;
+  date_joined: string;
   email: string;
-  employeeCode: string;
-  department: string;
-  designation: string;
-  role: string;
-  status: string;
-  joiningDate: string;
-  dob?: string;
-  contactNumber?: string;
-  emergencyContact?: string;
-  address?: string;
-  city?: string;
-  state?: string;
-  country?: string;
-  postalCode?: string;
-  notes?: string;
-  reportingManager?: string;
-  lastLogin?: string;
-  lastModified?: string;
-  modifiedBy?: string;
-  accessLevel?: number;
-  permissions?: string[];
-  teamMembers?: number;
-  profileImage?: string;
+  name: string;
+  dob: string | null;
+  employee_code: string ;
+  department: string | null;
+  contact: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  status: boolean;
+  designation: string | null;
+  business_unit: string | null;
+  groups: any[];
+  user_permissions: any[];
 }
 
 export interface Department {
   id: string;
   name: string;
-  description?: string;
+}
+
+export interface BusinessUnit {
+  id: string;
+  name: string;
+}
+
+export interface Designation {
+  id: string;
+  name: string;
 }
 
 export interface Role {
   id: string;
   name: string;
-  description?: string;
-  permissions?: string[];
 }
 
 export interface CredentialFormData {
-  name: string;
+  username: string;
   email: string;
-  employeeCode: string;
-  department: string;
-  designation: string;
-  role: string;
-  status: string;
-  joiningDate: string;
-  dob: string;
-  contactNumber: string;
-  emergencyContact: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  postalCode: string;
-  notes: string;
-  reportingManager: string;
+  name: string;
+  employee_code: string;
+  department: string | null;
+  designation: string | null;
+  business_unit: string | null;
+  status: boolean;
+  dob: string | null;
+  first_name: string;
+  last_name: string;
+  contact: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  is_active: boolean;
+  is_staff: boolean;
+  is_superuser: boolean;
 }
 
 export interface CredentialFormProps {
@@ -68,27 +74,31 @@ export interface CredentialFormProps {
   selectedUser: Credential | null;
   onSubmit: (formData: CredentialFormData) => void;
   departments: Department[];
-  roles: Role[];
+  businessUnits?: BusinessUnit[];
+  designations?: Designation[];
 }
 
 export interface CredentialDetailsProps {
   selectedUser: Credential | null;
   onClose: () => void;
   onEdit: (user: Credential) => void;
-  onReset: (id: string) => void;
+  onReset: (id: number) => void;
 }
 
 export interface CredentialTableProps {
   credentials: Credential[];
   onEdit: (user: Credential) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
   onView: (user: Credential) => void;
-  onResetPassword: (id: string) => void;
+  designations = [],
+  businessUnits = [],
+  onResetPassword: (id: number) => void;
   filter?: {
     searchValue?: string;
     department?: string;
+    business_unit?: string;
     role?: string;
-    status?: string;
+    status?: boolean;
   };
 }
 
@@ -96,17 +106,19 @@ export interface DeleteDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: () => void;
-  userId?: string | null;
+  userId?: number | null;
 }
 
 export interface CredentialFilterProps {
-  onFilterChange: (name: string, value: string) => void;
+  onFilterChange: (name: string, value: string | boolean) => void;
   departments: Department[];
+  businessUnits?: BusinessUnit[];
   roles: Role[];
   searchValue?: string;
   department?: string;
+  business_unit?: string;
   role?: string;
-  status?: string;
+  status?: boolean;
 }
 
 export interface CredentialStatsProps {

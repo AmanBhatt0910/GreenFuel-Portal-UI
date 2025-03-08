@@ -58,17 +58,17 @@ export function CredentialDetails({
       <CardHeader className="bg-muted/40 pb-4">
         <div className="flex justify-between items-start mb-2">
           <CardTitle className="text-xl font-semibold">{selectedUser.name || "Unnamed Employee"}</CardTitle>
-          <div>{renderStatusBadge(selectedUser.status)}</div>
+          <div>{(selectedUser.status)}</div>
         </div>
         <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
           <div className="flex items-center gap-1">
             <Mail className="h-3.5 w-3.5" />
             <span>{selectedUser.email || "No email"}</span>
           </div>
-          {selectedUser.contactNumber && (
+          {selectedUser.contact && (
             <div className="flex items-center gap-1">
               <Phone className="h-3.5 w-3.5" />
-              <span>{selectedUser.contactNumber}</span>
+              <span>{selectedUser.contact}</span>
             </div>
           )}
           {selectedUser.department && (
@@ -87,7 +87,7 @@ export function CredentialDetails({
             {renderDetailItem(
               <User className="h-4 w-4" />,
               "Employee Code",
-              selectedUser.employeeCode || "N/A"
+              selectedUser.employee_code || "N/A"
             )}
             
             {renderDetailItem(
@@ -101,29 +101,12 @@ export function CredentialDetails({
               "Department",
               selectedUser.department || "N/A"
             )}
-            
-            {renderDetailItem(
-              <User className="h-4 w-4" />,
-              "Role",
-              selectedUser.role || "N/A"
-            )}
-            
-            {selectedUser.reportingManager && renderDetailItem(
-              <UserCheck className="h-4 w-4" />,
-              "Reporting Manager",
-              selectedUser.reportingManager
-            )}
+     
             
             {selectedUser.dob && renderDetailItem(
               <Calendar className="h-4 w-4" />,
               "Date of Birth",
               formatDate(selectedUser.dob)
-            )}
-            
-            {renderDetailItem(
-              <CalendarClock className="h-4 w-4" />,
-              "Joining Date",
-              formatDate(selectedUser.joiningDate)
             )}
           </div>
           
@@ -136,17 +119,12 @@ export function CredentialDetails({
               selectedUser.email || "N/A"
             )}
             
-            {selectedUser.contactNumber && renderDetailItem(
+            {selectedUser.contact && renderDetailItem(
               <Phone className="h-4 w-4" />,
               "Contact Number",
-              selectedUser.contactNumber
+              selectedUser.contact
             )}
             
-            {selectedUser.emergencyContact && renderDetailItem(
-              <Phone className="h-4 w-4" />,
-              "Emergency Contact",
-              selectedUser.emergencyContact
-            )}
             
             {(selectedUser.address || selectedUser.city || selectedUser.state || selectedUser.country) && renderDetailItem(
               <MapPin className="h-4 w-4" />,
@@ -156,27 +134,15 @@ export function CredentialDetails({
                 {(selectedUser.city || selectedUser.state) && (
                   <div>{[selectedUser.city, selectedUser.state].filter(Boolean).join(", ")}</div>
                 )}
-                {(selectedUser.country || selectedUser.postalCode) && (
+                {(selectedUser.country) && (
                   <div>
-                    {selectedUser.country} {selectedUser.postalCode && `- ${selectedUser.postalCode}`}
+                    {selectedUser.country} 
                   </div>
                 )}
               </div>
             )}
           </div>
         </div>
-
-        {selectedUser.notes && (
-          <>
-            <Separator className="my-6" />
-            <div>
-              <h3 className="font-semibold text-base mb-2">Additional Notes</h3>
-              <div className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-line">
-                {selectedUser.notes}
-              </div>
-            </div>
-          </>
-        )}
 
         <div className="flex justify-end gap-3 mt-8">
           <Button variant="outline" onClick={onClose}>
