@@ -45,7 +45,7 @@ export default function CredentialsPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<Credential | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [userIdToDelete, setUserIdToDelete] = useState<string | null>(null);
+  const [userIdToDelete, setUserIdToDelete] = useState<number | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [detailUser, setDetailUser] = useState<Credential | null>(null);
   const [filter, setFilter] = useState({
@@ -109,8 +109,10 @@ export default function CredentialsPage() {
         //   setBusinessUnits(businessUnitsData);
         // }
         const res = await api.get('designations/');
+        console.log("designations" , res.data)
         setDesignations(res.data);
         const response = await api.get('business-units/')
+        console.log("business" , response.data);
         setBusinessUnits(response.data);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -120,7 +122,7 @@ export default function CredentialsPage() {
     fetchData();
   }, []);
 
-  const handleDelete = (id: string) => {
+  const handleDelete = (id: number) => {
     setUserIdToDelete(id);
     setIsDeleteDialogOpen(true);
   };
@@ -132,9 +134,10 @@ export default function CredentialsPage() {
         // Uncomment when API endpoint is ready
         // await api.delete(`userInfo/${userIdToDelete}`);
         
-        setCredentials((prev) => 
-          prev.filter((user) => user.id !== userIdToDelete)
-        );
+        // setCredentials((prev) => 
+        //   prev.filter((user) => user.id !== userIdToDelete)
+        // );
+
         toast.success("Employee deleted successfully");
       } catch (error) {
         console.error('Error deleting employee:', error);
@@ -152,7 +155,7 @@ export default function CredentialsPage() {
     setShowDetails(true);
   };
   
-  const handleResetPassword = async (userId: string) => {
+  const handleResetPassword = async (userId: number) => {
     try {
       setIsLoading(true);
       // Uncomment when API endpoint is ready

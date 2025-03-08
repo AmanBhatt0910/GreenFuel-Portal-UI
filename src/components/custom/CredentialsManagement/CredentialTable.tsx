@@ -43,7 +43,7 @@ export function CredentialTable({
   const designationMap = useMemo(() => {
     const map = new Map<number, string>();
     designations.forEach(designation => {
-      map.set(designation.id, designation.name);
+      map.set(designation.id, designation.business_unit_name);
     });
     return map;
   }, [designations]);

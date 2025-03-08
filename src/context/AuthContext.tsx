@@ -14,6 +14,7 @@ interface UserInfoType {
   date_joined: string;
   email: string;
   dob: string | null;
+  department: string | null;
   employee_code: string | null;
   designation: string | null;
   groups: any[];

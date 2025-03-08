@@ -32,13 +32,14 @@ export interface Department {
 }
 
 export interface BusinessUnit {
-  id: string;
+  id: number;
   name: string;
 }
 
 export interface Designation {
-  id: string;
+  id: number;
   name: string;
+  business_unit_name:string
 }
 
 export interface Role {
@@ -89,6 +90,8 @@ export interface CredentialTableProps {
   credentials: Credential[];
   onEdit: (user: Credential) => void;
   onDelete: (id: number) => void;
+  designations : Designation[];
+  businessUnits : BusinessUnit[];
   onView: (user: Credential) => void;
   onResetPassword: (id: number) => void;
   filter?: {
