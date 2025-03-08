@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Activity,
   CheckCircle,
@@ -7,20 +7,16 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import ProcessTracker from "@/components/custom/Dashboard/ProcessTracker";
-import TrackingTable from "@/components/custom/Dashboard/TrackingTable";
+import TrackingTable from "@/components/custom/dashboard/TrackingTable";
 
 import {
   StatCard,
-  WeeklyActivityChart,
-  ApprovalStatusChart,
   DashboardHeader,
   FormStat,
-  WeeklyDataPoint,
-  StatusLevel,
   RecentForm,
-} from "@/components/custom/Dashboard/DashboardComponents";
+} from "@/components/custom/dashboard/DashboardComponents";
 import useAxios from "../hooks/use-axios";
+import { GFContext } from "@/context/AuthContext";
 
 const formStats: FormStat = {
   total: 34,
@@ -78,17 +74,20 @@ const DashboardPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentDate, setCurrentDate] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
+  const {setUserInfo} = useContext(GFContext)
 
   const api = useAxios();
 
   const getUserData = async () => {
     try {
       const response = await api.get("/userInfo/");
-      console.log(response.data);
+      // console.log(response.data);
+      setUserInfo(response.data);
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
   };
+
 
   const getStatusColor = (status: string): string => {
     switch (status.toLowerCase()) {
@@ -194,7 +193,7 @@ const DashboardPage: React.FC = () => {
       <DashboardHeader currentDate={currentDate} onRefresh={handleRefresh} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCardData.map((stat, index) => (
+        {statCardData.map((stat) => (
           <StatCard
             key={stat.title}
             title={stat.title}

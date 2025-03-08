@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useContext } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -10,13 +10,9 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
 import {
-  LayoutDashboard,
-  FileText,
-  Search,
   CreditCard,
   ChevronDown,
   ClipboardList,
@@ -25,9 +21,6 @@ import {
   User,
   Mail,
   Home,
-  PlusCircle,
-  Calendar,
-  BarChart,
   FileCheck,
   PanelRight,
   Key,
@@ -46,6 +39,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { GFContext } from "@/context/AuthContext";
 
 const DashboardItems = [
   {
@@ -92,6 +86,14 @@ const BusinessUnits = [
 const AppSidebar = () => {
   const pathname = usePathname();
   const [approvalOpen, setApprovalOpen] = React.useState(false);
+  const { userInfo } = useContext(GFContext);
+
+  const handleLogout = () => {
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("authToken");
+      window.location.href='/'
+    }
+  };
 
   return (
     <Sidebar className="h-screen flex flex-col border-r dark:bg-gray-800 dark:border-gray-700">
@@ -125,8 +127,8 @@ const AppSidebar = () => {
                           className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
                             ${
                               isActive
-                                ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium" // Active state
-                                : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-green-900/20 dark:hover:text-green-400" // Hover state in dark mode
+                                ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
+                                : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-green-900/20 dark:hover:text-green-400"
                             }`}
                         >
                           <div className="flex items-center gap-3">
@@ -134,14 +136,14 @@ const AppSidebar = () => {
                               className={`h-4 w-4 ${
                                 isActive
                                   ? "text-gray-700 dark:text-gray-200"
-                                  : "text-gray-500 dark:text-gray-400 dark:hover:text-green-400" // Icon color change to green on hover in dark mode
+                                  : "text-gray-500 dark:text-gray-400 dark:hover:text-green-400"
                               }`}
                             />
                             <span
                               className={`${
                                 isActive
                                   ? "text-gray-700 dark:text-gray-200"
-                                  : "dark:hover:text-green-400" // Text color change to green on hover in dark mode
+                                  : "dark:hover:text-green-400"
                               }`}
                             >
                               {item.title}
@@ -236,101 +238,109 @@ const AppSidebar = () => {
           </SidebarGroup>
         </div>
 
-        <div className="mt-5">
-          <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
-            Credentials
-          </h3>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {Credentials.map((item, index) => {
-                  const isActive = pathname === item.url;
-                  return (
-                    <SidebarMenuItem key={index} className="mb-1">
-                      <SidebarMenuButton
-                        asChild
-                        className="hover:bg-gray-600/10 dark:hover:bg-gray-600/20"
-                      >
-                        <Link
-                          href={item.url}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
+        {userInfo && userInfo?.is_staff && (
+          <div className="mt-5">
+            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
+              Credentials
+            </h3>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {Credentials.map((item, index) => {
+                    const isActive = pathname === item.url;
+                    return (
+                      <SidebarMenuItem key={index} className="mb-1">
+                        <SidebarMenuButton
+                          asChild
+                          className="hover:bg-gray-600/10 dark:hover:bg-gray-600/20"
+                        >
+                          <Link
+                            href={item.url}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
                                     ${
                                       isActive
-                                        ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium" // Active state
+                                        ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
                                         : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
                                     }`}
-                        >
-                          <item.icon
-                            className={`h-4 w-4 ${
-                              isActive
-                                ? "text-gray-700 dark:text-gray-200"
-                                : "text-gray-500 dark:text-gray-400"
-                            }`}
-                          />
-                          <span
-                            className={`${
-                              isActive ? "text-gray-700 dark:text-gray-200" : ""
-                            }`}
                           >
-                            {item.title}
-                          </span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </div>
+                            <item.icon
+                              className={`h-4 w-4 ${
+                                isActive
+                                  ? "text-gray-700 dark:text-gray-200"
+                                  : "text-gray-500 dark:text-gray-400"
+                              }`}
+                            />
+                            <span
+                              className={`${
+                                isActive
+                                  ? "text-gray-700 dark:text-gray-200"
+                                  : ""
+                              }`}
+                            >
+                              {item.title}
+                            </span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
+        )}
 
-        <div className="mt-5">
-          <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
-            Business Units
-          </h3>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {BusinessUnits.map((item, index) => {
-                  const isActive = pathname === item.url;
-                  return (
-                    <SidebarMenuItem key={index} className="mb-1">
-                      <SidebarMenuButton
-                        asChild
-                        className="hover:bg-gray-600/10 dark:hover:bg-gray-600/20"
-                      >
-                        <Link
-                          href={item.url}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
+        {userInfo && userInfo.is_staff && (
+          <div className="mt-5">
+            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
+              Business Units
+            </h3>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {BusinessUnits.map((item, index) => {
+                    const isActive = pathname === item.url;
+                    return (
+                      <SidebarMenuItem key={index} className="mb-1">
+                        <SidebarMenuButton
+                          asChild
+                          className="hover:bg-gray-600/10 dark:hover:bg-gray-600/20"
+                        >
+                          <Link
+                            href={item.url}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
                                     ${
                                       isActive
-                                        ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium" // Active state
+                                        ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
                                         : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
                                     }`}
-                        >
-                          <item.icon
-                            className={`h-4 w-4 ${
-                              isActive
-                                ? "text-gray-700 dark:text-gray-200"
-                                : "text-gray-500 dark:text-gray-400"
-                            }`}
-                          />
-                          <span
-                            className={`${
-                              isActive ? "text-gray-700 dark:text-gray-200" : ""
-                            }`}
                           >
-                            {item.title}
-                          </span>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </div>
+                            <item.icon
+                              className={`h-4 w-4 ${
+                                isActive
+                                  ? "text-gray-700 dark:text-gray-200"
+                                  : "text-gray-500 dark:text-gray-400"
+                              }`}
+                            />
+                            <span
+                              className={`${
+                                isActive
+                                  ? "text-gray-700 dark:text-gray-200"
+                                  : ""
+                              }`}
+                            >
+                              {item.title}
+                            </span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
+        )}
       </SidebarContent>
 
       <SidebarFooter className="p-4 mt-auto border-t dark:border-gray-700 bg-gray-100 dark:bg-gray-900">
@@ -345,10 +355,10 @@ const AppSidebar = () => {
               </Avatar>
               <div className="flex flex-col items-start">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                  John Doe
+                  {userInfo && userInfo.username}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  john@acme.com
+                  {userInfo && userInfo.email}
                 </p>
               </div>
               <ChevronDown className="ml-auto h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -379,7 +389,10 @@ const AppSidebar = () => {
                 </span>
               </button>
               <hr className="my-1 border-red-600 dark:border-red-700" />
-              <button className="w-full flex items-center gap-2 p-2 rounded-md text-sm text-red-600 hover:bg-red-600/20 transition-colors duration-150">
+              <button
+                className="w-full flex items-center gap-2 p-2 rounded-md text-sm text-red-600 hover:bg-red-600/20 transition-colors duration-150"
+                onClick={handleLogout}
+              >
                 <LogOut className="h-4 w-4 text-red-600 dark:text-red-400" />
                 <span className="text-red-600 dark:text-red-400">Logout</span>
               </button>

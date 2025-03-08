@@ -1,20 +1,39 @@
 import React from "react";
-import { Leaf } from "lucide-react";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 interface GreenFuelLogoProps {
   size?: "sm" | "md" | "lg";
+  variant?: "dark" | "light";
 }
 
 export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
   size = "md",
+  variant = "light",
 }) => {
   const sizes = {
-    sm: { container: "h-12 w-12", icon: "h-6 w-6" },
-    md: { container: "h-16 w-16", icon: "h-8 w-8" },
-    lg: { container: "h-20 w-20", icon: "h-10 w-10" },
+    sm: { logoHeight: 40, textSize: "text-xs" },
+    md: { logoHeight: 60, textSize: "text-sm" },
+    lg: { logoHeight: 80, textSize: "text-base" },
   };
 
+  const colors = {
+    dark: {
+      primary: "#1E293B",
+      secondary: "#2E93A3", // Blue color from logo
+      accent: "#4CAF50",    // Green color from logo
+      text: "text-white"
+    },
+    light: {
+      primary: "#FFFFFF",
+      secondary: "#2E93A3", // Blue color from logo
+      accent: "#4CAF50",    // Green color from logo
+      text: "text-green-500"
+    }
+  };
+
+  const selectedColors = colors[variant];
+  
   const logoVariants = {
     hidden: { scale: 0.8, opacity: 0 },
     visible: {
@@ -29,11 +48,18 @@ export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
   };
 
   return (
-    <motion.div className="flex justify-center mb-6" initial="hidden" animate="visible" variants={logoVariants}>
-      <div
-        className={`${sizes[size].container} rounded-full bg-gradient-to-br from-[#0F172A] to-[#1E293B] flex items-center justify-center shadow-xl`}
-      >
-        <Leaf className={`${sizes[size].icon} text-white`} />
+    <motion.div 
+      className="flex flex-row items-center"
+      initial="hidden"
+      animate="visible"
+      variants={logoVariants}
+    >
+      <div className="relative">
+        <Image src={'/Greenfuel.png'} alt="Logo" width={30} height={30}/>
+      </div>
+
+      <div className={`mt-1 font-lg ${sizes[size].textSize} ${selectedColors.text}`}>
+        GreenFuel
       </div>
     </motion.div>
   );

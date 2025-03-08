@@ -1,11 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -22,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FormStat, RecentForm } from "./DashboardComponents/types";
+import { FormStat, RecentForm } from "./DashboardComponents";
 
 interface TrackingTableProps {
   formStats: FormStat;
@@ -58,17 +53,16 @@ const TrackingTable: React.FC<TrackingTableProps> = ({
   getStatusColor,
   getProgressColorClass,
 }) => {
-  // Filter the forms based on search term and filter
+  
   const filteredForms = recentForms.filter((form) => {
-    // Apply search filter
     const searchMatch =
       form.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       form.submitter.toLowerCase().includes(searchTerm.toLowerCase()) ||
       form.department.toLowerCase().includes(searchTerm.toLowerCase());
 
-    // Apply status filter
     const statusMatch =
-      filter === "all" || form.status.toLowerCase().includes(filter.toLowerCase());
+      filter === "all" ||
+      form.status.toLowerCase().includes(filter.toLowerCase());
 
     return searchMatch && statusMatch;
   });
@@ -117,7 +111,7 @@ const TrackingTable: React.FC<TrackingTableProps> = ({
                   <TableHead className="text-right">Last Updated</TableHead>
                 </TableRow>
               </TableHeader>
-              <TableBody >
+              <TableBody>
                 {filteredForms.map((form) => (
                   <TableRow
                     key={form.id}
@@ -151,7 +145,9 @@ const TrackingTable: React.FC<TrackingTableProps> = ({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">{form.updatedAt}</TableCell>
+                    <TableCell className="text-right">
+                      {form.updatedAt}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

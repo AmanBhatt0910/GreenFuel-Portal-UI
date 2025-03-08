@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { useContext } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { usePathname } from "next/navigation";
@@ -26,11 +26,12 @@ import {
 } from "@/components/ui/tooltip";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { GFContext } from "@/context/AuthContext";
 
 const AppHeader = () => {
   const pathname = usePathname();
+  const {userInfo} = useContext(GFContext);
 
-  // Function to get page title from pathname
   const getPageTitle = () => {
     const path = pathname.split("/").pop() || "Dashboard";
     return path
@@ -38,6 +39,13 @@ const AppHeader = () => {
       .map(word => word.charAt(0).toUpperCase() + word.slice(1))
       .join(" ");
   };
+
+  const handleLogout = () => {
+    if(typeof window !== "undefined" ){
+      localStorage.removeItem("authToken");
+      window.location.href = "/";
+    }
+  }
 
   return (
     <header className="sticky top-0 z-10 flex items-center justify-between w-full border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3">
@@ -59,7 +67,6 @@ const AppHeader = () => {
       </div>
 
       <div className="flex items-center gap-2">
-        {/* Notification Dropdown using ShadCN DropdownMenu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button 
@@ -121,15 +128,15 @@ const AppHeader = () => {
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar>
                 <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                <AvatarFallback className="bg-indigo-700 text-white">JD</AvatarFallback>
+                <AvatarFallback className="bg-indigo-700 text-white">{userInfo?.first_name + '' + userInfo?.last_login}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-56" align="end" forceMount>
             <DropdownMenuLabel>
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">John Doe</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">john@acme.com</p>
+                <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{userInfo?.username}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{userInfo?.email}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -137,7 +144,7 @@ const AppHeader = () => {
             <DropdownMenuItem>Settings</DropdownMenuItem>
             <DropdownMenuItem>Help & Support</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="text-red-500 focus:text-red-500 ">Logout</DropdownMenuItem>
+            <DropdownMenuItem className="text-red-500 focus:text-red-500 " onClick={handleLogout}>Logout</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

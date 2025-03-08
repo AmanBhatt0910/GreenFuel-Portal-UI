@@ -60,7 +60,7 @@ export const GreenFuelTitle: React.FC<GreenFuelTitleProps> = ({
   return (
     <>
       <motion.div variants={itemVariants} className="mb-4">
-        <h2 className="text-2xl font-bold text-center text-[#0F172A]">
+        <h2 className="text-2xl font-bold text-center text-[#0F172A] dark:text-amber-50">
           {title}
         </h2>
       </motion.div>

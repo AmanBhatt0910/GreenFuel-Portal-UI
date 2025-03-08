@@ -1,26 +1,25 @@
 "use client";
 import { createContext, ReactNode, useState } from "react";
-
 import { Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 
 interface UserInfoType {
   id: number;
-  name: string;
-  email: string;
-  phone_no: string;
-  user_id: string;
-  user_type: string;
-  email_verified: boolean;
-  phone_verified: boolean;
-  aadhar_verified: boolean;
-  pan_verified: boolean;
-  p_address: string;
-  date_joined: string;
+  password: string;
   last_login: string;
-  status: boolean;
-  referral: any;
-  VendorInfo: any;
+  is_superuser: boolean;
+  username: string;
+  first_name: string;
+  last_name: string;
+  is_staff: boolean;
+  is_active: boolean;
+  date_joined: string;
+  email: string;
+  dob: string | null;
+  employee_code: string | null;
+  designation: string | null;
+  groups: any[];
+  user_permissions: any[];
 }
 
 interface AccessTokenType {
@@ -35,10 +34,10 @@ interface GFContextType {
   baseURL: string;
   userInfo: UserInfoType | null;
   setUserInfo: Dispatch<SetStateAction<UserInfoType | null>>;
-  login: (email: string, password: string) => void;
+  login: (email: string, password: string) => Promise<void>;
 }
 
-export type { GFContextType };
+export type { GFContextType, UserInfoType };
 
 const GFContext = createContext<GFContextType>({
   authToken: null,
@@ -47,12 +46,13 @@ const GFContext = createContext<GFContextType>({
   baseURL: "",
   userInfo: null,
   setUserInfo: () => {},
-  login: () => {},
+  login: async () => {},
 });
 
 const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // const baseURL = "http://192.168.1.3:8000";
   const baseURL = "http://127.0.0.1:8000";
-
+  
   const router = useRouter();
   const [authToken, setAuthToken] = useState<AccessTokenType | null>(
     typeof window !== "undefined" && localStorage.getItem("accessToken")
@@ -74,30 +74,51 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   );
 
   const userLogin = async (email: string, password: string) => {
-    const response = await fetch(baseURL + `/auth/token/`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ email, password }),
-    });
-    if (response.status == 200) {
-      const data = await response.json();
-      setAuthToken(data);
-      localStorage.setItem("accessToken", JSON.stringify(data));
-    } else {
-      console.error("Unexpected response structure:", response);
+    try {
+      const response = await fetch(baseURL + `/auth/token/`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      if (response.status === 200) {
+        const tokenData = await response.json();
+        setAuthToken(tokenData);
+        localStorage.setItem("accessToken", JSON.stringify(tokenData));
+        
+        const userResponse = await fetch(baseURL + `/auth/user/`, {
+          headers: {
+            Authorization: `Bearer ${tokenData.access}`,
+          },
+        });
+        
+        if (userResponse.ok) {
+          const userData = await userResponse.json();
+          setUserInfo(userData);
+          localStorage.setItem("userInfo", JSON.stringify(userData));
+        }
+        
+        router.push("/dashboard");
+      } else {
+        throw new Error("Login failed");
+      }
+    } catch (error) {
+      console.error("Login error:", error);
+      throw error;
     }
   };
 
   const userLogout = () => {
     setAuthToken(null);
+    setUserInfo(null);
     typeof window !== "undefined" && localStorage.removeItem("accessToken");
     typeof window !== "undefined" && localStorage.removeItem("userInfo");
     router.push("/auth/login");
   };
 
-  const ContextData: GFContextType = {
+  const contextData: GFContextType = {
     authToken,
     setAuthToken,
     logout: userLogout,
@@ -108,7 +129,9 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   return (
-    <GFContext.Provider value={ContextData}>{children}</GFContext.Provider>
+    <GFContext.Provider value={contextData}>
+      {children}
+    </GFContext.Provider>
   );
 };
 
