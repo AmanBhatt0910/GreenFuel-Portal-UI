@@ -68,7 +68,7 @@ export default function LoginPage() {
             transition={{ delay: 0.3 }}
             className="relative z-10"
           >
-            <h1 className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">Welcome to GreenFuel</h1>
+            <h1 className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">Welcome to Green Fuel Energy</h1>
             <p className="text-lg mb-8 max-w-md text-gray-200">
               Empowering a sustainable future with innovative energy solutions.
             </p>

@@ -7,14 +7,14 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import TrackingTable from "@/components/custom/dashboard/TrackingTable";
+import TrackingTable from "@/components/custom/Dashboard/TrackingTable";
 
 import {
   StatCard,
   DashboardHeader,
   FormStat,
   RecentForm,
-} from "@/components/custom/dashboard/DashboardComponents";
+} from "@/components/custom/Dashboard/DashboardComponents";
 import useAxios from "../hooks/use-axios";
 import { GFContext } from "@/context/AuthContext";
 
