@@ -10,16 +10,9 @@ import { GFContext } from "@/context/AuthContext";
 import { LoaderCircle, LucideShield, LucideZap, LucideUsers } from "lucide-react";
 
 export default function LoginPage() {
-  const { authToken, setAuthToken, logout, login } = useContext(GFContext);
+  const {login } = useContext(GFContext);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
-  useEffect(() => {
-    if (authToken) {
-      router.push("/dashboard");
-    }
-  }, [authToken, router]);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -55,19 +48,6 @@ export default function LoginPage() {
     { href: "/training", label: "Training Portal" },
     { href: "/about", label: "About Us" },
   ];
-
-  if (authToken) {
-    return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
-        <div className="animate-pulse flex flex-col items-center justify-center">
-          <LoaderCircle className="h-12 w-12 animate-spin text-green-600 dark:text-green-500" />
-          <p className="mt-4 text-lg text-gray-700 dark:text-gray-300">
-            Redirecting to dashboard...
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0F172A] to-[#1E293B] dark:from-[#0B1121] dark:to-[#162033] font-poppins p-4">
