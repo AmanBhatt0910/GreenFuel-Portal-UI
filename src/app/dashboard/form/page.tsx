@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,6 +29,7 @@ import {
 } from "@/components/custom/AssetRequestForm";
 import { Button } from "@/components/ui/button";
 import { CustomBreadcrumb } from '@/components/custom/ui/Breadcrumb.custom';
+import { GFContext } from "@/context/AuthContext";
 
 // Form steps with enhanced descriptions
 const formSteps = [
@@ -85,6 +86,10 @@ export default function AssetRequestForm() {
   const [formData, setFormData] = useState<FormData>(getInitialFormData());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const {userInfo} = useContext(GFContext);
+
+  console.log(userInfo)
+  
 
   // State for asset management
   const [currentAsset, setCurrentAsset] = useState<AssetItem>({

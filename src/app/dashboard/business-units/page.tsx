@@ -1,508 +1,602 @@
-"use client";
+"use client"
 import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Save,
-  Trash2,
-  Plus,
+  Building2,
+  ChevronDown,
+  ChevronUp,
   Edit,
+  Factory,
+  Info,
+  LayoutGrid,
+  Plus,
+  Trash2,
+  Users,
   X,
   Check,
-  Building,
-  Info,
 } from "lucide-react";
-import { CustomBreadcrumb } from "@/components/custom/ui/Breadcrumb.custom";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import useAxios from "@/app/hooks/use-axios";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
-/**
- * Interface for Designation data structure
- */
-interface Designation {
+// Types
+interface Employee {
   id: string;
   name: string;
-  level: number;
-  business_unit: string;
-}
-
-/**
- * Interface for BusinessUnit data structure
- */
-interface BusinessUnit {
-  id: string;
-  name: string;
-  designations: Designation[];
-}
-
-/**
- * State interface for new business unit
- */
-interface NewUnitState {
-  name: string;
-}
-
-/**
- * State interface for new designation
- */
-interface NewDesignationState {
-  name: string;
+  designation: string;
   level: number;
 }
 
-/**
- * Level styling configuration - determines color scheme based on level value
- */
-const getLevelColor = (level:number) => {
-  // Colors based on level groups - can be expanded for more levels
-  if (level <= 2) {
-    return "bg-purple-50 dark:bg-purple-950 border-purple-200 dark:border-purple-800 text-purple-900 dark:text-purple-300";
-  } else if (level <= 4) {
-    return "bg-blue-50 dark:bg-blue-950 border-blue-200 dark:border-blue-800 text-blue-900 dark:text-blue-300";
-  } else if (level <= 6) {
-    return "bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800 text-green-900 dark:text-green-300";
-  } else {
-    return "bg-amber-50 dark:bg-amber-950 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-300";
-  }
-};
+interface Department {
+  id: string;
+  name: string;
+  employees: Employee[];
+}
 
-/**
- * BusinessUnitHierarchy Component - Manages the organization structure
- */
-const BusinessUnitHierarchy: React.FC = () => {
-  // Main state for business units data
-  const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+interface Plant {
+  id: string;
+  name: string;
+  location: string;
+  departments: Department[];
+}
+
+// Helper function to generate unique IDs
+const generateId = () => Math.random().toString(36).substr(2, 9);
+
+export default function PlantHierarchyManagement() {
+  // State
+  const [plants, setPlants] = useState<Plant[]>([]);
+  const [activePlantId, setActivePlantId] = useState<string>("");
+  const [activeTab, setActiveTab] = useState("plants");
   const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // State for new business unit form
-  const [newUnit, setNewUnit] = useState<NewUnitState>({
+  // New entity states
+  const [newPlant, setNewPlant] = useState<{ name: string; location: string }>({
+    name: "",
+    location: "",
+  });
+  const [newDepartment, setNewDepartment] = useState<{ name: string }>({
     name: "",
   });
 
-  // State for new designation form
-  const [newDesignation, setNewDesignation] = useState<NewDesignationState>({
+  // Get the highest level in a department + 1 (for auto-increment)
+  const getNextLevel = (employees: Employee[]) => {
+    if (employees.length === 0) return 1;
+    const maxLevel = Math.max(...employees.map((e) => e.level));
+    return maxLevel + 1;
+  };
+
+  const [newEmployee, setNewEmployee] = useState<{
+    name: string;
+    designation: string;
+    level: number;
+  }>({
     name: "",
+    designation: "",
     level: 1,
   });
 
-  // State for active and editing business units/designations
-  const [activeUnitId, setActiveUnitId] = useState<string | null>(null);
-  const [editingUnitId, setEditingUnitId] = useState<string | null>(null);
-  const [editingDesignationId, setEditingDesignationId] = useState<
-    string | null
-  >(null);
-  const [editingName, setEditingName] = useState<string>("");
-  const [editingLevel, setEditingLevel] = useState<number>(1);
+  // Dialog states
+  const [isAddEmployeeDialogOpen, setIsAddEmployeeDialogOpen] = useState(false);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>("");
 
-  // API instance from custom hook
-  const api = useAxios();
+  // Editing states
+  const [editingPlantId, setEditingPlantId] = useState<string>("");
+  const [editingDepartmentId, setEditingDepartmentId] = useState<string>("");
+  const [editingEmployeeId, setEditingEmployeeId] = useState<string>("");
+  const [editingName, setEditingName] = useState("");
+  const [editingLocation, setEditingLocation] = useState("");
+  const [editingDesignation, setEditingDesignation] = useState("");
+  const [editingLevel, setEditingLevel] = useState(1);
 
-  // State for validated hierarchy display
-  const [validatedHierarchy, setValidatedHierarchy] = useState<
-    {
-      unitName: string;
-      title: string;
-      level: number;
-    }[]
-  >([]);
+  // Department expansion state
+  const [expandedDepartments, setExpandedDepartments] = useState<
+    Record<string, boolean>
+  >({});
 
-  /**
-   * Fetch business units on component mount
-   */
+  // Hierarchy validation
+  const [validatedHierarchy, setValidatedHierarchy] = useState<any[]>([]);
+
+  // Load data from localStorage on initial render
   useEffect(() => {
-    fetchBusinessUnits();
+    const savedData = localStorage.getItem("plantHierarchyData");
+    if (savedData) {
+      try {
+        const parsedData = JSON.parse(savedData);
+        setPlants(parsedData);
+      } catch (err) {
+        console.error("Failed to parse saved data", err);
+      }
+    }
   }, []);
 
-  /**
-   * Fetches all business units from the API
-   */
-  const fetchBusinessUnits = async () => {
-    setIsLoading(true);
-    setError(null);
+  // Save data to localStorage whenever plants change
+  useEffect(() => {
+    localStorage.setItem("plantHierarchyData", JSON.stringify(plants));
+  }, [plants]);
 
+  // Helper function to get active plant
+  const getActivePlant = () => {
+    return plants.find((plant) => plant.id === activePlantId);
+  };
+
+  // Plant CRUD operations
+  const addNewPlant = () => {
     try {
-      const response = await api.get("business-units/");
-      console.log("Fetched business units:", response.data);
-
-      const unitsWithDesignations: BusinessUnit[] = [];
-
-      for (const unit of response.data) {
-        const unitWithDesignations = {
-          ...unit,
-          designations: await fetchDesignationsForUnit(unit.id),
-        };
-        unitsWithDesignations.push(unitWithDesignations);
+      setIsLoading(true);
+      if (!newPlant.name.trim()) {
+        setError("Plant name is required");
+        return;
       }
 
-      setBusinessUnits(unitsWithDesignations);
+      const newPlantObj: Plant = {
+        id: generateId(),
+        name: newPlant.name,
+        location: newPlant.location,
+        departments: [],
+      };
+
+      setPlants([...plants, newPlantObj]);
+      setNewPlant({ name: "", location: "" });
+      setError(null);
     } catch (err) {
-      console.error("Error fetching business units:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while fetching business units"
-      );
+      setError("Failed to add plant");
     } finally {
       setIsLoading(false);
     }
   };
 
-  /**
-   * Fetches designations for a specific business unit
-   * @param businessUnitId - ID of the business unit
-   */
-  const fetchDesignationsForUnit = async (
-    businessUnitId: string
-  ): Promise<Designation[]> => {
-    try {
-      const response = await api.get(
-        `designations/?business_unit=${businessUnitId}`
-      );
-      console.log(
-        `Fetched designations for unit ${businessUnitId}:`,
-        response.data
-      );
-      return response.data;
-    } catch (err) {
-      console.error(
-        `Error fetching designations for business unit ${businessUnitId}:`,
-        err
-      );
-      return [];
-    }
+  const startEditingPlant = (plant: Plant) => {
+    setEditingPlantId(plant.id);
+    setEditingName(plant.name);
+    setEditingLocation(plant.location);
   };
 
-  /**
-   * Creates a new business unit
-   */
-  const addNewUnit = async () => {
-    if (!newUnit.name) {
-      alert("Please enter a business unit name");
+  const saveEditedPlant = () => {
+    if (!editingName.trim()) {
+      setError("Plant name is required");
       return;
     }
 
-    setIsLoading(true);
+    setPlants(
+      plants.map((plant) =>
+        plant.id === editingPlantId
+          ? { ...plant, name: editingName, location: editingLocation }
+          : plant
+      )
+    );
+
+    cancelEditingPlant();
+  };
+
+  const cancelEditingPlant = () => {
+    setEditingPlantId("");
+    setEditingName("");
+    setEditingLocation("");
+  };
+
+  const deletePlant = (plantId: string) => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this plant? This will delete all departments and employees within it."
+      )
+    ) {
+      setPlants(plants.filter((plant) => plant.id !== plantId));
+      if (activePlantId === plantId) {
+        setActivePlantId("");
+      }
+    }
+  };
+
+  // Department CRUD operations
+  const addNewDepartment = (plantId: string) => {
+    if (!newDepartment.name.trim()) {
+      setError("Department name is required");
+      return;
+    }
+
+    const newDepartmentObj: Department = {
+      id: generateId(),
+      name: newDepartment.name,
+      employees: [],
+    };
+
+    setPlants(
+      plants.map((plant) =>
+        plant.id === plantId
+          ? { ...plant, departments: [...plant.departments, newDepartmentObj] }
+          : plant
+      )
+    );
+
+    setNewDepartment({ name: "" });
     setError(null);
 
-    try {
-      const response = await api.post("business-units/", {
-        name: newUnit.name,
-      });
+    // Auto-expand the newly created department
+    setExpandedDepartments({
+      ...expandedDepartments,
+      [newDepartmentObj.id]: true,
+    });
+  };
 
-      console.log("Created business unit:", response.data);
+  const startEditingDepartment = (plantId: string, department: Department) => {
+    setEditingDepartmentId(department.id);
+    setEditingName(department.name);
+  };
 
-      const newBusinessUnit = {
-        id: response.data.id,
-        name: response.data.name,
-        designations: [],
-      };
-      setBusinessUnits([...businessUnits, newBusinessUnit]);
-      setNewUnit({ name: "" });
-    } catch (err) {
-      console.error("Error creating business unit:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while creating the business unit"
-      );
-    } finally {
-      setIsLoading(false);
+  const saveEditedDepartment = (plantId: string) => {
+    if (!editingName.trim()) {
+      setError("Department name is required");
+      return;
     }
+
+    setPlants(
+      plants.map((plant) =>
+        plant.id === plantId
+          ? {
+              ...plant,
+              departments: plant.departments.map((dept) =>
+                dept.id === editingDepartmentId
+                  ? { ...dept, name: editingName }
+                  : dept
+              ),
+            }
+          : plant
+      )
+    );
+
+    cancelEditingDepartment();
   };
 
-  /**
-   * Deletes a business unit
-   * @param id - ID of the business unit to delete
-   */
-  const deleteUnit = async (id: string) => {
-    try {
-      await api.delete(`business-units/${id}/`);
-      setBusinessUnits(businessUnits.filter((unit) => unit.id !== id));
-      if (activeUnitId === id) {
-        setActiveUnitId(null);
-      }
-    } catch (err) {
-      console.error("Error deleting business unit:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while deleting the business unit"
-      );
-    }
-  };
-
-  /**
-   * Starts editing a business unit
-   * @param unit - Business unit to edit
-   */
-  const startEditingUnit = (unit: BusinessUnit) => {
-    setEditingUnitId(unit.id);
-    setEditingName(unit.name);
-  };
-
-  /**
-   * Saves the edited business unit
-   */
-  const saveEditedUnit = async () => {
-    if (!editingUnitId || !editingName.trim()) return;
-
-    try {
-      const response = await api.put(`business-units/${editingUnitId}/`, {
-        name: editingName,
-      });
-
-      setBusinessUnits(
-        businessUnits.map((unit) =>
-          unit.id === editingUnitId ? { ...unit, name: editingName } : unit
-        )
-      );
-
-      setEditingUnitId(null);
-      setEditingName("");
-    } catch (err) {
-      console.error("Error updating business unit:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while updating the business unit"
-      );
-    }
-  };
-
-  /**
-   * Cancels editing a business unit
-   */
-  const cancelEditingUnit = () => {
-    setEditingUnitId(null);
+  const cancelEditingDepartment = () => {
+    setEditingDepartmentId("");
     setEditingName("");
   };
 
-  /**
-   * Adds a new designation to a business unit
-   * @param unitId - ID of the business unit
-   */
-  const addNewDesignation = async (unitId: string) => {
-    if (!newDesignation.name) {
-      alert("Please fill in all designation fields");
-      return;
-    }
-
-    if (newDesignation.level < 1) {
-      alert("Level must be at least 1");
-      return;
-    }
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const designationData = {
-        name: newDesignation.name,
-        level: newDesignation.level,
-        business_unit: unitId,
-      };
-
-      const response = await api.post("designations/", designationData);
-      console.log("Created designation:", response.data);
-
-      const updatedDesignations = await fetchDesignationsForUnit(unitId);
-
-      setBusinessUnits(
-        businessUnits.map((unit) =>
-          unit.id === unitId
-            ? { ...unit, designations: updatedDesignations }
-            : unit
-        )
-      );
-
-      setNewDesignation({ name: "", level: 1 });
-    } catch (err) {
-      console.error("Error creating designation:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while creating the designation"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  /**
-   * Deletes a designation
-   * @param unitId - ID of the business unit
-   * @param designationId - ID of the designation to delete
-   */
-  const deleteDesignation = async (unitId: string, designationId: string) => {
-    try {
-      await api.delete(`designations/${designationId}/`);
-
-      setBusinessUnits(
-        businessUnits.map((unit) =>
-          unit.id === unitId
+  const deleteDepartment = (plantId: string, departmentId: string) => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this department? This will delete all employees within it."
+      )
+    ) {
+      setPlants(
+        plants.map((plant) =>
+          plant.id === plantId
             ? {
-                ...unit,
-                designations: unit.designations.filter(
-                  (d) => d.id !== designationId
+                ...plant,
+                departments: plant.departments.filter(
+                  (dept) => dept.id !== departmentId
                 ),
               }
-            : unit
+            : plant
         )
-      );
-    } catch (err) {
-      console.error("Error deleting designation:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while deleting the designation"
       );
     }
   };
 
-  /**
-   * Starts editing a designation
-   * @param unitId - ID of the business unit
-   * @param designation - Designation to edit
-   */
-  const startEditingDesignation = (
-    unitId: string,
-    designation: Designation
+  const toggleDepartmentExpansion = (departmentId: string) => {
+    setExpandedDepartments({
+      ...expandedDepartments,
+      [departmentId]: !expandedDepartments[departmentId],
+    });
+  };
+
+  // Employee CRUD operations
+  const openAddEmployeeDialog = (departmentId: string) => {
+    setSelectedDepartmentId(departmentId);
+
+    // Find the department to get next level
+    const plant = getActivePlant();
+    if (plant) {
+      const department = plant.departments.find((d) => d.id === departmentId);
+      if (department) {
+        // Auto-increment level for new employee
+        const nextLevel = getNextLevel(department.employees);
+        setNewEmployee({
+          name: "",
+          designation: "",
+          level: nextLevel,
+        });
+      }
+    }
+
+    setIsAddEmployeeDialogOpen(true);
+  };
+
+  const addNewEmployee = () => {
+    if (!newEmployee.name.trim()) {
+      setError("Employee name is required");
+      return;
+    }
+
+    if (!newEmployee.designation.trim()) {
+      setError("Designation is required");
+      return;
+    }
+
+    const newEmployeeObj: Employee = {
+      id: generateId(),
+      name: newEmployee.name,
+      designation: newEmployee.designation,
+      level: newEmployee.level,
+    };
+
+    setPlants(
+      plants.map((plant) =>
+        plant.id === activePlantId
+          ? {
+              ...plant,
+              departments: plant.departments.map((dept) =>
+                dept.id === selectedDepartmentId
+                  ? { ...dept, employees: [...dept.employees, newEmployeeObj] }
+                  : dept
+              ),
+            }
+          : plant
+      )
+    );
+
+    setIsAddEmployeeDialogOpen(false);
+    setError(null);
+  };
+
+  const startEditingEmployee = (
+    plantId: string,
+    departmentId: string,
+    employee: Employee
   ) => {
-    setEditingDesignationId(designation.id);
-    setEditingName(designation.name);
-    setEditingLevel(designation.level);
+    setEditingEmployeeId(employee.id);
+    setEditingName(employee.name);
+    setEditingDesignation(employee.designation);
+    setEditingLevel(employee.level);
   };
 
-  /**
-   * Saves the edited designation
-   * @param unitId - ID of the business unit
-   */
-  const saveEditedDesignation = async (unitId: string) => {
-    if (!editingDesignationId || !editingName.trim()) return;
-
-    try {
-      const updatedDesignation = {
-        name: editingName,
-        level: editingLevel,
-        business_unit: unitId,
-      };
-
-      await api.put(
-        `designations/${editingDesignationId}/`,
-        updatedDesignation
-      );
-
-      setBusinessUnits(
-        businessUnits.map((unit) =>
-          unit.id === unitId
-            ? {
-                ...unit,
-                designations: unit.designations.map((d) =>
-                  d.id === editingDesignationId
-                    ? { ...d, name: editingName, level: editingLevel }
-                    : d
-                ),
-              }
-            : unit
-        )
-      );
-
-      setEditingDesignationId(null);
-      setEditingName("");
-      setEditingLevel(1);
-    } catch (err) {
-      console.error("Error updating designation:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "An error occurred while updating the designation"
-      );
+  const saveEditedEmployee = (plantId: string, departmentId: string) => {
+    if (!editingName.trim()) {
+      setError("Employee name is required");
+      return;
     }
+
+    if (!editingDesignation.trim()) {
+      setError("Designation is required");
+      return;
+    }
+
+    setPlants(
+      plants.map((plant) =>
+        plant.id === plantId
+          ? {
+              ...plant,
+              departments: plant.departments.map((dept) =>
+                dept.id === departmentId
+                  ? {
+                      ...dept,
+                      employees: dept.employees.map((emp) =>
+                        emp.id === editingEmployeeId
+                          ? {
+                              ...emp,
+                              name: editingName,
+                              designation: editingDesignation,
+                              level: editingLevel,
+                            }
+                          : emp
+                      ),
+                    }
+                  : dept
+              ),
+            }
+          : plant
+      )
+    );
+
+    cancelEditingEmployee();
   };
 
-  /**
-   * Cancels editing a designation
-   */
-  const cancelEditingDesignation = () => {
-    setEditingDesignationId(null);
+  const cancelEditingEmployee = () => {
+    setEditingEmployeeId("");
     setEditingName("");
+    setEditingDesignation("");
     setEditingLevel(1);
   };
 
-  /**
-   * Sorts designations by level
-   * @param designations - Designations to sort
-   */
-  const getSortedDesignations = (designations: Designation[]) => {
-    return [...designations].sort((a, b) => a.level - b.level);
+  const deleteEmployee = (
+    plantId: string,
+    departmentId: string,
+    employeeId: string
+  ) => {
+    if (window.confirm("Are you sure you want to delete this employee?")) {
+      setPlants(
+        plants.map((plant) =>
+          plant.id === plantId
+            ? {
+                ...plant,
+                departments: plant.departments.map((dept) =>
+                  dept.id === departmentId
+                    ? {
+                        ...dept,
+                        employees: dept.employees.filter(
+                          (emp) => emp.id !== employeeId
+                        ),
+                      }
+                    : dept
+                ),
+              }
+            : plant
+        )
+      );
+    }
   };
 
-  /**
-   * Validates the organization hierarchy
-   */
-  const validateHierarchy = () => {
-    const flattenedHierarchy: {
-      unitName: string;
-      title: string;
-      level: number;
-    }[] = [];
+  // Level operations
+  const handleLevelInputChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    isEditing = false
+  ) => {
+    const value = parseInt(e.target.value);
+    if (isNaN(value) || value < 1) return;
 
-    businessUnits.forEach((unit) => {
-      unit.designations.forEach((designation) => {
-        flattenedHierarchy.push({
-          unitName: unit.name,
-          title: designation.name,
-          level: designation.level,
+    if (isEditing) {
+      setEditingLevel(value);
+    } else {
+      setNewEmployee({ ...newEmployee, level: value });
+    }
+  };
+
+  const moveEmployeeUp = (
+    plantId: string,
+    departmentId: string,
+    employeeId: string
+  ) => {
+    setPlants(
+      plants.map((plant) =>
+        plant.id === plantId
+          ? {
+              ...plant,
+              departments: plant.departments.map((dept) =>
+                dept.id === departmentId
+                  ? {
+                      ...dept,
+                      employees: dept.employees.map((emp) =>
+                        emp.id === employeeId && emp.level > 1
+                          ? { ...emp, level: emp.level - 1 }
+                          : emp
+                      ),
+                    }
+                  : dept
+              ),
+            }
+          : plant
+      )
+    );
+  };
+
+  const moveEmployeeDown = (
+    plantId: string,
+    departmentId: string,
+    employeeId: string
+  ) => {
+    setPlants(
+      plants.map((plant) =>
+        plant.id === plantId
+          ? {
+              ...plant,
+              departments: plant.departments.map((dept) =>
+                dept.id === departmentId
+                  ? {
+                      ...dept,
+                      employees: dept.employees.map((emp) =>
+                        emp.id === employeeId
+                          ? { ...emp, level: emp.level + 1 }
+                          : emp
+                      ),
+                    }
+                  : dept
+              ),
+            }
+          : plant
+      )
+    );
+  };
+
+  // Helpers
+  const getSortedEmployees = (employees: Employee[]) => {
+    return [...employees].sort((a, b) => a.level - b.level);
+  };
+
+  const getLevelColor = (level: number) => {
+    const colors = [
+      "bg-blue-50 text-blue-800 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800",
+      "bg-green-50 text-green-800 dark:bg-green-900/40 dark:text-green-400 border border-green-200 dark:border-green-800",
+      "bg-purple-50 text-purple-800 dark:bg-purple-900/40 dark:text-purple-400 border border-purple-200 dark:border-purple-800",
+      "bg-amber-50 text-amber-800 dark:bg-amber-900/40 dark:text-amber-400 border border-amber-200 dark:border-amber-800",
+      "bg-red-50 text-red-800 dark:bg-red-900/40 dark:text-red-400 border border-red-200 dark:border-red-800",
+    ];
+
+    // Use modulo to cycle through colors for higher levels
+    return colors[(level - 1) % colors.length];
+  };
+
+  const validateHierarchy = () => {
+    const hierarchyData: any[] = [];
+
+    plants.forEach((plant) => {
+      plant.departments.forEach((department) => {
+        const sortedEmployees = getSortedEmployees(department.employees);
+
+        sortedEmployees.forEach((employee) => {
+          hierarchyData.push({
+            level: employee.level,
+            plantName: plant.name,
+            departmentName: department.name,
+            employeeName: employee.name,
+            designation: employee.designation,
+          });
         });
       });
     });
 
-    flattenedHierarchy.sort((a, b) => a.level - b.level);
-
-    setValidatedHierarchy(flattenedHierarchy);
+    // Sort by level
+    hierarchyData.sort((a, b) => a.level - b.level);
+    setValidatedHierarchy(hierarchyData);
   };
 
-  /**
-   * Handles level input change for both new and editing designations
-   * @param e - Change event
-   * @param isEditing - Whether in editing mode
-   */
-  const handleLevelInputChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    isEditing: boolean = false
-  ) => {
-    const value = parseInt(e.target.value) || 1;
-    // Only enforce minimum value of 1, no maximum restriction
-    const level = Math.max(value, 1);
-
-    if (isEditing) {
-      setEditingLevel(level);
-    } else {
-      setNewDesignation({
-        ...newDesignation,
-        level,
-      });
-    }
-  };
+  // Custom breadcrumb component
+  const CustomBreadcrumb = ({
+    items,
+    ...props
+  }: {
+    items: { label: string; href: string }[];
+  }) => (
+    <nav className="flex" aria-label="Breadcrumb" {...props}>
+      <ol className="inline-flex items-center space-x-1 md:space-x-3">
+        {items.map((item, index) => (
+          <li key={index} className="inline-flex items-center">
+            {index > 0 && <span className="mx-2 text-gray-400">/</span>}
+            <a
+              href={item.href}
+              className="text-sm font-medium text-gray-700 hover:text-green-600 dark:text-gray-300 dark:hover:text-green-400"
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ol>
+    </nav>
+  );
 
   return (
     <div
-      className="container mx-auto "
-      data-component="business-unit-hierarchy"
+      className="container mx-auto"
+      data-component="plant-hierarchy-management"
     >
       {/* Main container */}
       <div className="container py-4 mx-auto max-w-[95%] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
@@ -510,7 +604,7 @@ const BusinessUnitHierarchy: React.FC = () => {
         <CustomBreadcrumb
           items={[
             { label: "Dashboard", href: "/dashboard" },
-            { label: "Business Units", href: "/dashboard/business-units" },
+            { label: "Plant Management", href: "/dashboard/plants" },
           ]}
           aria-label="Breadcrumb Navigation"
         />
@@ -518,11 +612,11 @@ const BusinessUnitHierarchy: React.FC = () => {
         {/* Page header */}
         <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6 mt-4">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight" >
-              Business Unit Hierarchy
+            <h1 className="text-3xl font-bold tracking-tight">
+              Plant Hierarchy Management
             </h1>
             <p className="text-green-700 dark:text-green-400 text-sm font-medium mt-1">
-              Manage and visualize your organization's hierarchical structure
+              Manage plants, departments, and employee hierarchies
             </p>
           </div>
 
@@ -541,9 +635,10 @@ const BusinessUnitHierarchy: React.FC = () => {
               </TooltipTrigger>
               <TooltipContent className="max-w-md p-4">
                 <p>
-                  Create business units and add designations with specific
-                  levels. The validated hierarchy will display your
-                  organizational structure sorted by level.
+                  Create plants, add departments within each plant, and manage
+                  employees with their designations and levels. You can directly
+                  input employee level numbers or use the up/down arrows to
+                  adjust levels.
                 </p>
               </TooltipContent>
             </Tooltip>
@@ -562,378 +657,909 @@ const BusinessUnitHierarchy: React.FC = () => {
           </div>
         )}
 
-        {/* Add New Business Unit Section */}
-        <Card
-          className="mb-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm"
-          data-section="new-business-unit"
+        {/* Main Tabs */}
+        <Tabs
+          defaultValue="plants"
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="mb-6"
         >
-          <CardHeader>
-            <CardTitle className="text-xl text-gray-800 dark:text-gray-100">
-              Add New Business Unit
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex gap-4 mb-4">
-              <div className="flex-grow">
-                <Input
-                  placeholder="Business Unit Name"
-                  value={newUnit.name}
-                  onChange={(e) => setNewUnit({ name: e.target.value })}
-                  className="bg-white dark:bg-gray-700"
-                  aria-label="Business unit name"
-                  disabled={isLoading}
-                />
-              </div>
-              <Button
-                onClick={addNewUnit}
-                className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
-                aria-label="Add business unit"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <span className="flex items-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      aria-hidden="true"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Loading...
-                  </span>
-                ) : (
-                  <span className="flex items-center">
-                    <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
-                    Add Unit
-                  </span>
-                )}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Business Units Display Grid */}
-        <div
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-          data-section="business-units-list"
-        >
-          {businessUnits.map((unit) => (
-            <Card
-              key={unit.id}
-              className="bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm"
-              data-unit-id={unit.id}
+          <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsTrigger value="plants" className="flex items-center gap-2">
+              <Factory className="w-4 h-4" />
+              Plants
+            </TabsTrigger>
+            <TabsTrigger
+              value="departments"
+              className="flex items-center gap-2"
             >
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                {editingUnitId === unit.id ? (
-                  // Edit mode for business unit
-                  <div className="flex items-center gap-2 flex-grow">
-                    <Input
-                      value={editingName}
-                      onChange={(e) => setEditingName(e.target.value)}
-                      className="bg-white dark:bg-gray-700"
-                      placeholder="Business Unit Name"
-                      aria-label="Edit business unit name"
-                    />
-                    <Button
-                      onClick={saveEditedUnit}
-                      variant="ghost"
-                      size="icon"
-                      className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                      aria-label="Save changes"
-                    >
-                      <Check className="h-4 w-4" aria-hidden="true" />
-                    </Button>
-                    <Button
-                      onClick={cancelEditingUnit}
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      aria-label="Cancel editing"
-                    >
-                      <X className="h-4 w-4" aria-hidden="true" />
-                    </Button>
-                  </div>
-                ) : (
-                  // Display mode for business unit
-                  <div className="flex items-center">
-                    <Building
-                      className="h-5 w-5 text-green-600 dark:text-green-400 mr-2"
-                      aria-hidden="true"
-                    />
-                    <CardTitle className="text-xl text-gray-800 dark:text-gray-100">
-                      {unit.name}
-                    </CardTitle>
-                  </div>
-                )}
-                {editingUnitId !== unit.id && (
-                  <div className="flex items-center gap-2">
-                    <Button
-                      onClick={() => startEditingUnit(unit)}
-                      variant="ghost"
-                      size="icon"
-                      className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                      aria-label={`Edit ${unit.name}`}
-                    >
-                      <Edit className="h-4 w-4" aria-hidden="true" />
-                    </Button>
-                    <Button
-                      onClick={() => deleteUnit(unit.id)}
-                      variant="ghost"
-                      size="icon"
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                      aria-label={`Delete ${unit.name}`}
-                    >
-                      <Trash2 className="h-4 w-4" aria-hidden="true" />
-                    </Button>
-                  </div>
-                )}
+              <Building2 className="w-4 h-4" />
+              Departments
+            </TabsTrigger>
+            <TabsTrigger value="hierarchy" className="flex items-center gap-2">
+              <LayoutGrid className="w-4 h-4" />
+              Hierarchy
+            </TabsTrigger>
+          </TabsList>
+
+          {/* Plants Tab */}
+          <TabsContent value="plants">
+            {/* Add New Plant Section */}
+            <Card
+              className="mb-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm"
+              data-section="new-plant"
+            >
+              <CardHeader>
+                <CardTitle className="text-xl text-gray-800 dark:text-gray-100">
+                  Add New Plant
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3">
-                  Designations
-                </h3>
-                <div className="space-y-4">
-                  {/* Designations List */}
-                  <div
-                    className="grid grid-cols-1 gap-2"
-                    data-section="designations-list"
-                  >
-                    {getSortedDesignations(unit.designations).map(
-                      (designation) => (
-                        <div
-                          key={designation.id}
-                          className={`relative flex items-center justify-between p-3 border rounded-md ${getLevelColor(
-                            designation.level
-                          )}`}
-                          data-designation-id={designation.id}
-                          data-level={designation.level}
-                        >
-                          {editingDesignationId === designation.id ? (
-                            // Edit mode for designation
-                            <div className="flex flex-1 items-center gap-2">
-                              <Input
-                                value={editingName}
-                                onChange={(e) => setEditingName(e.target.value)}
-                                className="bg-white dark:bg-gray-700 flex-grow"
-                                placeholder="Designation Title"
-                                aria-label="Edit designation title"
-                              />
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs whitespace-nowrap">
-                                  Level:
-                                </span>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={editingLevel}
-                                  onChange={(e) =>
-                                    handleLevelInputChange(e, true)
-                                  }
-                                  className="bg-white dark:bg-gray-700 w-16"
-                                  placeholder="Level"
-                                  aria-label="Edit designation level"
-                                />
-                              </div>
-                              <Button
-                                onClick={() => saveEditedDesignation(unit.id)}
-                                variant="ghost"
-                                size="icon"
-                                className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                                aria-label="Save designation changes"
-                              >
-                                <Check className="h-4 w-4" aria-hidden="true" />
-                              </Button>
-                              <Button
-                                onClick={cancelEditingDesignation}
-                                variant="ghost"
-                                size="icon"
-                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                aria-label="Cancel designation editing"
-                              >
-                                <X className="h-4 w-4" aria-hidden="true" />
-                              </Button>
-                            </div>
-                          ) : (
-                            // Display mode for designation
-                            <>
-                              <div className="flex-grow">
-                                <span className="font-medium">
-                                  {designation.name}
-                                </span>
-                                <span className="ml-2 text-xs px-2 py-1 rounded-full bg-white/50 dark:bg-black/20">
-                                  Level {designation.level}
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <Button
-                                  onClick={() =>
-                                    startEditingDesignation(
-                                      unit.id,
-                                      designation
-                                    )
-                                  }
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                                  aria-label={`Edit ${designation.name}`}
-                                >
-                                  <Edit
-                                    className="h-3 w-3"
-                                    aria-hidden="true"
-                                  />
-                                </Button>
-                                <Button
-                                  onClick={() =>
-                                    deleteDesignation(unit.id, designation.id)
-                                  }
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                                  aria-label={`Delete ${designation.name}`}
-                                >
-                                  <Trash2
-                                    className="h-3 w-3"
-                                    aria-hidden="true"
-                                  />
-                                </Button>
-                              </div>
-                            </>
-                          )}
-                        </div>
-                      )
-                    )}
-                  </div>
-
-                  {/* Add New Designation Form */}
-                  <div
-                    className="flex flex-col sm:flex-row gap-3 bg-gray-50 dark:bg-gray-700/30 p-3 rounded-md border border-gray-100 dark:border-gray-700"
-                    data-section="add-designation"
-                  >
-                    <Input
-                      placeholder="Designation Title"
-                      value={newDesignation.name}
-                      onChange={(e) =>
-                        setNewDesignation({
-                          ...newDesignation,
-                          name: e.target.value,
-                        })
-                      }
-                      className="bg-white dark:bg-gray-700 flex-grow"
-                      aria-label="New designation title"
-                    />
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs whitespace-nowrap">Level:</span>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={newDesignation.level}
-                        onChange={handleLevelInputChange}
-                        className="bg-white dark:bg-gray-700 w-16"
-                        placeholder="Level"
-                        aria-label="New designation level"
-                      />
-                    </div>
-                    <Button
-                      onClick={() => addNewDesignation(unit.id)}
-                      className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
-                      aria-label={`Add designation to ${unit.name}`}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label
+                      htmlFor="plantName"
+                      className="text-sm font-medium mb-1 block"
                     >
-                      <Plus className="h-4 w-4 mr-2" aria-hidden="true" />
-                      Add
-                    </Button>
+                      Plant Name
+                    </label>
+                    <Input
+                      id="plantName"
+                      placeholder="e.g., Greenfuel CNG"
+                      value={newPlant.name}
+                      onChange={(e) =>
+                        setNewPlant({ ...newPlant, name: e.target.value })
+                      }
+                      className="bg-white dark:bg-gray-700"
+                      aria-label="Plant name"
+                      disabled={isLoading}
+                    />
+                  </div>
+                  <div>
+                    <label
+                      htmlFor="plantLocation"
+                      className="text-sm font-medium mb-1 block"
+                    >
+                      Location (Optional)
+                    </label>
+                    <Input
+                      id="plantLocation"
+                      placeholder="e.g., West Industrial Zone"
+                      value={newPlant.location}
+                      onChange={(e) =>
+                        setNewPlant({ ...newPlant, location: e.target.value })
+                      }
+                      className="bg-white dark:bg-gray-700"
+                      aria-label="Plant location"
+                      disabled={isLoading}
+                    />
                   </div>
                 </div>
+                <Button
+                  onClick={addNewPlant}
+                  className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                  aria-label="Add plant"
+                  disabled={isLoading}
+                >
+                  <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
+                  Add Plant
+                </Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
 
-        {/* Hierarchy Validation Section */}
-        <Card
-          className="mt-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm"
-          data-section="hierarchy-validation"
-        >
-          <CardHeader>
-            <CardTitle className="text-xl text-gray-800 dark:text-gray-100">
-              Validated Organization Hierarchy
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Button
-              onClick={validateHierarchy}
-              className="bg-purple-600 hover:bg-purple-700 text-white mb-4"
-              aria-label="Validate hierarchy"
+            {/* Plants List */}
+            <div
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              data-section="plants-list"
             >
-              Validate Hierarchy
-            </Button>
-
-            {validatedHierarchy.length > 0 && (
-              <div className="overflow-x-auto">
-                <table
-                  className="w-full border-collapse"
-                  aria-label="Organization hierarchy"
+              {plants.map((plant) => (
+                <Card
+                  key={plant.id}
+                  className={`bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm transition hover:shadow-md ${
+                    activePlantId === plant.id ? "ring-2 ring-green-500" : ""
+                  }`}
+                  data-plant-id={plant.id}
+                  onClick={() => setActivePlantId(plant.id)}
                 >
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-700 text-left">
-                      <th className="px-4 py-3 border-b" scope="col">
-                        Level
-                      </th>
-                      <th className="px-4 py-3 border-b" scope="col">
-                        Business Unit
-                      </th>
-                      <th className="px-4 py-3 border-b" scope="col">
-                        Designation
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {validatedHierarchy.map((item, index) => (
-                      <tr
-                        key={index}
-                        className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      >
-                        <td className="px-4 py-3">
-                          <span
-                            className={`inline-block px-2 py-1 rounded-md text-xs font-medium ${getLevelColor(
-                              item.level
-                            )}`}
+                  <CardHeader className="flex flex-row items-start justify-between pb-2">
+                    {editingPlantId === plant.id ? (
+                      // Edit mode for plant
+                      <div className="flex flex-col gap-3 w-full">
+                        <Input
+                          value={editingName}
+                          onChange={(e) => setEditingName(e.target.value)}
+                          className="bg-white dark:bg-gray-700"
+                          placeholder="Plant Name"
+                          aria-label="Edit plant name"
+                        />
+                        <Input
+                          value={editingLocation}
+                          onChange={(e) => setEditingLocation(e.target.value)}
+                          className="bg-white dark:bg-gray-700"
+                          placeholder="Location (Optional)"
+                          aria-label="Edit plant location"
+                        />
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              saveEditedPlant();
+                            }}
+                            variant="ghost"
+                            className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                            aria-label="Save changes"
                           >
-                            {item.level}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">{item.unitName}</td>
-                        <td className="px-4 py-3">{item.title}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                            <Check
+                              className="h-4 w-4 mr-1"
+                              aria-hidden="true"
+                            />
+                            Save
+                          </Button>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              cancelEditingPlant();
+                            }}
+                            variant="ghost"
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            aria-label="Cancel editing"
+                          >
+                            <X className="h-4 w-4 mr-1" aria-hidden="true" />
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      // View mode for plant
+                      <div>
+                        <CardTitle className="text-xl text-gray-800 dark:text-gray-100">
+                          {plant.name}
+                        </CardTitle>
+                        {plant.location && (
+                          <CardDescription className="text-green-700 dark:text-green-400">
+                            {plant.location}
+                          </CardDescription>
+                        )}
+                      </div>
+                    )}
 
-            {validatedHierarchy.length === 0 && (
-              <div className="text-center py-6 text-gray-500 dark:text-gray-400">
-                Click 'Validate Hierarchy' to view your organization structure
+                    {editingPlantId !== plant.id && (
+                      <div className="flex gap-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  startEditingPlant(plant);
+                                }}
+                                aria-label="Edit plant"
+                              >
+                                <Edit className="h-4 w-4" aria-hidden="true" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Edit Plant</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  deletePlant(plant.id);
+                                }}
+                                aria-label="Delete plant"
+                              >
+                                <Trash2
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Delete Plant</TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          Departments:
+                        </span>
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900/40 dark:text-green-400 border border-green-200 dark:border-green-800">
+                          {plant.departments.length}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-gray-600 dark:text-gray-300">
+                          Total Employees:
+                        </span>
+                        <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                          {plant.departments.reduce(
+                            (sum, dept) => sum + dept.employees.length,
+                            0
+                          )}
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                  <CardFooter className="pt-0">
+                    <Button
+                      variant="outline"
+                      className="w-full border-gray-200 dark:border-gray-700 hover:bg-green-50 hover:text-green-700 dark:hover:bg-green-900/20 dark:hover:text-green-300"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setActivePlantId(plant.id);
+                        setActiveTab("departments");
+                      }}
+                      aria-label="View departments"
+                    >
+                      View Departments
+                    </Button>
+                  </CardFooter>
+                </Card>
+              ))}
+            </div>
+
+            {plants.length === 0 && (
+              <div className="text-center py-16 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <Building2
+                  className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-600"
+                  aria-hidden="true"
+                />
+                <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                  No Plants Added
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  Start by adding your first plant using the form above.
+                </p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </TabsContent>
+
+          {/* Departments Tab */}
+          <TabsContent value="departments">
+            {activePlantId ? (
+              <>
+                <Card className="mb-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                  <CardHeader>
+                    <CardTitle className="text-xl text-gray-800 dark:text-gray-100">
+                      Add New Department to {getActivePlant()?.name}
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 gap-4 mb-4">
+                      <div>
+                        <label
+                          htmlFor="departmentName"
+                          className="text-sm font-medium mb-1 block"
+                        >
+                          Department Name
+                        </label>
+                        <Input
+                          id="departmentName"
+                          placeholder="e.g., Production"
+                          value={newDepartment.name}
+                          onChange={(e) =>
+                            setNewDepartment({ name: e.target.value })
+                          }
+                          className="bg-white dark:bg-gray-700"
+                          aria-label="Department name"
+                        />
+                      </div>
+                    </div>
+                    <Button
+                      onClick={() => addNewDepartment(activePlantId)}
+                      className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                      aria-label="Add department"
+                    >
+                      <Plus className="w-4 h-4 mr-2" aria-hidden="true" />
+                      Add Department
+                    </Button>
+                  </CardContent>
+                </Card>
+
+                {/* Departments List */}
+                <div className="space-y-4" data-section="departments-list">
+                  {getActivePlant()?.departments.map((department) => (
+                    <Collapsible
+                      key={department.id}
+                      open={expandedDepartments[department.id]}
+                      onOpenChange={() =>
+                        toggleDepartmentExpansion(department.id)
+                      }
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 shadow-sm"
+                      data-department-id={department.id}
+                    >
+                      <div className="flex items-center justify-between p-4">
+                        {editingDepartmentId === department.id ? (
+                          // Edit mode for department
+                          <div className="flex flex-col sm:flex-row gap-3 w-full">
+                            <Input
+                              value={editingName}
+                              onChange={(e) => setEditingName(e.target.value)}
+                              className="bg-white dark:bg-gray-700 flex-grow"
+                              placeholder="Department Name"
+                              aria-label="Edit department name"
+                            />
+                            <div className="flex gap-2">
+                              <Button
+                                onClick={() =>
+                                  saveEditedDepartment(activePlantId)
+                                }
+                                variant="ghost"
+                                className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                aria-label="Save changes"
+                              >
+                                <Check
+                                  className="h-4 w-4 mr-1"
+                                  aria-hidden="true"
+                                />
+                                Save
+                              </Button>
+                              <Button
+                                onClick={cancelEditingDepartment}
+                                variant="ghost"
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                aria-label="Cancel editing"
+                              >
+                                <X
+                                  className="h-4 w-4 mr-1"
+                                  aria-hidden="true"
+                                />
+                                Cancel
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          // View mode for department
+                          <div className="flex items-center space-x-2">
+                            <Building2
+                              className="h-5 w-5 text-gray-500 dark:text-gray-400"
+                              aria-hidden="true"
+                            />
+                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">
+                              {department.name}
+                            </h3>
+                            <Badge className="ml-2 bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
+                              {department.employees.length} Employees
+                            </Badge>
+                          </div>
+                        )}
+
+                        <div className="flex items-center">
+                          {editingDepartmentId !== department.id && (
+                            <>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                      onClick={() =>
+                                        startEditingDepartment(
+                                          activePlantId,
+                                          department
+                                        )
+                                      }
+                                      aria-label="Edit department"
+                                    >
+                                      <Edit
+                                        className="h-4 w-4"
+                                        aria-hidden="true"
+                                      />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Edit Department
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      variant="ghost"
+                                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                      onClick={() =>
+                                        deleteDepartment(
+                                          activePlantId,
+                                          department.id
+                                        )
+                                      }
+                                      aria-label="Delete department"
+                                    >
+                                      <Trash2
+                                        className="h-4 w-4"
+                                        aria-hidden="true"
+                                      />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    Delete Department
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </>
+                          )}
+
+                          <CollapsibleTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                              aria-label={
+                                expandedDepartments[department.id]
+                                  ? "Collapse department"
+                                  : "Expand department"
+                              }
+                            >
+                              {expandedDepartments[department.id] ? (
+                                <ChevronUp
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              ) : (
+                                <ChevronDown
+                                  className="h-4 w-4"
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </Button>
+                          </CollapsibleTrigger>
+                        </div>
+                      </div>
+
+                      <CollapsibleContent>
+                        <div className="border-t border-gray-200 dark:border-gray-700 p-4">
+                          <div className="flex justify-between items-center mb-4">
+                            <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center">
+                              <Users
+                                className="h-4 w-4 mr-2"
+                                aria-hidden="true"
+                              />
+                              Employees
+                            </h4>
+                            <Button
+                              onClick={() =>
+                                openAddEmployeeDialog(department.id)
+                              }
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                              aria-label="Add employee"
+                            >
+                              <Plus
+                                className="h-3.5 w-3.5 mr-1"
+                                aria-hidden="true"
+                              />
+                              Add Employee
+                            </Button>
+                          </div>
+
+                          {department.employees.length > 0 ? (
+                            <div className="space-y-3">
+                              {getSortedEmployees(department.employees).map(
+                                (employee) => (
+                                  <div
+                                    key={employee.id}
+                                    className="border border-gray-200 dark:border-gray-700 rounded-md p-3 bg-gray-50 dark:bg-gray-900/50"
+                                    data-employee-id={employee.id}
+                                  >
+                                    {editingEmployeeId === employee.id ? (
+                                      // Edit mode for employee
+                                      <div className="grid grid-cols-1 gap-3 w-full">
+                                        <Input
+                                          value={editingName}
+                                          onChange={(e) =>
+                                            setEditingName(e.target.value)
+                                          }
+                                          className="bg-white dark:bg-gray-700"
+                                          placeholder="Employee Name"
+                                          aria-label="Edit employee name"
+                                        />
+                                        <Input
+                                          value={editingDesignation}
+                                          onChange={(e) =>
+                                            setEditingDesignation(
+                                              e.target.value
+                                            )
+                                          }
+                                          className="bg-white dark:bg-gray-700"
+                                          placeholder="Designation"
+                                          aria-label="Edit employee designation"
+                                        />
+                                        <div className="flex items-center gap-2">
+                                          <label
+                                            htmlFor="editLevel"
+                                            className="text-sm font-medium whitespace-nowrap"
+                                          >
+                                            Level:
+                                          </label>
+                                          <Input
+                                            id="editLevel"
+                                            type="number"
+                                            min="1"
+                                            value={editingLevel}
+                                            onChange={(e) =>
+                                              handleLevelInputChange(e, true)
+                                            }
+                                            className="bg-white dark:bg-gray-700 w-20"
+                                            aria-label="Edit employee level"
+                                          />
+                                        </div>
+                                        <div className="flex gap-2 mt-2">
+                                          <Button
+                                            onClick={() =>
+                                              saveEditedEmployee(
+                                                activePlantId,
+                                                department.id
+                                              )
+                                            }
+                                            variant="ghost"
+                                            className="text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                                            aria-label="Save changes"
+                                          >
+                                            <Check
+                                              className="h-4 w-4 mr-1"
+                                              aria-hidden="true"
+                                            />
+                                            Save
+                                          </Button>
+                                          <Button
+                                            onClick={cancelEditingEmployee}
+                                            variant="ghost"
+                                            className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                            aria-label="Cancel editing"
+                                          >
+                                            <X
+                                              className="h-4 w-4 mr-1"
+                                              aria-hidden="true"
+                                            />
+                                            Cancel
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    ) : (
+                                      // View mode for employee
+                                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div>
+                                          <div className="font-medium text-gray-800 dark:text-gray-200">
+                                            {employee.name}
+                                          </div>
+                                          <div className="text-sm text-gray-600 dark:text-gray-400">
+                                            {employee.designation}
+                                          </div>
+                                        </div>
+                                        <div className="flex flex-wrap items-center gap-2">
+                                          <Badge
+                                            className={`${getLevelColor(
+                                              employee.level
+                                            )}`}
+                                          >
+                                            Level {employee.level}
+                                          </Badge>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                            onClick={() =>
+                                              moveEmployeeUp(
+                                                activePlantId,
+                                                department.id,
+                                                employee.id
+                                              )
+                                            }
+                                            disabled={employee.level <= 1}
+                                            aria-label="Move employee up one level"
+                                          >
+                                            <ChevronUp
+                                              className="h-4 w-4"
+                                              aria-hidden="true"
+                                            />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                            onClick={() =>
+                                              moveEmployeeDown(
+                                                activePlantId,
+                                                department.id,
+                                                employee.id
+                                              )
+                                            }
+                                            aria-label="Move employee down one level"
+                                          >
+                                            <ChevronDown
+                                              className="h-4 w-4"
+                                              aria-hidden="true"
+                                            />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
+                                            onClick={() =>
+                                              startEditingEmployee(
+                                                activePlantId,
+                                                department.id,
+                                                employee
+                                              )
+                                            }
+                                            aria-label="Edit employee"
+                                          >
+                                            <Edit
+                                              className="h-4 w-4"
+                                              aria-hidden="true"
+                                            />
+                                          </Button>
+                                          <Button
+                                            size="sm"
+                                            variant="ghost"
+                                            className="h-8 w-8 p-0 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+                                            onClick={() =>
+                                              deleteEmployee(
+                                                activePlantId,
+                                                department.id,
+                                                employee.id
+                                              )
+                                            }
+                                            aria-label="Delete employee"
+                                          >
+                                            <Trash2
+                                              className="h-4 w-4"
+                                              aria-hidden="true"
+                                            />
+                                          </Button>
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          ) : (
+                            <div className="text-center py-8 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                              <Users
+                                className="h-8 w-8 mx-auto text-gray-400 dark:text-gray-600"
+                                aria-hidden="true"
+                              />
+                              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                                No employees added yet. Add your first employee
+                                to this department.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+
+                  {getActivePlant()?.departments.length === 0 && (
+                    <div className="text-center py-16 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                      <Building2
+                        className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-600"
+                        aria-hidden="true"
+                      />
+                      <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                        No Departments Added
+                      </h3>
+                      <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                        Start by adding your first department using the form
+                        above.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-16 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                <Factory
+                  className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-600"
+                  aria-hidden="true"
+                />
+                <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                  No Plant Selected
+                </h3>
+                <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                  Please select a plant from the Plants tab first.
+                </p>
+                <Button
+                  className="mt-4 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                  onClick={() => setActiveTab("plants")}
+                  aria-label="Go to plants tab"
+                >
+                  Go to Plants
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          {/* Hierarchy Tab */}
+          <TabsContent value="hierarchy">
+            <Card className="mb-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+              <CardHeader>
+                <CardTitle className="text-xl text-gray-800 dark:text-gray-100">
+                  Employee Hierarchy View
+                </CardTitle>
+                <CardDescription>
+                  View your organization's employee hierarchy across all plants
+                  and departments
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Button
+                  onClick={validateHierarchy}
+                  className="mb-6 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+                  aria-label="Generate hierarchy view"
+                >
+                  <LayoutGrid className="w-4 h-4 mr-2" aria-hidden="true" />
+                  Generate Hierarchy View
+                </Button>
+
+                {validatedHierarchy.length > 0 ? (
+                  <ScrollArea className="h-96">
+                    <div className="space-y-4">
+                      {Array.from(
+                        new Set(validatedHierarchy.map((item) => item.level))
+                      )
+                        .sort((a, b) => a - b)
+                        .map((level) => (
+                          <div key={level} className="mb-4">
+                            <h3
+                              className={`text-lg font-medium mb-2 ${getLevelColor(
+                                level
+                              )} inline-block px-3 py-1 rounded-full`}
+                            >
+                              Level {level}
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                              {validatedHierarchy
+                                .filter((item) => item.level === level)
+                                .map((item, index) => (
+                                  <div
+                                    key={index}
+                                    className="border border-gray-200 dark:border-gray-700 rounded-md p-4 bg-white dark:bg-gray-800 shadow-sm"
+                                  >
+                                    <div className="font-medium text-gray-800 dark:text-gray-200">
+                                      {item.employeeName}
+                                    </div>
+                                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                                      {item.designation}
+                                    </div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                                      <span className="font-medium">
+                                        {item.plantName}
+                                      </span>{" "}
+                                      &rsaquo; {item.departmentName}
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="text-center py-16 bg-gray-50 dark:bg-gray-900 rounded-lg">
+                    <LayoutGrid
+                      className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-600"
+                      aria-hidden="true"
+                    />
+                    <h3 className="mt-4 text-lg font-medium text-gray-900 dark:text-gray-100">
+                      Hierarchy Not Generated
+                    </h3>
+                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                      Click the "Generate Hierarchy View" button to see your
+                      organization's structure.
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </div>
+
+      {/* Add Employee Dialog */}
+      <Dialog
+        open={isAddEmployeeDialogOpen}
+        onOpenChange={setIsAddEmployeeDialogOpen}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add New Employee</DialogTitle>
+            <DialogDescription>
+              Add a new employee to the department. Level determines hierarchy
+              position.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <label htmlFor="employeeName" className="text-sm font-medium">
+                Employee Name
+              </label>
+              <Input
+                id="employeeName"
+                placeholder="e.g., John Smith"
+                value={newEmployee.name}
+                onChange={(e) =>
+                  setNewEmployee({ ...newEmployee, name: e.target.value })
+                }
+                className="bg-white dark:bg-gray-700"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="designation" className="text-sm font-medium">
+                Designation
+              </label>
+              <Input
+                id="designation"
+                placeholder="e.g., Plant Supervisor"
+                value={newEmployee.designation}
+                onChange={(e) =>
+                  setNewEmployee({
+                    ...newEmployee,
+                    designation: e.target.value,
+                  })
+                }
+                className="bg-white dark:bg-gray-700"
+              />
+            </div>
+            <div className="grid gap-2">
+              <label htmlFor="level" className="text-sm font-medium">
+                Hierarchy Level
+              </label>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="level"
+                  type="number"
+                  min="1"
+                  value={newEmployee.level}
+                  onChange={(e) => handleLevelInputChange(e)}
+                  className="bg-white dark:bg-gray-700 w-20"
+                />
+                <div className="text-sm text-gray-500 dark:text-gray-400">
+                  Lower number = higher position
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 p-3 rounded-md dark:bg-red-900/30 dark:border-red-800 dark:text-red-400 mb-4">
+              {error}
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setIsAddEmployeeDialogOpen(false);
+                setError(null);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={addNewEmployee}
+              className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white"
+            >
+              Add Employee
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-};
-
-export default BusinessUnitHierarchy;
+}
