@@ -52,7 +52,7 @@ const useAxios = (): AxiosInstance => {
           }
         );
 
-        localStorage.setItem("authToken", JSON.stringify(response.data));
+        localStorage.setItem("accessToken", JSON.stringify(response.data));
         setAuthToken(response.data);
 
         req.headers.Authorization = `Bearer ${response.data.access}`;
