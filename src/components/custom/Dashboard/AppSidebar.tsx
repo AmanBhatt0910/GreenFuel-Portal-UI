@@ -91,7 +91,7 @@ const AppSidebar = () => {
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken");
-      window.location.href='/'
+      window.location.href = "/";
     }
   };
 
@@ -238,7 +238,7 @@ const AppSidebar = () => {
           </SidebarGroup>
         </div>
 
-        {userInfo && userInfo?.is_staff && (
+        {userInfo?.is_staff && (
           <div className="mt-5">
             <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
               Credentials

@@ -28,7 +28,7 @@ export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
       primary: "#FFFFFF",
       secondary: "#2E93A3", // Blue color from logo
       accent: "#4CAF50",    // Green color from logo
-      text: "text-green-500"
+      text: "text-gray-500"
     }
   };
 
@@ -58,7 +58,7 @@ export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
         <Image src={'/Greenfuel.png'} alt="Logo" width={30} height={30}/>
       </div>
 
-      <div className={`mt-1 font-lg ${sizes[size].textSize} ${selectedColors.text}`}>
+      <div className={`mt-1 font-extrabold ${sizes[size].textSize} ${selectedColors.text}`}>
         Green Fuel
       </div>
     </motion.div>

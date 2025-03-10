@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useState } from "react";
+import { createContext, ReactNode, useEffect, useState } from "react";
 import { Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
 
@@ -57,7 +57,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const baseURL = "http://127.0.0.1:8000";
   // const baseURL = "http://192.168.1.3:8000";
   // const baseURL = "http://127.0.0.1:8000";
-  
+
   const router = useRouter();
   const [authToken, setAuthToken] = useState<AccessTokenType | null>(
     typeof window !== "undefined" && localStorage.getItem("accessToken")
@@ -69,16 +69,21 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       : null
   );
 
-  const [userInfo, setUserInfo] = useState<UserInfoType | null>(
-    typeof window !== "undefined" && localStorage.getItem("userInfo")
-      ? JSON.parse(
-          (typeof window !== "undefined" && localStorage.getItem("userInfo")) ||
-            "{}"
-        )
-      : null
-  );
+  const [userInfo, setUserInfo] = useState<UserInfoType | null>(null);
 
-  const userLogin = async (email: string, password: string): Promise<LoginResponseType> => {
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const storedUserInfo = localStorage.getItem("userInfo");
+      if (storedUserInfo) {
+        setUserInfo(JSON.parse(storedUserInfo));
+      }
+    }
+  }, []);
+
+  const userLogin = async (
+    email: string,
+    password: string
+  ): Promise<LoginResponseType> => {
     try {
       const response = await fetch(baseURL + `/auth/token/`, {
         method: "POST",
@@ -87,24 +92,24 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         },
         body: JSON.stringify({ email, password }),
       });
-      
+
       if (response.status === 200) {
         const tokenData = await response.json();
         setAuthToken(tokenData);
         localStorage.setItem("accessToken", JSON.stringify(tokenData));
-        
+
         const userResponse = await fetch(baseURL + `/auth/user/`, {
           headers: {
             Authorization: `Bearer ${tokenData.access}`,
           },
         });
-        
+
         if (userResponse.ok) {
           const userData = await userResponse.json();
           setUserInfo(userData);
           localStorage.setItem("userInfo", JSON.stringify(userData));
         }
-        
+
         router.push("/dashboard");
         return { success: true, message: "Login successful" };
       } else {
@@ -114,17 +119,17 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           return { success: false, message: "Your account is inactive" };
         } else {
           const errorData = await response.json().catch(() => ({}));
-          return { 
-            success: false, 
-            message: errorData.detail || "Login failed. Please try again." 
+          return {
+            success: false,
+            message: errorData.detail || "Login failed. Please try again.",
           };
         }
       }
     } catch (error) {
       console.error("Login error:", error);
-      return { 
-        success: false, 
-        message: "Network error. Please check your connection." 
+      return {
+        success: false,
+        message: "Network error. Please check your connection.",
       };
     }
   };
@@ -148,9 +153,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   };
 
   return (
-    <GFContext.Provider value={contextData}>
-      {children}
-    </GFContext.Provider>
+    <GFContext.Provider value={contextData}>{children}</GFContext.Provider>
   );
 };
 
