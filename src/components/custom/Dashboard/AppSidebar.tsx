@@ -91,7 +91,7 @@ const AppSidebar = () => {
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken");
-      window.location.href='/'
+      window.location.href = "/";
     }
   };
 
