@@ -81,7 +81,8 @@ const DashboardPage: React.FC = () => {
   const getUserDashboardData = async () => {
     try {
       const response = await api.get("/userInfo/?self=true");
-      localStorage.setItem("userInfo", JSON.stringify(response.data));
+      typeof window !== "undefined" &&
+        localStorage.setItem("userInfo", JSON.stringify(response.data));
       setUserInfo(response.data);
     } catch (error) {
       console.error("Error fetching user data:", error);
