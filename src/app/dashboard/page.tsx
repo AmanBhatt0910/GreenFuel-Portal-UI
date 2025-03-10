@@ -74,20 +74,19 @@ const DashboardPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [currentDate, setCurrentDate] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const {setUserInfo} = useContext(GFContext)
+  const { setUserInfo } = useContext(GFContext);
 
   const api = useAxios();
 
   const getUserDashboardData = async () => {
     try {
       const response = await api.get("/userInfo/?self=true");
-      // console.log(response.data);
+      localStorage.setItem("userInfo", JSON.stringify(response.data));
       setUserInfo(response.data);
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
   };
-
 
   const getStatusColor = (status: string): string => {
     switch (status.toLowerCase()) {
