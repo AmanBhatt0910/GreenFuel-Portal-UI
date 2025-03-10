@@ -36,11 +36,10 @@ export default function LoginPage() {
       const response = await login(email, password);
       if (!response.success) {
         setError(response.message);
+        return;
       }
-      setError(null);
     } catch (error) {
       setError("Login failed. Please check your credentials.");
-      console.error("Login error:", error);
     } finally {
       setIsLoading(false);
     }
