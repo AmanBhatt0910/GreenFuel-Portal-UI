@@ -7,6 +7,7 @@ export interface AssetItem {
   total: number;
 }
 
+
 export interface FormData {
   plant: string;
   date: string;
@@ -25,6 +26,38 @@ export interface FormData {
   approvalType: string;
   notifyTo: string;
 }
+
+export interface SubmittingFormData {
+  user: number; 
+  business_unit: string; 
+  department: string; 
+  designation: string; 
+  date: string; 
+  total: string; 
+  reason: string; 
+  policy_agreement: boolean; 
+  initiate_dept: string; 
+  current_status: string; 
+  items : SubmittingAssetItem[];
+  benefit_to_organisation: string; 
+  approval_category: string; 
+  approval_type: string; 
+  notify_to: string | null; 
+  current_level: number; 
+  max_level: number; 
+  rejected: boolean; 
+  rejection_reason: string | null; 
+}
+
+export interface SubmittingAssetItem {
+  name: string; 
+  description: string; 
+  quantity: number; 
+  per_unit_price: string; 
+  sap_code: string; 
+}
+
+
 
 export interface FormStepProps {
   formData: FormData;

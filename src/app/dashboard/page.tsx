@@ -7,14 +7,14 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import TrackingTable from "@/components/custom/Dashboard/TrackingTable";
+import TrackingTable from "@/components/custom/dashboard/TrackingTable";
 
 import {
   StatCard,
   DashboardHeader,
   FormStat,
   RecentForm,
-} from "@/components/custom/Dashboard/DashboardComponents";
+} from "@/components/custom/dashboard/DashboardComponents";
 import useAxios from "../hooks/use-axios";
 import { GFContext } from "@/context/AuthContext";
 
@@ -132,19 +132,19 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  const getFormattedDate = (): string => {
-    const now = new Date();
-    return now.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  };
+  // const getFormattedDate = (): string => {
+  //   const now = new Date();
+  //   return now.toLocaleDateString("en-US", {
+  //     weekday: "long",
+  //     year: "numeric",
+  //     month: "long",
+  //     day: "numeric",
+  //   });
+  // };
 
   useEffect(() => {
     getUserDashboardData();
-    setCurrentDate(getFormattedDate());
+    // setCurrentDate(getFormattedDate());
     setTimeout(() => setIsLoaded(true), 100);
   }, []);
 

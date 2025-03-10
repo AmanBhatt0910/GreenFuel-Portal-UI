@@ -18,6 +18,7 @@ interface UserInfoType {
   employee_code: string | null;
   designation: string | null;
   groups: any[];
+  name : string,
   user_permissions: any[];
 }
 

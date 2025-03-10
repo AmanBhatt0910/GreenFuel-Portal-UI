@@ -19,14 +19,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({
         Greenfuel Dashboard
       </h1>
       <div className="flex space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="dark:border-gray-700 dark:text-gray-300 flex items-center"
-        >
-          <Calendar className="h-4 w-4 mr-2" />
-          <span>{currentDate}</span>
-        </Button>
+      
         <motion.div
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

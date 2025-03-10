@@ -1,5 +1,5 @@
 "use client";
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useEffect } from "react";
 import { format } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -13,8 +13,13 @@ import {
   Leaf,
   FileText,
   Home,
+  Download,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import Link from "next/link";
+import { jsPDF } from "jspdf";
+import autoTable from 'jspdf-autotable';
 
 // Import our custom components
 import {
@@ -26,10 +31,20 @@ import {
   ConfirmationStep,
   FormNavigation,
   SidebarItem,
+  SubmittingFormData,
+  SubmittingAssetItem,
 } from "@/components/custom/AssetRequestForm";
 import { Button } from "@/components/ui/button";
 import { CustomBreadcrumb } from '@/components/custom/ui/Breadcrumb.custom';
 import { GFContext } from "@/context/AuthContext";
+import useAxios from "@/app/hooks/use-axios";
+
+// Optionally, if you're using TypeScript and still have type errors, add this declaration near the top of the file:
+declare module 'jspdf' {
+  interface jsPDF {
+    autoTable: (options: any) => any;
+  }
+}
 
 // Form steps with enhanced descriptions
 const formSteps = [
@@ -87,9 +102,18 @@ export default function AssetRequestForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const {userInfo} = useContext(GFContext);
+  const [expandedView, setExpandedView] = useState(false);
 
-  console.log(userInfo)
-  
+  // Pre-fill form data with user information when userInfo is available
+  useEffect(() => {
+    if (userInfo) {
+      setFormData(prevData => ({
+        ...prevData,
+        employeeName: userInfo.name || "",
+        employeeCode: userInfo.employee_code || ""
+      }));
+    }
+  }, [userInfo]);
 
   // State for asset management
   const [currentAsset, setCurrentAsset] = useState<AssetItem>({
@@ -268,19 +292,62 @@ export default function AssetRequestForm() {
     setCurrentStep((prev) => prev + 1);
   };
 
+  const api = useAxios();
+
   // Submit the form
   const handleSubmit = async () => {
     setIsSubmitting(true);
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    console.log(formData);
+    // console.log(formData);
+
+    const submittingFormData: SubmittingFormData = {
+      user: userInfo?.id || 0,
+      business_unit: formData.plant,
+      department: formData.department,
+      designation: formData.designation,
+      date: formData.date,
+      total: formData.assetAmount,
+      reason: formData.reason,
+      policy_agreement: formData.policyAgreement,
+      initiate_dept: formData.initiateDept,
+      current_status: formData.currentStatus,
+      benefit_to_organisation: formData.benefitToOrg,
+      approval_category: formData.approvalCategory,
+      approval_type: formData.approvalType,
+      notify_to: formData.notifyTo,
+      current_level: 0,
+      max_level: 0,
+      rejected: false,
+      rejection_reason: null,
+      items: formData.assets.map(asset => ({
+        name: asset.title,
+        description: asset.description,
+        quantity: asset.quantity,
+        per_unit_price: asset.pricePerUnit.toString(),
+        sap_code: asset.sapItemCode,
+      }))
+    }
+    
+    console.log("submittingFormData" , submittingFormData)
+
+    // const response = await api.post("approval-items/", submittingAssetItems);
+
+    // console.log(response.data)
+    
     setIsSubmitting(false);
     setIsSubmitted(true);
   };
 
   // Reset the form
   const resetForm = () => {
-    setFormData(getInitialFormData());
+    // Pre-fill user information when resetting the form
+    const initialData = getInitialFormData();
+    if (userInfo) {
+      initialData.employeeName = userInfo.name || "";
+      initialData.employeeCode = userInfo.employee_code || "";
+    }
+    setFormData(initialData);
     setCurrentStep(0);
     setIsSubmitted(false);
   };
@@ -292,9 +359,7 @@ export default function AssetRequestForm() {
         return (
           formData.plant.trim() !== "" &&
           formData.employeeCode.trim() !== "" &&
-          formData.employeeName.trim() !== "" &&
-          formData.department.trim() !== "" &&
-          formData.designation.trim() !== ""
+          formData.employeeName.trim() !== ""
         );
       case 1:
         return formData.assets.length > 0;
@@ -315,8 +380,7 @@ export default function AssetRequestForm() {
           formData.plant.trim() !== "" &&
           formData.employeeCode.trim() !== "" &&
           formData.employeeName.trim() !== "" &&
-          formData.department.trim() !== "" &&
-          formData.designation.trim() !== ""
+          formData.department.trim() !== ""
         );
       case 1:
         return formData.assets.length > 0;
@@ -328,11 +392,6 @@ export default function AssetRequestForm() {
         return false;
     }
   };
-
-  // Calculate progress percentage
-  const progressPercentage = Math.floor(
-    ((currentStep + 1) / formSteps.length) * 100
-  );
 
   // Get request ID
   const getRequestId = () => {
@@ -349,6 +408,221 @@ export default function AssetRequestForm() {
       currency: "INR",
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  // Generate PDF with all details
+  const generatePDF = () => {
+    // Create a new PDF document
+    const doc = new jsPDF();
+    const requestId = getRequestId();
+    const timeline = getEstimatedTimeline();
+    
+    // Add title
+    doc.setFontSize(20);
+    doc.setTextColor(0, 102, 51); // Green color
+    doc.text(`Asset Request Summary #${requestId}`, 105, 20, { align: 'center' });
+    
+    // Add header with logo placeholder
+    doc.setDrawColor(0, 102, 51);
+    doc.setLineWidth(0.5);
+    doc.line(14, 25, 196, 25);
+    
+    // Basic Information
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Request Information", 14, 35);
+    
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    const leftColumnX = 14;
+    const rightColumnX = 110;
+    let y = 45;
+    
+    // Basic info - left column
+    doc.text("Submitted By:", leftColumnX, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text(formData.employeeName, leftColumnX + 40, y);
+    
+    // Basic info - right column
+    doc.setTextColor(100, 100, 100);
+    doc.text("Submission Date:", rightColumnX, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text(format(new Date(), "MMMM dd, yyyy"), rightColumnX + 40, y);
+    
+    // Employee code
+    y += 8;
+    doc.setTextColor(100, 100, 100);
+    doc.text("Employee Code:", leftColumnX, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text(formData.employeeCode, leftColumnX + 40, y);
+    
+    // Plant
+    doc.setTextColor(100, 100, 100);
+    doc.text("Plant Location:", rightColumnX, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text(formData.plant, rightColumnX + 40, y);
+    
+    // Department
+    y += 8;
+    doc.setTextColor(100, 100, 100);
+    doc.text("Department:", leftColumnX, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text(formData.department, leftColumnX + 40, y);
+    
+    // Current Status
+    doc.setTextColor(100, 100, 100);
+    doc.text("Current Status:", rightColumnX, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Pending Approval", rightColumnX + 40, y);
+    
+    // Designation if available
+    if (formData.designation) {
+      y += 8;
+      doc.setTextColor(100, 100, 100);
+      doc.text("Designation:", leftColumnX, y);
+      doc.setTextColor(0, 0, 0);
+      doc.text(formData.designation, leftColumnX + 40, y);
+    }
+    
+    // Asset Summary
+    y += 15;
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Asset Summary", 14, y);
+    
+    y += 10;
+  
+    if (formData.assets.length > 0) {
+      const tableColumn = ["Asset", "Description", "Qty", "Unit Price", "Total"];
+      const tableRows = formData.assets.map(asset => [
+        asset.title,
+        asset.description || "-",
+        asset.quantity.toString(),
+        formatCurrency(Number(asset.pricePerUnit)).replace("₹", "INR "),
+        formatCurrency(Number(asset.total)).replace("₹", "INR ")
+      ]);
+      
+      autoTable(doc, {
+        head: [tableColumn],
+        body: tableRows,
+        startY: y,
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [0, 102, 51] },
+        footStyles: { fillColor: [240, 248, 240] },
+        foot: [['', '', '', 'Total Amount:', formatCurrency(Number(formData.assetAmount)).replace("₹", "INR ")]],
+      });
+      
+      y = (doc as any).lastAutoTable.finalY + 15;
+    } else {
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text("No assets requested", 14, y);
+      y += 10;
+    }
+    
+    // Request Reason
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Request Justification", 14, y);
+    
+    y += 8;
+    doc.setFontSize(10);
+    doc.setTextColor(50, 50, 50);
+    
+    // Handle multiline text for reason
+    const splitReason = doc.splitTextToSize(formData.reason, 180);
+    doc.text(splitReason, 14, y);
+    
+    y += splitReason.length * 5 + 10;
+    
+    // Benefits to Organization
+    if (formData.benefitToOrg) {
+      if (y > 240) {
+        doc.addPage();
+        y = 20;
+      }
+      
+      doc.setFontSize(14);
+      doc.setTextColor(0, 0, 0);
+      doc.text("Benefits to Organization", 14, y);
+      
+      y += 8;
+      doc.setFontSize(10);
+      doc.setTextColor(50, 50, 50);
+      
+      const splitBenefits = doc.splitTextToSize(formData.benefitToOrg, 180);
+      doc.text(splitBenefits, 14, y);
+      
+      y += splitBenefits.length * 5 + 10;
+    }
+    
+    // Estimated Timeline
+    if (y > 240) {
+      doc.addPage();
+      y = 20;
+    }
+    
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text("Estimated Timeline", 14, y);
+    
+    y += 8;
+    doc.setFontSize(10);
+    
+    doc.setTextColor(100, 100, 100);
+    doc.text("Current Status:", leftColumnX, y);
+    doc.setTextColor(0, 102, 204);
+    doc.text("Pending Approval", leftColumnX + 40, y);
+    
+    y += 8;
+    doc.setTextColor(100, 100, 100);
+    doc.text("Management Approval:", leftColumnX, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Expected by ${timeline.approval}`, leftColumnX + 40, y);
+    
+    y += 8;
+    doc.setTextColor(100, 100, 100);
+    doc.text("Processing & Procurement:", leftColumnX, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Expected by ${timeline.processing}`, leftColumnX + 40, y);
+    
+    y += 8;
+    doc.setTextColor(100, 100, 100);
+    doc.text("Delivery & Handover:", leftColumnX, y);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Expected by ${timeline.delivery}`, leftColumnX + 40, y);
+    
+    // Important Note
+    y += 15;
+    doc.setFillColor(255, 250, 230);
+    doc.rect(14, y, 182, 25, 'F');
+    
+    y += 5;
+    doc.setFontSize(10);
+    doc.setTextColor(153, 102, 0);
+    doc.text("Important Information:", 18, y);
+    
+    y += 5;
+    doc.setFontSize(9);
+    doc.text("This asset request will be reviewed by your department head and the procurement team.", 18, y);
+    y += 5;
+    doc.text("You will receive notifications about any status changes to your request.", 18, y);
+    y += 5;
+    doc.text("For inquiries, please reference your request number when contacting the IT department.", 18, y);
+    
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(150, 150, 150);
+      doc.text(`Page ${i} of ${pageCount}`, 196, 287, { align: 'right' });
+      doc.text(`Generated on ${format(new Date(), "MMMM dd, yyyy")}`, 14, 287);
+      doc.text("Asset Management System", 105, 287, { align: 'center' });
+    }
+    
+    // Save the PDF
+    doc.save(`Asset_Request_${requestId}.pdf`);
   };
 
   // Render form step content
@@ -472,306 +746,98 @@ export default function AssetRequestForm() {
       />
   
       {isSubmitted ? (
-        <div className="flex flex-col items-center justify-center max-w-4xl mx-auto p-6 rounded-xl bg-gradient-to-b from-white to-green-50 dark:from-gray-800 dark:to-green-900/40 shadow-lg border border-green-100 dark:border-green-900/50">
-          <div className="relative mb-8">
-            <div className="absolute inset-0 bg-green-400/20 dark:bg-green-500/10 rounded-full animate-ping opacity-75"></div>
-            <div className="relative flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-800/40 dark:to-green-700/40 rounded-full shadow-inner">
-              <Check
-                className="h-12 w-12 text-green-600 dark:text-green-400"
-                strokeWidth={3}
-              />
-            </div>
-          </div>
-
-          <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white text-center">
-            Asset Request Submitted
-          </h2>
-
-          <div className="flex items-center mb-6 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
-            <FileCheck className="h-5 w-5 mr-2 text-green-600 dark:text-green-400" />
-            <p className="text-sm font-medium text-green-800 dark:text-green-300">
-              Request #{requestId}
-            </p>
-          </div>
-
-          {/* Submission Details Card */}
-          <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
-              Submission Details
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Submitted By
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.employeeName}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Employee Code
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.employeeCode}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Department
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.department}
-                  </p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Submission Date
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {format(new Date(), "MMMM dd, yyyy")}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Plant Location
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.plant}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Designation
-                  </p>
-                  <p className="font-medium text-gray-900 dark:text-white">
-                    {formData.designation}
-                  </p>
-                </div>
+          <div className="flex flex-col items-center justify-center max-w-4xl mx-auto p-6 rounded-xl bg-gradient-to-b from-white to-green-50 dark:from-gray-800 dark:to-green-900/40 shadow-lg border border-green-100 dark:border-green-900/50">
+            <div className="relative mb-8">
+              <div className="absolute inset-0 bg-green-400/20 dark:bg-green-500/10 rounded-full animate-ping opacity-75"></div>
+              <div className="relative flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-800/40 dark:to-green-700/40 rounded-full shadow-inner">
+                <Check
+                  className="h-12 w-12 text-green-600 dark:text-green-400"
+                  strokeWidth={3}
+                />
               </div>
             </div>
-
-            {/* Assets Summary */}
-            <div className="mt-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-3">
-                Asset Summary
-              </h4>
-
-              {formData.assets.length > 0 ? (
-                <div className="border rounded-lg overflow-hidden">
-                  <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-                    <thead className="bg-gray-50 dark:bg-gray-800">
-                      <tr>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Asset
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Description
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Qty
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Unit Price
-                        </th>
-                        <th
-                          scope="col"
-                          className="px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
-                        >
-                          Total
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                      {formData.assets.map((asset, index) => (
-                        <tr
-                          key={index}
-                          className={
-                            index % 2 === 0
-                              ? "bg-white dark:bg-gray-800"
-                              : "bg-gray-50 dark:bg-gray-700"
-                          }
-                        >
-                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white">
-                            {asset.title}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400">
-                            {asset.description || "-"}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
-                            {asset.quantity}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-right">
-                            {formatCurrency(Number(asset.pricePerUnit))}
-                          </td>
-                          <td className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right font-medium">
-                            {formatCurrency(Number(asset.total))}
-                          </td>
-                        </tr>
-                      ))}
-                      <tr className="bg-blue-50 dark:bg-blue-900/20 font-medium">
-                        <td
-                          colSpan={4}
-                          className="px-4 py-3 text-sm text-gray-900 dark:text-white text-right"
-                        >
-                          Total Amount:
-                        </td>
-                        <td className="px-4 py-3 text-sm text-blue-700 dark:text-blue-400 text-right font-bold">
-                          {formatCurrency(Number(formData.assetAmount))}
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="text-gray-500 dark:text-gray-400">
-                  No assets requested
-                </p>
-              )}
-            </div>
-
-            {/* Request Reason */}
-            <div className="mt-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-2">
-                Request Reason
-              </h4>
-              <p className="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-800 p-3 rounded border border-gray-200 dark:border-gray-700">
-                {formData.reason}
+        
+            <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white text-center">
+              Asset Request Submitted Successfully
+            </h2>
+        
+            <div className="flex items-center mb-6 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
+              <FileCheck className="h-5 w-5 mr-2 text-green-600 dark:text-green-400" />
+              <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                Request #{requestId}
               </p>
             </div>
-
-            {/* Timeline */}
-            <div className="mt-6">
-              <h4 className="font-medium text-gray-900 dark:text-white mb-4">
-                Estimated Timeline
-              </h4>
-
-              <div className="relative">
-                {/* Timeline line */}
-                <div className="absolute left-8 top-0 h-full w-0.5 bg-gray-200 dark:bg-gray-700"></div>
-
-                {/* Current status */}
-                <div className="relative flex items-center mb-6">
-                  <div className="absolute left-8 -ml-3 h-6 w-6 rounded-full border-2 border-blue-500 bg-white dark:bg-gray-800 z-10"></div>
-                  <div className="absolute left-8 -ml-2.5 h-5 w-5 rounded-full bg-blue-500 animate-pulse z-20"></div>
-                  <div className="ml-12">
-                    <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
-                      Current Status
-                    </p>
-                    <div className="flex items-center mt-1 bg-blue-50 dark:bg-blue-900/20 px-3 py-1.5 rounded">
-                      <div className="h-2 w-2 rounded-full bg-blue-500 mr-2"></div>
-                      <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Pending Approval
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Upcoming stages */}
-                <div className="relative flex items-center mb-6">
-                  <div className="absolute left-8 -ml-2.5 h-5 w-5 rounded-full bg-gray-300 dark:bg-gray-600 z-10"></div>
-                  <div className="ml-12">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      Management Approval
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Expected by {timeline.approval}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative flex items-center mb-6">
-                  <div className="absolute left-8 -ml-2.5 h-5 w-5 rounded-full bg-gray-300 dark:bg-gray-600 z-10"></div>
-                  <div className="ml-12">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      Processing & Procurement
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Expected by {timeline.processing}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="relative flex items-center">
-                  <div className="absolute left-8 -ml-2.5 h-5 w-5 rounded-full bg-gray-300 dark:bg-gray-600 z-10"></div>
-                  <div className="ml-12">
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-300">
-                      Delivery & Handover
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      Expected by {timeline.delivery}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Request Note */}
-            <div className="mt-8 p-4 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-              <div className="flex">
-                <AlertCircle className="h-5 w-5 mr-3 mt-0.5 flex-shrink-0 text-yellow-500 dark:text-yellow-400" />
+        
+            <p className="text-gray-600 dark:text-gray-300 mb-8 text-center max-w-2xl">
+              Thank you for submitting your asset request. The request has been
+              logged in our system and is now pending approval. You can track the
+              status of your request using the reference number above.
+            </p>
+        
+            {/* Simple request summary card */}
+            <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-100 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
+                Request Overview
+              </h3>
+        
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
-                  <p className="text-sm font-medium text-yellow-800 dark:text-yellow-400">
-                    Important Note
-                  </p>
-                  <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
-                    Your asset request will be reviewed by your department head
-                    and the procurement team. You'll receive email notifications
-                    about the status updates.
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Requestor</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{formData.employeeName}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Department</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{formData.department}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Submission Date</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{format(new Date(), "MMMM dd, yyyy")}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Total Request Value</p>
+                  <p className="font-medium text-gray-900 dark:text-white">{formatCurrency(Number(formData.assetAmount))}</p>
+                </div>
+              </div>
+        
+              <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-4">
+                <div className="flex items-center">
+                  <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
+                  <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                    Estimated Completion: {timeline.delivery}
                   </p>
                 </div>
               </div>
+        
+              <Button 
+                onClick={generatePDF} 
+                className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                View Complete Summary (PDF)
+              </Button>
+            </div>
+        
+            <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-xl">
+              <Button
+                onClick={resetForm}
+                className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md transition-all duration-200 flex items-center justify-center"
+              >
+                <FileCheck className="h-4 w-4 mr-2" />
+                Submit Another Request
+              </Button>
+        
+              <Link href="/dashboard">
+                <Button
+                  variant="outline"
+                  className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 flex items-center justify-center"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </Link>
             </div>
           </div>
-
-          <p className="text-gray-600 dark:text-gray-300 mb-8 text-center max-w-2xl">
-            Thank you for submitting your asset request. The request has been
-            logged in our system and is now pending approval. You can track the
-            status of your request using the reference number above.
-          </p>
-
-          <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-xl">
-            <Button
-              onClick={resetForm}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md transition-all duration-200 flex items-center justify-center"
-            >
-              <FileCheck className="h-4 w-4 mr-2" />
-              Submit Another Request
-            </Button>
-
-            <Link href="/dashboard">
-              <Button
-                variant="outline"
-                className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 flex items-center justify-center"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
-        </div>
-      ) : (
+        ) : (
         <div className="mt-4">
           <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6">
             <div>
