@@ -1,5 +1,5 @@
 "use client";
-import React, { useContext } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -40,6 +40,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { GFContext } from "@/context/AuthContext";
+import useAxios from "@/app/hooks/use-axios";
 
 const DashboardItems = [
   {
@@ -62,7 +63,15 @@ const ApprovalItems = [
   },
   {
     title: "My Requests",
-    url: "/dashboard/my-requests",
+    url: "/dashboard/requests",
+    icon: FileCheck,
+  },
+];
+
+const RequestItems = [
+  {
+    title: "My Requests",
+    url: "/dashboard/requests",
     icon: FileCheck,
   },
 ];
@@ -87,6 +96,34 @@ const AppSidebar = () => {
   const pathname = usePathname();
   const [approvalOpen, setApprovalOpen] = React.useState(false);
   const { userInfo } = useContext(GFContext);
+  const api = useAxios();
+  const [designation, setDesignation] = useState<string | null>(null);
+
+  const fetchedRef = React.useRef<string | null>(null);
+
+  useEffect(() => {
+    // Only fetch if userInfo exists and has a designation
+    if (userInfo && userInfo.designation) {
+      // Only fetch if we haven't already fetched this designation
+      if (fetchedRef.current !== userInfo.designation) {
+        const fetchDesignation = async () => {
+          try {
+            const response = await api.get(
+              `/designations/${userInfo.designation}/`
+            );
+            setDesignation(response.data.level);
+            fetchedRef.current = userInfo.designation;
+          } catch (error) {
+            console.error("Error fetching designation:", error);
+          }
+        };
+
+        fetchDesignation();
+      }
+    }
+  }, [userInfo]);
+
+  console.log("designation", userInfo);
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
@@ -237,6 +274,56 @@ const AppSidebar = () => {
             </SidebarGroupContent>
           </SidebarGroup>
         </div>
+
+        {/* Request Section with Dropdown */}
+        {designation && parseInt(designation) === 1 && (
+          <div className="mt-5">
+            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
+              Requests
+            </h3>
+
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {RequestItems.map((item, index) => {
+                    const isActive = pathname === item.url;
+                    return (
+                      <SidebarMenuItem key={index} className="mb-1">
+                        <SidebarMenuButton asChild>
+                          <Link
+                            href={item.url}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 ${
+                              isActive
+                                ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200"
+                                : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
+                            }`}
+                          >
+                            <item.icon
+                              className={`h-4 w-4 ${
+                                isActive
+                                  ? "text-gray-700 dark:text-gray-200"
+                                  : "text-gray-500 dark:text-gray-400"
+                              }`}
+                            />
+                            <span
+                              className={`${
+                                isActive
+                                  ? "text-gray-700 dark:text-gray-200"
+                                  : "text-gray-500 dark:text-gray-400 transition-all duration-200"
+                              }`}
+                            >
+                              {item.title}
+                            </span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
+        )}
 
         {userInfo?.is_staff && (
           <div className="mt-5">

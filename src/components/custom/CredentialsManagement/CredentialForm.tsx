@@ -19,32 +19,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Credential, CredentialFormData, CredentialFormProps, Designation, BusinessUnit } from "./types";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "@/lib/toast-util";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import useAxios from "@/app/hooks/use-axios";
+import { toast } from "@/lib/toast-util";
+import { CredentialFormData, CredentialFormProps, Department, Designation, BusinessUnit, FormFieldProps } from "./types";
 
-const FormField = memo(({ 
-  label, 
-  name, 
-  value, 
-  onChange, 
-  type = "text", 
-  placeholder = "", 
+
+
+const FormField = memo(({
+  label,
+  name,
+  value,
+  onChange,
+  type = "text",
+  placeholder = "",
   required = false,
-  helperText = ""
-}: {
-  label: string;
-  name: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  type?: string;
-  placeholder?: string;
-  required?: boolean;
-  helperText?: string;
-}) => {
+  helperText = "",
+  disabled = false,
+}: FormFieldProps) => {
   return (
     <div className="space-y-2">
       <Label htmlFor={name} className="text-sm font-medium">
@@ -59,22 +53,18 @@ const FormField = memo(({
         placeholder={placeholder}
         className="w-full"
         required={required}
+        disabled={disabled}
       />
-      {helperText && <div className="text-xs text-gray-500">{helperText}</div>}
+      {helperText && (
+        <div className="text-xs text-gray-500">{helperText}</div>
+      )}
     </div>
   );
 });
 FormField.displayName = "FormField";
 
-const SelectField = memo(({ 
-  label, 
-  name, 
-  value, 
-  onChange, 
-  options, 
-  placeholder = "", 
-  required = false 
-}: {
+// Select field component
+interface SelectFieldProps {
   label: string;
   name: string;
   value: string | number;
@@ -82,25 +72,44 @@ const SelectField = memo(({
   options: Array<{ id: string | number; name: string }>;
   placeholder?: string;
   required?: boolean;
-}) => {
+  disabled?: boolean;
+}
+
+const SelectField = memo(({
+  label,
+  name,
+  value,
+  onChange,
+  options,
+  placeholder = "",
+  required = false,
+  disabled = false,
+}: SelectFieldProps) => {
   return (
     <div className="space-y-2">
       <Label htmlFor={name} className="text-sm font-medium">
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
       <Select
-        value={value ? value.toString() : ""}
+        value={value ? value.toString() : undefined}
         onValueChange={(value) => onChange(name, value)}
+        disabled={disabled}
       >
         <SelectTrigger className="w-full">
           <SelectValue placeholder={placeholder} />
         </SelectTrigger>
         <SelectContent>
-          {options.filter(option => option.name && option.name.trim() !== "").map((option) => (
-            <SelectItem key={option.id.toString()} value={option.id.toString()}>
-              {option.name}
-            </SelectItem>
-          ))}
+          <SelectItem value="placeholder">Select...</SelectItem>
+          {options
+            .filter((option) => option.name && option.name.trim() !== "")
+            .map((option) => (
+              <SelectItem
+                key={option.id.toString()}
+                value={option.id.toString()}
+              >
+                {option.name}
+              </SelectItem>
+            ))}
         </SelectContent>
       </Select>
     </div>
@@ -108,14 +117,158 @@ const SelectField = memo(({
 });
 SelectField.displayName = "SelectField";
 
+// Cascading dropdown component
+interface CascadingDropdownProps {
+  businessUnits: BusinessUnit[];
+  departments: Department[];
+  designations: Designation[];
+  selectedBusinessUnit: number | null;
+  selectedDepartment: number | null;
+  selectedDesignation: number | null;
+  onBusinessUnitChange: (value: number | null) => void;
+  onDepartmentChange: (value: number | null) => void;
+  onDesignationChange: (value: number | null) => void;
+  isLoading: boolean;
+}
+
+const CascadingDropdowns = memo(({
+  businessUnits,
+  departments,
+  designations,
+  selectedBusinessUnit,
+  selectedDepartment,
+  selectedDesignation,
+  onBusinessUnitChange,
+  onDepartmentChange,
+  onDesignationChange,
+  isLoading,
+}: CascadingDropdownProps) => {
+  // Filter departments based on selected business unit
+  const filteredDepartments = useMemo(() => {
+    if (!selectedBusinessUnit) return [];
+    return departments.filter(
+      (dept) => dept.business_unit === selectedBusinessUnit
+    );
+  }, [departments, selectedBusinessUnit]);
+
+  // Filter designations based on selected department
+  const filteredDesignations = useMemo(() => {
+    if (!selectedDepartment) return [];
+    return designations.filter(
+      (desig) => desig.department === selectedDepartment
+    );
+  }, [designations, selectedDepartment]);
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="space-y-2">
+        <Label htmlFor="business_unit" className="text-sm font-medium">
+          Business Unit / Plant
+        </Label>
+        <Select
+          value={selectedBusinessUnit ? selectedBusinessUnit.toString() : undefined}
+          onValueChange={(value) => {
+            onBusinessUnitChange(value ? parseInt(value, 10) : null);
+            // Reset department and designation when business unit changes
+            onDepartmentChange(null);
+            onDesignationChange(null);
+          }}
+          disabled={isLoading}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Select Business Unit" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="placeholder">Select...</SelectItem>
+            {businessUnits.map((bu) => (
+              <SelectItem key={bu.id.toString()} value={bu.id.toString()}>
+                {bu.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="department" className="text-sm font-medium">
+          Department
+        </Label>
+        <Select
+          value={selectedDepartment ? selectedDepartment.toString() : undefined}
+          onValueChange={(value) => {
+            onDepartmentChange(value ? parseInt(value, 10) : null);
+            // Reset designation when department changes
+            onDesignationChange(null);
+          }}
+          disabled={!selectedBusinessUnit || isLoading}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue
+              placeholder={
+                selectedBusinessUnit
+                  ? "Select Department"
+                  : "Select Business Unit first"
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="placeholder">Select...</SelectItem>
+            {filteredDepartments.map((dept) => (
+              <SelectItem key={dept.id.toString()} value={dept.id.toString()}>
+                {dept.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="designation" className="text-sm font-medium">
+          Designation
+        </Label>
+        <Select
+          value={selectedDesignation ? selectedDesignation.toString() : undefined}
+          onValueChange={(value) =>
+            onDesignationChange(value ? parseInt(value, 10) : null)
+          }
+          disabled={!selectedDepartment || isLoading}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue
+              placeholder={
+                selectedDepartment
+                  ? "Select Designation"
+                  : "Select Department first"
+              }
+            />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="placeholder">Select...</SelectItem>
+            {filteredDesignations.map((desig) => (
+              <SelectItem
+                key={desig.id.toString()}
+                value={desig.id.toString()}
+              >
+                {desig.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    </div>
+  );
+});
+CascadingDropdowns.displayName = "CascadingDropdowns";
+
 function CredentialFormContent({
   isOpen,
   onClose,
   selectedUser,
   onSubmit,
-  departments,
+  departments = [],
   businessUnits = [],
   designations = [],
+  isLoading = false,
 }: CredentialFormProps) {
   // Internal form state management aligned with API response
   const [formData, setFormData] = useState<CredentialFormData>({
@@ -137,77 +290,79 @@ function CredentialFormContent({
     last_name: "",
     is_active: true,
     is_staff: false,
-    is_superuser: false
+    is_superuser: false,
   });
 
-  const [activeTab, setActiveTab] = useState("basic");
+  const [activeTab, setActiveTab] = useState<"basic" | "contact">("basic");
   const [loadedDesignations, setLoadedDesignations] = useState<Designation[]>([]);
   const [loadedBusinessUnits, setLoadedBusinessUnits] = useState<BusinessUnit[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loadedDepartments, setLoadedDepartments] = useState<Department[]>([]);
+  const [formLoading, setFormLoading] = useState(true);
   const api = useAxios();
 
-  // Fetch designations and business units
+  // Fetch master data if not provided in props
   useEffect(() => {
     const fetchData = async () => {
-      setIsLoading(true);
+      setFormLoading(true);
       try {
-        // Use existing designations and businessUnits if provided as props
+        // Use existing data if provided as props
         if (designations.length > 0) {
           setLoadedDesignations(designations);
         } else {
-          const res = await api.get('designations/');
-          console.log(res.data)
-          setLoadedDesignations(res.data)
+          const res = await api.get("/designations/");
+          setLoadedDesignations(res.data);
         }
 
         if (businessUnits.length > 0) {
           setLoadedBusinessUnits(businessUnits);
         } else {
-          const res = await api.get('business-units/');
-          console.log(res.data)
-          setLoadedBusinessUnits(res.data)
+          const res = await api.get("/business-units/");
+          setLoadedBusinessUnits(res.data);
+        }
+
+        if (departments.length > 0) {
+          setLoadedDepartments(departments);
+        } else {
+          const res = await api.get("/departments/");
+          setLoadedDepartments(res.data);
         }
       } catch (error) {
         console.error("Error fetching form data:", error);
         toast.error("Failed to load form data. Please try again.");
       } finally {
-        setIsLoading(false);
+        setFormLoading(false);
       }
     };
 
     if (isOpen) {
       fetchData();
     }
-  }, [isOpen, designations, businessUnits]);
+  }, [isOpen, designations, businessUnits, departments, api]);
 
   // Initialize form data when selectedUser changes or component mounts
   useEffect(() => {
     if (selectedUser) {
-      // Combine first_name and last_name into name for UI display
-      const combinedName = [selectedUser.first_name, selectedUser.last_name]
-        .filter(Boolean)
-        .join(" ");
-        
       setFormData({
         username: selectedUser.username || "",
         email: selectedUser.email || "",
-        name: combinedName || selectedUser.name || "",
-        employee_code: selectedUser.employee_code,
+        name: selectedUser.name || "",
+        employee_code: selectedUser.employee_code || "",
         department: selectedUser.department,
         designation: selectedUser.designation,
         business_unit: selectedUser.business_unit,
         status: selectedUser.status !== undefined ? selectedUser.status : true,
-        dob: selectedUser.dob,
-        address: selectedUser.address,
-        contact: selectedUser.contact,
-        city: selectedUser.city,
-        state: selectedUser.state,
-        country: selectedUser.country,
+        dob: selectedUser.dob || null,
+        address: selectedUser.address || null,
+        contact: selectedUser.contact || null,
+        city: selectedUser.city || null,
+        state: selectedUser.state || null,
+        country: selectedUser.country || null,
         first_name: selectedUser.first_name || "",
         last_name: selectedUser.last_name || "",
-        is_active: selectedUser.is_active !== undefined ? selectedUser.is_active : true,
+        is_active:
+          selectedUser.is_active !== undefined ? selectedUser.is_active : true,
         is_staff: selectedUser.is_staff || false,
-        is_superuser: selectedUser.is_superuser || false
+        is_superuser: selectedUser.is_superuser || false,
       });
     } else {
       // Reset form when adding a new user
@@ -230,59 +385,98 @@ function CredentialFormContent({
         last_name: "",
         is_active: true,
         is_staff: false,
-        is_superuser: false
+        is_superuser: false,
       });
     }
   }, [selectedUser, isOpen]);
 
-  // Handle input changes including special handling for the name field
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    
-    if (name === 'name') {
-      // When name changes, split it into first_name and last_name
-      const nameParts = value.trim().split(/\s+/);
-      const firstName = nameParts[0] || '';
-      const lastName = nameParts.slice(1).join(' ');
-      
-      setFormData(prev => ({
-        ...prev,
-        name: value,
-        first_name: firstName,
-        last_name: lastName
-      }));
-    } else {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value,
-      }));
-    }
+  // For handling individual entity selection
+  const handleBusinessUnitChange = useCallback((value: number | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      business_unit: value,
+      // Reset dependent fields
+      department: null,
+      designation: null,
+    }));
   }, []);
 
+  const handleDepartmentChange = useCallback((value: number | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      department: value,
+      // Reset dependent field
+      designation: null,
+    }));
+  }, []);
+
+  const handleDesignationChange = useCallback((value: number | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      designation: value,
+    }));
+  }, []);
+
+  // Handle input changes including special handling for the name field
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+
+      if (name === "name") {
+        // When name changes, split it into first_name and last_name
+        const nameParts = value.trim().split(/\s+/);
+        const firstName = nameParts[0] || "";
+        const lastName = nameParts.slice(1).join(" ");
+
+        setFormData((prev) => ({
+          ...prev,
+          name: value,
+          first_name: firstName,
+          last_name: lastName,
+        }));
+      } else {
+        setFormData((prev) => ({
+          ...prev,
+          [name]: value,
+        }));
+      }
+    },
+    []
+  );
+
   const handleSelectChange = useCallback((name: string, value: string) => {
-    // Convert string value to number for IDs
-    const processedValue = name === 'designation' || name === 'business_unit' 
-      ? parseInt(value, 10)
+    // If user selects the placeholder, treat it as null
+    if (value === "placeholder") {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: null,
+      }));
+      return;
+    }
+    
+    // Convert string value to number for IDs, or keep as null if empty
+    const processedValue = ["designation", "business_unit", "department"].includes(name)
+      ? value ? parseInt(value, 10) : null
       : value;
-      
-    setFormData(prev => ({
+  
+    setFormData((prev) => ({
       ...prev,
       [name]: processedValue,
     }));
   }, []);
 
   const handleSwitchChange = useCallback((name: string, checked: boolean) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: checked,
     }));
   }, []);
 
-  const isValidEmail = useCallback((email: string) => {
+  const isValidEmail = useCallback((email: string): boolean => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   }, []);
 
-  const validateForm = useCallback(() => {
+  const validateForm = useCallback((): boolean => {
     // Basic info validation
     if (!formData.email) {
       toast.error("Please provide an email address");
@@ -309,259 +503,293 @@ function CredentialFormContent({
     return true;
   }, [formData, isValidEmail]);
 
-  const handleSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateForm()) return;
+  const handleSubmit = useCallback(
+    (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!validateForm()) return;
 
-    // Set username to email if not provided
-    const dataForSubmit = {
-      ...formData,
-      username: formData.username || formData.email
-    };
-    
-    onSubmit(dataForSubmit);
-  }, [validateForm, onSubmit, formData]);
+      // Set username to email if not provided
+      const dataForSubmit = {
+        ...formData,
+        username: formData.username || formData.email,
+      };
+
+      onSubmit(dataForSubmit);
+    },
+    [validateForm, onSubmit, formData]
+  );
 
   const handleTabChange = useCallback((value: string) => {
-    setActiveTab(value);
+    setActiveTab(value as "basic" | "contact");
   }, []);
 
-  const navigateTab = useCallback((direction: 'next' | 'prev') => {
-    const tabs = ["basic", "contact"];
-    const currentIndex = tabs.indexOf(activeTab);
-    const newIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
-    if (newIndex >= 0 && newIndex < tabs.length) {
-      setActiveTab(tabs[newIndex]);
-    }
-  }, [activeTab]);
+  const navigateTab = useCallback(
+    (direction: "next" | "prev") => {
+      const tabs: ["basic", "contact"] = ["basic", "contact"];
+      const currentIndex = tabs.indexOf(activeTab);
+      const newIndex =
+        direction === "next" ? currentIndex + 1 : currentIndex - 1;
+      if (newIndex >= 0 && newIndex < tabs.length) {
+        setActiveTab(tabs[newIndex]);
+      }
+    },
+    [activeTab]
+  );
 
-  const basicTabContent = useMemo(() => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <FormField
-        label="Email Address"
-        name="email"
-        value={formData.email}
-        type="email"
-        onChange={handleInputChange}
-        placeholder="john.doe@company.com"
-        required
-      />
+  const basicTabContent = useMemo(
+    () => (
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          label="Email Address"
+          name="email"
+          value={formData.email}
+          type="email"
+          onChange={handleInputChange}
+          placeholder="john.doe@company.com"
+          required
+          disabled={isLoading || formLoading}
+        />
 
-      <FormField
-        label="Username"
-        name="username"
-        value={formData.username}
-        onChange={handleInputChange}
-        placeholder="Same as email if left empty"
-      />
+        <FormField
+          label="Username"
+          name="username"
+          value={formData.username}
+          onChange={handleInputChange}
+          placeholder="Same as email if left empty"
+          disabled={isLoading || formLoading}
+        />
 
-      {/* Replaced first_name and last_name fields with a single name field */}
-      <FormField
-        label="Full Name"
-        name="name"
-        value={formData.name}
-        onChange={handleInputChange}
-        placeholder="John Doe"
-        required
-      />
+        <FormField
+          label="Full Name"
+          name="name"
+          value={formData.name}
+          onChange={handleInputChange}
+          placeholder="John Doe"
+          required
+          disabled={isLoading || formLoading}
+        />
 
-      <FormField
-        label="Employee Code"
-        name="employee_code"
-        value={formData.employee_code || ""}
-        onChange={handleInputChange}
-        placeholder="EMP-12345"
-        helperText="Format: EMP-#####"
-      />
+        <FormField
+          label="Employee Code"
+          name="employee_code"
+          value={formData.employee_code || ""}
+          onChange={handleInputChange}
+          placeholder="EMP-12345"
+          helperText="Format: EMP-#####"
+          disabled={isLoading || formLoading}
+        />
 
-      <FormField
-        label="Date of Birth"
-        name="dob"
-        type="date"
-        value={formData.dob || ""}
-        onChange={handleInputChange}
-      />
+        <FormField
+          label="Date of Birth"
+          name="dob"
+          type="date"
+          value={formData.dob || ""}
+          onChange={handleInputChange}
+          disabled={isLoading || formLoading}
+        />
 
-      <div className="col-span-1">
-        <div className="flex items-center space-x-2">
-          <Switch 
-            id="is_active" 
-            checked={formData.is_active} 
-            onCheckedChange={(checked) => handleSwitchChange('is_active', checked)} 
-          />
-          <Label htmlFor="is_active">Account Active</Label>
+        <div className="col-span-1">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_active"
+              checked={formData.is_active}
+              onCheckedChange={(checked) =>
+                handleSwitchChange("is_active", checked)
+              }
+              disabled={isLoading || formLoading}
+            />
+            <Label htmlFor="is_active">Account Active</Label>
+          </div>
+        </div>
+
+        <div className="col-span-1">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_staff"
+              checked={formData.is_staff}
+              onCheckedChange={(checked) =>
+                handleSwitchChange("is_staff", checked)
+              }
+              disabled={isLoading || formLoading}
+            />
+            <Label htmlFor="is_staff">Staff Account</Label>
+          </div>
+        </div>
+
+        <div className="col-span-1">
+          <div className="flex items-center space-x-2">
+            <Switch
+              id="is_superuser"
+              checked={formData.is_superuser}
+              onCheckedChange={(checked) =>
+                handleSwitchChange("is_superuser", checked)
+              }
+              disabled={isLoading || formLoading}
+            />
+            <Label htmlFor="is_superuser">Admin Account</Label>
+          </div>
         </div>
       </div>
+    ),
+    [formData, handleInputChange, handleSwitchChange, isLoading, formLoading]
+  );
 
-      <div className="col-span-1">
-        <div className="flex items-center space-x-2">
-          <Switch 
-            id="is_staff" 
-            checked={formData.is_staff} 
-            onCheckedChange={(checked) => handleSwitchChange('is_staff', checked)} 
+  const contactTabContent = useMemo(
+    () => (
+      <>
+        <div className="mb-6">
+          <CascadingDropdowns
+            businessUnits={loadedBusinessUnits}
+            departments={loadedDepartments}
+            designations={loadedDesignations}
+            selectedBusinessUnit={formData.business_unit}
+            selectedDepartment={formData.department}
+            selectedDesignation={formData.designation}
+            onBusinessUnitChange={handleBusinessUnitChange}
+            onDepartmentChange={handleDepartmentChange}
+            onDesignationChange={handleDesignationChange}
+            isLoading={isLoading || formLoading}
           />
-          <Label htmlFor="is_staff">Staff Account</Label>
         </div>
-      </div>
-    </div>
-  ), [formData, handleInputChange, handleSwitchChange]);
 
-  const contactTabContent = useMemo(() => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <FormField
-        label="Contact Number"
-        name="contact"
-        value={formData.contact || ""}
-        onChange={handleInputChange}
-        placeholder="+91 9876543210"
-      />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            label="Contact Number"
+            name="contact"
+            value={formData.contact || ""}
+            onChange={handleInputChange}
+            placeholder="+1 123-456-7890"
+            disabled={isLoading || formLoading}
+          />
 
-      <FormField
-        label="Department"
-        name="department"
-        value={formData.department || ""}
-        onChange={handleInputChange}
-        placeholder="e.g. IT, HR, Finance"
-      />
+          <div className="space-y-2">
+            <Label htmlFor="address" className="text-sm font-medium">
+              Address
+            </Label>
+            <Textarea
+              id="address"
+              name="address"
+              value={formData.address || ""}
+              onChange={handleInputChange}
+              placeholder="Street address"
+              className="w-full"
+              disabled={isLoading || formLoading}
+            />
+          </div>
 
-      <SelectField
-        label="Business Unit"
-        name="business_unit"
-        value={formData.business_unit || ""}
-        onChange={handleSelectChange}
-        options={loadedBusinessUnits}
-        placeholder="Select Business Unit"
-      />
+          <FormField
+            label="City"
+            name="city"
+            value={formData.city || ""}
+            onChange={handleInputChange}
+            disabled={isLoading || formLoading}
+          />
 
-      <SelectField
-        label="Designation"
-        name="designation"
-        value={formData.designation || ""}
-        onChange={handleSelectChange}
-        options={loadedDesignations}
-        placeholder="Select Designation"
-      />
+          <FormField
+            label="State/Province"
+            name="state"
+            value={formData.state || ""}
+            onChange={handleInputChange}
+            disabled={isLoading || formLoading}
+          />
 
-      <div className="col-span-2">
-        <FormField
-          label="Address"
-          name="address"
-          value={formData.address || ""}
-          onChange={handleInputChange}
-          placeholder="123 Main St"
-        />
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <FormField
-          label="City"
-          name="city"
-          value={formData.city || ""}
-          onChange={handleInputChange}
-          placeholder="Mumbai"
-        />
-
-        <FormField
-          label="State"
-          name="state"
-          value={formData.state || ""}
-          onChange={handleInputChange}
-          placeholder="Maharashtra"
-        />
-      </div>
-
-      <FormField
-        label="Country"
-        name="country"
-        value={formData.country || ""}
-        onChange={handleInputChange}
-        placeholder="India"
-      />
-    </div>
-  ), [formData, handleInputChange, handleSelectChange, loadedBusinessUnits, loadedDesignations]);
+          <FormField
+            label="Country"
+            name="country"
+            value={formData.country || ""}
+            onChange={handleInputChange}
+            disabled={isLoading || formLoading}
+          />
+        </div>
+      </>
+    ),
+    [
+      formData,
+      handleInputChange,
+      loadedBusinessUnits,
+      loadedDepartments,
+      loadedDesignations,
+      handleBusinessUnitChange,
+      handleDepartmentChange,
+      handleDesignationChange,
+      isLoading,
+      formLoading,
+    ]
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold">
-            {selectedUser ? "Edit Employee" : "Add New Employee"}
-          </DialogTitle>
-          <DialogDescription className="text-muted-foreground">
+          <DialogTitle>
             {selectedUser
-              ? "Update the employee details below. Click save when you're done."
-              : "Fill in the employee details below. Required fields are marked with an asterisk (*)."}
+              ? `Edit User: ${formData.name || formData.email}`
+              : "Add New User"}
+          </DialogTitle>
+          <DialogDescription>
+            {selectedUser
+              ? "Update user information in the system."
+              : "Create a new user account in the system."}
           </DialogDescription>
         </DialogHeader>
 
-        {isLoading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <div className="space-y-6 py-4">
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-              <TabsList className="grid grid-cols-2 mb-6">
-                <TabsTrigger value="basic">Basic Info</TabsTrigger>
-                <TabsTrigger value="contact">Contact & Organization</TabsTrigger>
-              </TabsList>
+        <form onSubmit={handleSubmit}>
+          <Tabs
+            value={activeTab}
+            onValueChange={handleTabChange}
+            className="w-full"
+          >
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="basic">Basic Information</TabsTrigger>
+              <TabsTrigger value="contact">Organizational Details</TabsTrigger>
+            </TabsList>
 
-              <TabsContent value="basic" className="space-y-4">
-                {basicTabContent}
-              </TabsContent>
-
-              <TabsContent value="contact" className="space-y-4">
-                {contactTabContent}
-              </TabsContent>
-            </Tabs>
-
-            <DialogFooter className="flex justify-between w-full mt-6">
-              <div>
-                {activeTab !== "basic" && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => navigateTab('prev')}
-                  >
-                    Previous
-                  </Button>
-                )}
-              </div>
-              <div className="flex gap-2">
+            <TabsContent value="basic" className="mt-4">
+              {basicTabContent}
+              <div className="flex justify-end mt-6">
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={onClose}
+                  onClick={() => navigateTab("next")}
+                  disabled={isLoading || formLoading}
                 >
-                  Cancel
+                  Next
                 </Button>
-
-                {activeTab !== "contact" ? (
-                  <Button
-                    type="button"
-                    onClick={() => navigateTab('next')}
-                  >
-                    Next
-                  </Button>
-                ) : (
-                  <Button 
-                    type="button"
-                    onClick={(e) => handleSubmit(e as React.FormEvent)}
-                  >
-                    {selectedUser ? "Save Changes" : "Create Employee"}
-                  </Button>
-                )}
               </div>
-            </DialogFooter>
-          </div>
-        )}
+            </TabsContent>
+
+            <TabsContent value="contact" className="mt-4">
+              {contactTabContent}
+              <div className="flex justify-between mt-6">
+                <Button
+                  type="button"
+                  onClick={() => navigateTab("prev")}
+                  variant="outline"
+                  disabled={isLoading || formLoading}
+                >
+                  Previous
+                </Button>
+                <Button type="submit" disabled={isLoading || formLoading}>
+                  {selectedUser ? "Update User" : "Create User"}
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </form>
+
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={isLoading || formLoading}
+          >
+            Cancel
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
-CredentialFormContent.displayName = "CredentialFormContent";
 
-// Export as a regular function component
-export function CredentialForm(props: CredentialFormProps) {
+export default function CredentialForm(props: CredentialFormProps) {
   return <CredentialFormContent {...props} />;
 }

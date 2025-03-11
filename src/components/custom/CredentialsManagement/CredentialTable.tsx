@@ -10,8 +10,8 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
-import { Pencil, Trash2, KeyRound, Eye, MoreHorizontal, Building, User } from "lucide-react";
-import { Credential, CredentialTableProps, Designation, BusinessUnit } from "./types";
+import { Pencil, Trash2, KeyRound, Eye, MoreHorizontal, Building } from "lucide-react";
+import { Credential, CredentialTableProps } from "./types";
 import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
@@ -33,20 +33,29 @@ export function CredentialTable({
   onResetPassword,
   filter = {},
   designations = [],
-  businessUnits = []
+  departments = [],
+  businessUnits = [],
+  isLoading = false
 }: CredentialTableProps) {
   // Ensure credentials is an array
   const credentialsArray: Credential[] = Array.isArray(credentials) ? credentials : [];
-  console.log(credentialsArray)
 
   // Create lookup maps for designations and business units
   const designationMap = useMemo(() => {
     const map = new Map<number, string>();
     designations.forEach(designation => {
-      map.set(designation.id, designation.business_unit_name);
+      map.set(designation.id, designation.name); 
     });
     return map;
   }, [designations]);
+
+  const departmentMap = useMemo(() => {
+    const map = new Map<number, string>();
+    departments.forEach(department => {
+      map.set(department.id, department.name);
+    });
+    return map;
+  }, [departments]);
 
   const businessUnitMap = useMemo(() => {
     const map = new Map<number, string>();
@@ -66,19 +75,24 @@ export function CredentialTable({
     return businessUnitMap.get(id) || '-';
   };
 
+  const getDepartmentName = (id: number | null) => {
+    if (id === null) return '-';
+    return departmentMap.get(id) || '-';
+  };
+
   const filteredCredentials = credentialsArray.filter((cred) => {
     const searchValue = filter.searchValue?.toLowerCase() || "";
 
     // Handle department filter
     if (filter.department && filter.department !== "all" && 
-        cred.department?.toLowerCase() !== filter.department.toLowerCase()) {
+        cred.department?.toString() !== filter.department) {
       return false;
     }
     
     // Handle business unit filter (now comparing with mapped name)
     if (filter.business_unit && filter.business_unit !== "all") {
       const unitName = getBusinessUnitName(cred.business_unit);
-      if (unitName.toLowerCase() !== filter.business_unit.toLowerCase()) {
+      if (unitName !== filter.business_unit) {
         return false;
       }
     }
@@ -95,7 +109,7 @@ export function CredentialTable({
         cred.department, 
         designationName, 
         businessUnitName
-      ].some(field => field?.toLowerCase().includes(searchValue));
+      ].some(field => field?.toString().includes(searchValue));
     }
     
     return true;
@@ -115,7 +129,11 @@ export function CredentialTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {filteredCredentials.length > 0 ? (
+          {isLoading ? (
+            <TableRow>
+              <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading...</TableCell>
+            </TableRow>
+          ) : filteredCredentials.length > 0 ? (
             filteredCredentials.map((user, index) => (
               <motion.tr
                 key={user.id}
@@ -135,7 +153,7 @@ export function CredentialTable({
                     </div>
                   </div>
                 </TableCell>
-                <TableCell>{user.department || '-'}</TableCell>
+                <TableCell>{getDepartmentName(user.department)}</TableCell>
                 <TableCell>
                   {user.business_unit !== null ? (
                     <Badge variant="outline">
@@ -167,7 +185,7 @@ export function CredentialTable({
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Actions</DropdownMenuLabel>
                           <DropdownMenuItem onClick={() => onEdit(user)}><Pencil className="h-4 w-4 mr-2" />Edit</DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => onResetPassword(user.id)}><KeyRound className="h-4 w-4 mr-2" />Reset Password</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => onResetPassword(user.email)}><KeyRound className="h-4 w-4 mr-2" />Reset Password</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem className="text-red-600" onClick={() => onDelete(user.id)}>
                             <Trash2 className="h-4 w-4 mr-2" />Delete

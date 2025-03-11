@@ -1,34 +1,24 @@
 export interface Credential {
   id: number;
-  password: string;
-  last_login: string | null;
-  is_superuser: boolean;
   username: string;
+  email: string;
+  name?: string;
+  employee_code?: string;
+  department: number | null; // Ensure this is number | null, not string | null
+  designation: number | null; // Ensure this is number | null, not string | null
+  business_unit: number | null; // Ensure this is number | null, not string | null
+  status?: boolean;
+  dob?: string | null;
+  contact?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
   first_name: string;
   last_name: string;
-  is_staff: boolean;
   is_active: boolean;
-  date_joined: string;
-  email: string;
-  name: string;
-  dob: string | null;
-  employee_code: string ;
-  department: string | null;
-  contact: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  country: string | null;
-  status: boolean;
-  designation: string | null;
-  business_unit: string | null;
-  groups: any[];
-  user_permissions: any[];
-}
-
-export interface Department {
-  id: string;
-  name: string;
+  is_staff: boolean;
+  is_superuser: boolean;
 }
 
 export interface BusinessUnit {
@@ -36,10 +26,16 @@ export interface BusinessUnit {
   name: string;
 }
 
+export interface Department {
+  id: number;
+  name: string;
+  business_unit: number; 
+}
+
 export interface Designation {
   id: number;
   name: string;
-  business_unit_name:string
+  department: number;
 }
 
 export interface Role {
@@ -51,19 +47,19 @@ export interface CredentialFormData {
   username: string;
   email: string;
   name: string;
-  employee_code: string;
-  department: string | null;
-  designation: string | null;
-  business_unit: string | null;
-  status: boolean;
-  dob: string | null;
+  employee_code?: string;
+  department: number | null;
+  designation: number | null;
+  business_unit: number | null;
+  status?: boolean;
+  dob?: string | null;
+  contact?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
   first_name: string;
   last_name: string;
-  contact: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  country: string | null;
   is_active: boolean;
   is_staff: boolean;
   is_superuser: boolean;
@@ -75,15 +71,19 @@ export interface CredentialFormProps {
   selectedUser: Credential | null;
   onSubmit: (formData: CredentialFormData) => void;
   departments: Department[];
-  businessUnits?: BusinessUnit[];
-  designations?: Designation[];
+  businessUnits: BusinessUnit[];
+  designations: Designation[];
+  isLoading: boolean;
 }
 
 export interface CredentialDetailsProps {
   selectedUser: Credential | null;
   onClose: () => void;
   onEdit: (user: Credential) => void;
-  onReset: (id: number) => void;
+  onReset: (email: string) => void;
+  designations : Designation[];
+  departments : Department[];
+  businessUnits : BusinessUnit[];
 }
 
 export interface CredentialTableProps {
@@ -91,16 +91,20 @@ export interface CredentialTableProps {
   onEdit: (user: Credential) => void;
   onDelete: (id: number) => void;
   designations : Designation[];
+  departments : Department[];
   businessUnits : BusinessUnit[];
   onView: (user: Credential) => void;
-  onResetPassword: (id: number) => void;
+  onResetPassword: (email: string) => void;
   filter?: {
     searchValue?: string;
     department?: string;
+    designation?: string;
+
     business_unit?: string;
     role?: string;
     status?: boolean;
   };
+  isLoading: boolean;
 }
 
 export interface DeleteDialogProps {
@@ -108,20 +112,29 @@ export interface DeleteDialogProps {
   onClose: () => void;
   onConfirm: () => void;
   userId?: number | null;
+  isLoading: boolean;
 }
 
-export interface CredentialFilterProps {
-  onFilterChange: (name: string, value: string | boolean) => void;
-  departments: Department[];
-  businessUnits?: BusinessUnit[];
-  roles: Role[];
-  searchValue?: string;
-  department?: string;
-  business_unit?: string;
-  role?: string;
-  status?: boolean;
+export interface CredentialFilter {
+  searchValue: string;
+  department: string;
+  business_unit: string;
+  role: string;
+  status: string;
 }
 
 export interface CredentialStatsProps {
   credentials: Credential[];
+}
+
+export interface FormFieldProps {
+  label: string;
+  name: string;
+  value: string;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  type?: string;
+  placeholder?: string;
+  required?: boolean;
+  helperText?: string;
+  disabled?: boolean;
 }

@@ -132,16 +132,6 @@ const DashboardPage: React.FC = () => {
     }
   };
 
-  // const getFormattedDate = (): string => {
-  //   const now = new Date();
-  //   return now.toLocaleDateString("en-US", {
-  //     weekday: "long",
-  //     year: "numeric",
-  //     month: "long",
-  //     day: "numeric",
-  //   });
-  // };
-
   useEffect(() => {
     getUserDashboardData();
     // setCurrentDate(getFormattedDate());

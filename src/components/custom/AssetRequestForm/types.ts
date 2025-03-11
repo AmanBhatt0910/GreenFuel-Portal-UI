@@ -56,6 +56,36 @@ export interface SubmittingAssetItem {
   sap_code: string;                 // Added this field that was in your data
 }
 
+export interface BudgetRequest {
+  id: number;
+  budget_id: string;
+  date: string;
+  total: string;
+  reason: string;
+  policy_agreement: boolean;
+  current_status: string;
+  benefit_to_organisation: string;
+  approval_category: string;
+  approval_type: string;
+  current_level: number;
+  max_level: number;
+  rejected: boolean;
+  rejection_reason: string | null;
+  user: number;
+  business_unit: number;
+  department: number;
+  designation: number;
+  initiate_dept: number | null;
+  notify_to: number;
+}
+
+export interface RequestData {
+  id: number;
+  title: string;
+  budget_id: number;
+  status: string;
+  created_at: string;
+}
 
 export interface FormStepProps {
   formData: FormData;

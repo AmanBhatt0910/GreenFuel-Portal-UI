@@ -11,53 +11,37 @@ import {
   Role
 } from "@/components/custom/CredentialsManagement/types";
 import { CredentialTable } from "@/components/custom/CredentialsManagement/CredentialTable";
-import { CredentialForm } from "@/components/custom/CredentialsManagement/CredentialForm"; 
+import CredentialForm from "@/components/custom/CredentialsManagement/CredentialForm"; 
 import { DeleteDialog } from "@/components/custom/CredentialsManagement/DeleteDialog";
 import { CredentialDetails } from "@/components/custom/CredentialsManagement/CredentialDetails";
-import { CredentialFilter } from "@/components/custom/CredentialsManagement/CredentialFilter";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CustomBreadcrumb } from '@/components/custom/ui/Breadcrumb.custom';
 import { Button } from "@/components/ui/button";
 import { Plus, AlertTriangle, Info } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
-
+import { BusinessUnitFilter } from "@/components/custom/CredentialsManagement/CredentialFilter";
 
 export default function CredentialsPage() {
   // State
   const [credentials, setCredentials] = useState<Credential[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([
-    { id: "1", name: "Human Resources" },
-    { id: "2", name: "Engineering" },
-    { id: "3", name: "Sales" },
-    { id: "4", name: "Marketing" },
-    { id: "5", name: "Finance" },
-    { id: "6", name: "Customer Support" },
-    { id: "7", name: "IT & Security" },
-    { id: "8", name: "Legal" },
-    { id: "9", name: "Operations" },
-    { id: "10", name: "Product Management" },
-  ]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
   const [designations, setDesignations] = useState<Designation[]>([]);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<Credential | null>(null);
+  const [selectedUser, setSelectedUser] = useState(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState<number | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [detailUser, setDetailUser] = useState<Credential | null>(null);
   const [filter, setFilter] = useState({
     searchValue: "",
-    department: "all",
-    business_unit: "all",
-    role: "all",
-    status: "all",
+    business_unit: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const api = useAxios();
-
 
   // Handle filter changes
   const handleFilterChange = useCallback((name: string, value: string) => {
@@ -67,18 +51,48 @@ export default function CredentialsPage() {
     }));
   }, []);
 
-  // Fetch employees
+  // Fetch employees with filters applied
   const fetchCredentials = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const response = await api.get('/userInfo/');
-      console.log('Fetched:', response.data);
+      // Build query parameters based on filters
+      const params = new URLSearchParams();
+      if (filter.searchValue) {
+        params.append('search', filter.searchValue);
+      }
+      if (filter.business_unit) {
+        params.append('business_unit', filter.business_unit);
+      }
+      
+      const queryString = params.toString() ? `?${params.toString()}` : '';
+      const response = await api.get(`/userInfo/${queryString}`);
       setCredentials(response.data);
     } catch (error) {
       console.error('Error fetching credentials:', error);
       toast.error('Failed to load employee data');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [filter.searchValue, filter.business_unit]);
+
+  // Fetch a single credential by ID
+  const fetchCredentialById = useCallback(async (id: number) => {
+    setIsLoading(true);
+    try {
+      const response = await api.get(`/userInfo/${id}/`);
+      const userData = response.data;
+      
+      return userData;
+    } catch (error) {
+      console.error(`Error fetching credential with ID ${id}:`, error);
+      toast.error('Failed to load employee details');
+      return null;
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
+  // Re-fetch when filters change
   useEffect(() => {
     fetchCredentials();
   }, [fetchCredentials]);
@@ -88,38 +102,38 @@ export default function CredentialsPage() {
     setIsFormOpen(true);
   }, []);
 
-  const handleEdit = (user: Credential) => {
-    setSelectedUser(user);
-    setIsFormOpen(true);
+  const handleEdit = async (user: Credential) => {
+    // Fetch the latest user data by ID to ensure we have the most up-to-date information
+    const freshUserData = await fetchCredentialById(user.id);
+    if (freshUserData) {
+      setSelectedUser(freshUserData);
+      setIsFormOpen(true);
+    }
   };
 
+  // Add API calls to fetch master data
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchMasterData = async () => {
       try {
-        // const [designationsResponse, businessUnitsResponse] = await Promise.all([
-        //   fetch('/api/designations/'),
-        //   fetch('/api/business-units/')
-        // ]);
+        setIsLoading(true);
+        const [businessUnitsRes, departmentsRes, designationsRes] = await Promise.all([
+          api.get('/business-units/'),
+          api.get('/departments/'),
+          api.get('/designations/')
+        ]);
         
-        // if (designationsResponse.ok && businessUnitsResponse.ok) {
-        //   const designationsData = await designationsResponse.json();
-        //   const businessUnitsData = await businessUnitsResponse.json();
-          
-        //   setDesignations(designationsData);
-        //   setBusinessUnits(businessUnitsData);
-        // }
-        const res = await api.get('designations/');
-        console.log("designations" , res.data)
-        setDesignations(res.data);
-        const response = await api.get('business-units/')
-        console.log("business" , response.data);
-        setBusinessUnits(response.data);
+        setBusinessUnits(businessUnitsRes.data);
+        setDepartments(departmentsRes.data);
+        setDesignations(designationsRes.data);
       } catch (error) {
-        console.error('Error fetching data:', error);
+        console.error('Error fetching master data:', error);
+        toast.error('Failed to load configuration data');
+      } finally {
+        setIsLoading(false);
       }
     };
     
-    fetchData();
+    fetchMasterData();
   }, []);
 
   const handleDelete = (id: number) => {
@@ -131,12 +145,11 @@ export default function CredentialsPage() {
     if (userIdToDelete) {
       try {
         setIsLoading(true);
-        // Uncomment when API endpoint is ready
-        // await api.delete(`userInfo/${userIdToDelete}`);
+        await api.delete(`/userInfo/${userIdToDelete}/`);
         
-        // setCredentials((prev) => 
-        //   prev.filter((user) => user.id !== userIdToDelete)
-        // );
+        setCredentials((prev) => 
+          prev.filter((user) => user.id !== userIdToDelete)
+        );
 
         toast.success("Employee deleted successfully");
       } catch (error) {
@@ -150,16 +163,19 @@ export default function CredentialsPage() {
     }
   };
 
-  const handleViewDetails = (user: Credential) => {
-    setDetailUser(user);
-    setShowDetails(true);
+  const handleViewDetails = async (user: Credential) => {
+    // Fetch the latest user data by ID with enriched name data
+    const freshUserData = await fetchCredentialById(user.id);
+    if (freshUserData) {
+      setDetailUser(freshUserData);
+      setShowDetails(true);
+    }
   };
   
-  const handleResetPassword = async (userId: number) => {
+  const handleResetPassword = async (email: string) => {
     try {
       setIsLoading(true);
-      // Uncomment when API endpoint is ready
-      // await api.post(`userInfo/${userId}/reset-password`);
+      await api.post(`forgot-password/`, { email: email });
       toast.success("Password reset link sent to user's email");
     } catch (error) {
       console.error('Error resetting password:', error);
@@ -172,30 +188,18 @@ export default function CredentialsPage() {
   const handleFormSubmit = useCallback(async (formData: CredentialFormData) => {
     try {
       setIsLoading(true);
-      console.log('Form data submitted:', formData);
       
       if (selectedUser) {
-        // Update existing user
-        // await api.put(`userInfo/${selectedUser.id}/`, formData);
-        
-        // setCredentials((prev) =>
-        //   prev.map((user) =>
-        //     user.id === selectedUser.id
-        //       ? {
-        //           ...user,
-        //           ...formData,
-        //         }
-        //       : user
-        //   )
-        // );
-        toast.success("Employee updated successfully");
+        // Update existing user logic would go here
+        // await api.put(`/userInfo/${selectedUser.id}/`, formData);
+        // await fetchCredentials();
+        // toast.success("Employee updated successfully");
       } else {
         // Create new user
-        const response = await api.post('/register/', formData);
-        console.log('New user created:', response.data);
+        await api.post('/register/', formData);
         
         // Add the new user to the list
-        await fetchCredentials(); // Refresh the entire list to get proper data
+        await fetchCredentials();
         toast.success("Employee added successfully");
       }
       
@@ -206,7 +210,7 @@ export default function CredentialsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedUser, api, fetchCredentials]);
+  }, [selectedUser, fetchCredentials]);
 
   return (
     <div className="container py-4 mx-auto max-w-[95%] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
@@ -241,17 +245,14 @@ export default function CredentialsPage() {
         </AlertDescription>
       </Alert>
 
-      <div className="mb-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/90 p-5 rounded-xl shadow">
-        {/* <CredentialFilter 
+      {/* <div className="mb-6 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/90 p-5 rounded-xl shadow">
+        <BusinessUnitFilter 
           onFilterChange={handleFilterChange}
-          departments={departments} 
-          roles={roles}
-          status={filter.status}
+          businessUnits={businessUnits}
           searchValue={filter.searchValue}
-          department={filter.department}
-          role={filter.role}
-        /> */}
-      </div>
+          business_unit={filter.business_unit}
+        />
+      </div> */}
 
       <div className="bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-800/90 rounded-xl shadow overflow-hidden">
         <CredentialTable
@@ -260,10 +261,10 @@ export default function CredentialsPage() {
           onDelete={handleDelete}
           onView={handleViewDetails}
           onResetPassword={handleResetPassword}
-          filter={filter}
+          isLoading={isLoading}
           designations={designations}
-      businessUnits={businessUnits}
-          // isLoading={isLoading}
+          departments={departments}
+          businessUnits={businessUnits}
         />
       </div>
 
@@ -275,6 +276,7 @@ export default function CredentialsPage() {
         businessUnits={businessUnits}
         designations={designations}
         onSubmit={handleFormSubmit}
+        isLoading={isLoading}
       />
 
       <DeleteDialog
@@ -282,21 +284,23 @@ export default function CredentialsPage() {
         onClose={() => setIsDeleteDialogOpen(false)}
         onConfirm={handleDeleteConfirm}
         userId={userIdToDelete}
-        // isLoading={isLoading}
+        isLoading={isLoading}
       />
 
       {showDetails && detailUser && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
           <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-background rounded-lg">
             <CredentialDetails
+              designations={designations}
+              departments={departments}
+              businessUnits={businessUnits}
               selectedUser={detailUser}
               onClose={() => setShowDetails(false)}
               onEdit={(user) => {
                 setShowDetails(false);
                 handleEdit(user);
-              }}
+              }}  
               onReset={handleResetPassword}
-              // isLoading={isLoading}
             />
           </div>
         </div>

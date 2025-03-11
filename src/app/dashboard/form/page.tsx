@@ -103,6 +103,7 @@ export default function AssetRequestForm() {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const {userInfo} = useContext(GFContext);
   const [user, setUser] = useState<any>(null);
+  const [budgetId, setBudgetId] = useState<any>(null);
 
   const api = useAxios();
 
@@ -122,7 +123,6 @@ export default function AssetRequestForm() {
     const fetchData = async () => {
       const response = await api.get('/userInfo/');
       setUser(response.data);
-      console.log('Fetched:', response.data);
     };
     fetchData();
   }, []);
@@ -344,11 +344,20 @@ export default function AssetRequestForm() {
     console.log("submittingFormData" , submittingFormData)
 
     const response = await api.post("approval-requests/", submittingFormData);
+    console.log("response" , response)
 
-    console.log("response" , response.data)
-    
+    // console.log("response" , response.data.budget_id)
+    if(response.status === 201){
+      setBudgetId(response.data.budget_id);
+  
+      setIsSubmitting(false);
+      setIsSubmitted(true);
+      return;
+    }
+
     setIsSubmitting(false);
-    setIsSubmitted(true);
+    setIsSubmitted(false);
+
   };
 
   // Reset the form
@@ -462,9 +471,14 @@ const generatePDF = async () => {
   }
   
   // Create a new PDF document
-  const doc = new jsPDF();
-  const requestId = getRequestId();
-  const timeline = getEstimatedTimeline();
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'mm',
+    format: 'a4'
+  });
+
+  const timeline: { approval: string; processing: string; delivery: string } = getEstimatedTimeline();
+  
   
   // Define colors
   const primaryColor = [0, 102, 51]; // Green
@@ -495,9 +509,9 @@ const generatePDF = async () => {
   // Document subtitle with request ID
   doc.setFontSize(14);
   doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
-  doc.text(`Request #${requestId}`, 105, 28, { align: 'center' });
+  doc.text(`Request #${budgetId}`, 105, 28, { align: 'center' });
   
-  // Add header decorative element
+  // Add header decorative element - improved contrast
   doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
   doc.rect(0, 35, 210, 12, 'F');
   
@@ -505,7 +519,7 @@ const generatePDF = async () => {
   doc.setLineWidth(1);
   doc.line(14, 35, 196, 35);
   
-  // Date and confidentiality
+  // Date and confidentiality - ensuring proper alignment
   doc.setFontSize(9);
   doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
   doc.setFont("helvetica", "normal");
@@ -517,15 +531,16 @@ const generatePDF = async () => {
   doc.setLineWidth(0.5);
   doc.line(14, 47, 196, 47);
   
-  // Introduction paragraph
+  // Introduction paragraph - improved line spacing
   doc.setFontSize(10);
   doc.setTextColor(50, 50, 50);
   doc.setFont("helvetica", "normal");
-  const introText = "This document contains a formal request for company assets as submitted through the Asset Management System. The request is subject to approval according to company policies and budgetary constraints. Please review all details carefully before proceeding with the approval process.";
-  const splitIntro = doc.splitTextToSize(introText, 180);
+  const introText: string = "This document contains a formal request for company assets as submitted through the Asset Management System. The request is subject to approval according to company policies and budgetary constraints. Please review all details carefully before proceeding with the approval process.";
+  const splitIntro: string[] = doc.splitTextToSize(introText, 180);
   doc.text(splitIntro, 14, 55);
   
-  let y = 55 + (splitIntro.length * 5) + 8;
+  let y: number = 55 + (splitIntro.length * 5) + 8;
+
   
   // REQUESTOR INFORMATION SECTION
   addSectionHeader(doc, "REQUESTOR INFORMATION", y, primaryColor);
@@ -554,12 +569,13 @@ const generatePDF = async () => {
   
   y += 16;
   
-  // ASSET SUMMARY SECTION
+  // ASSET SUMMARY SECTION - improved table formatting
   addSectionHeader(doc, "ASSET SUMMARY", y, primaryColor);
   y += 10;
   
-  if (formData.assets.length > 0) {
-    const tableColumn = [
+  if (formData.assets && formData.assets.length > 0) {
+    // Improved table columns with proper width distribution
+    const tableColumn: { header: string; dataKey: string }[] = [
       { header: "Asset", dataKey: "asset" },
       { header: "Description", dataKey: "description" },
       { header: "SAP Code", dataKey: "sapCode" },
@@ -577,6 +593,7 @@ const generatePDF = async () => {
       total: formatCurrency(Number(asset.total)).replace("₹", "INR ")
     }));
     
+    // Improved table formatting with better column widths
     autoTable(doc, {
       head: [tableColumn.map(col => col.header)],
       body: tableRows.map(row => [
@@ -588,18 +605,44 @@ const generatePDF = async () => {
         row.total
       ]),
       startY: y,
-      styles: { fontSize: 9, cellPadding: 3 },
+      styles: { 
+        fontSize: 9, 
+        cellPadding: 3,
+        overflow: 'linebreak',
+        lineWidth: 0.1
+      },
+      columnStyles: {
+        0: { cellWidth: 30 },  // Asset
+        1: { cellWidth: 60 },  // Description
+        2: { cellWidth: 20 },  // SAP Code
+        3: { cellWidth: 10 },  // Qty
+        4: { cellWidth: 25 },  // Unit Price
+        5: { cellWidth: 25 }   // Total
+      },
       headStyles: { 
         fillColor: [primaryColor[0], primaryColor[1], primaryColor[2]],
         textColor: [255, 255, 255],
-        fontStyle: 'bold'
+        fontStyle: 'bold',
+        halign: 'left'
       },
       alternateRowStyles: { fillColor: [245, 250, 245] },
       footStyles: { 
         fillColor: [240, 248, 240],
-        fontStyle: 'bold' 
+        fontStyle: 'bold',
+        halign: 'right'
       },
       foot: [['', '', '', '', 'Total Request Value:', formatCurrency(Number(formData.assetAmount)).replace("₹", "INR ")]],
+      didDrawPage: (data) => {
+        // Ensure footer appears on every page of the table
+        doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+        doc.rect(0, 287, 210, 10, 'F');
+        
+        doc.setFontSize(8);
+        doc.setTextColor(255, 255, 255);
+        doc.text(`Request #${budgetId} | Page ${doc.getNumberOfPages()} of ${doc.getNumberOfPages()}`, 105, 293, { align: 'center' });
+        doc.text(`Asset Management System`, 14, 293);
+        doc.text(`Confidential Document`, 196, 293, { align: 'right' });
+      }
     });
     
     y = (doc as any).lastAutoTable.finalY + 15;
@@ -622,9 +665,10 @@ const generatePDF = async () => {
   doc.setFontSize(10);
   doc.setTextColor(50, 50, 50);
   doc.setFont("helvetica", "normal");
+
   
   // Handle multiline text for reason
-  const splitReason = doc.splitTextToSize(formData.reason, 170);
+  const splitReason: string[] = doc.splitTextToSize(formData.reason || "No justification provided", 170);
   doc.text(splitReason, 19, y + 8);
   
   y += 45;
@@ -634,14 +678,14 @@ const generatePDF = async () => {
     addSectionHeader(doc, "ORGANIZATIONAL BENEFITS", y, primaryColor);
     y += 8;
     
-    // Add boxed benefits
+    // Add boxed benefits with proper padding
     doc.setFillColor(248, 250, 248);
     doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.roundedRect(14, y, 182, 35, 2, 2, 'FD');
     
     doc.setFontSize(10);
     doc.setTextColor(50, 50, 50);
-    const splitBenefits = doc.splitTextToSize(formData.benefitToOrg, 170);
+    const splitBenefits: string[] = doc.splitTextToSize(formData.benefitToOrg, 170);
     doc.text(splitBenefits, 19, y + 8);
     
     y += 40;
@@ -658,7 +702,7 @@ const generatePDF = async () => {
   y += 10;
   
   // Draw workflow steps
-  const workflowSteps = [
+  const workflowSteps: { title: string; status: string; date: string }[] = [
     { title: "Request Submitted", status: "Complete", date: format(new Date(), "MMM dd, yyyy") },
     { title: "Department Approval", status: "Pending", date: timeline.approval },
     { title: "Financial Approval", status: "Pending", date: "TBD" },
@@ -666,43 +710,43 @@ const generatePDF = async () => {
     { title: "Delivery & Handover", status: "Pending", date: timeline.delivery }
   ];
   
-  // Draw workflow diagram
-  const startX = 25;
-  const colWidth = 35;
+  // Draw workflow diagram with improved spacing and alignment
+  const startX: number = 25;
+  const colWidth: number = 35;
   
   workflowSteps.forEach((step, index) => {
-    const x = startX + (index * colWidth);
+    const x: number = startX + (index * colWidth);
     
-    // Draw circle
+    // Draw circle with better contrast
     if (step.status === "Complete") {
-        doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
+      doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
     } else {
       doc.setFillColor(220, 220, 220);
     }
     doc.circle(x, y, 5, 'F');
     
-    // Draw connecting line
+    // Draw connecting line with improved visibility
     if (index < workflowSteps.length - 1) {
       doc.setDrawColor(150, 150, 150);
-      doc.setLineWidth(0.5);
+      doc.setLineWidth(0.7);
       doc.line(x + 5, y, x + colWidth - 5, y);
     }
     
-    // Draw text
+    // Draw text with improved positioning and readability
     doc.setFontSize(8);
     doc.setTextColor(80, 80, 80);
     doc.text(step.title, x, y + 10, { align: 'center' });
     
-    // Draw status
+    // Draw status with better color contrast
     doc.setFontSize(7);
     if (step.status === "Complete") {
       doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
     } else {
-      doc.setTextColor(150, 150, 150);
+      doc.setTextColor(120, 120, 120);
     }
     doc.text(step.status, x, y + 15, { align: 'center' });
     
-    // Draw date
+    // Draw date with consistent formatting
     doc.setFontSize(7);
     doc.setTextColor(100, 100, 100);
     doc.text(step.date, x, y + 20, { align: 'center' });
@@ -714,17 +758,19 @@ const generatePDF = async () => {
   addSectionHeader(doc, "ESTIMATED TIMELINE", y, primaryColor);
   y += 10;
   
-  // Add timeline information in a box
+  // Add timeline information in a box with better contrast
   doc.setFillColor(248, 250, 248);
-  doc.roundedRect(14, y, 182, 40, 2, 2, 'F');
+  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.roundedRect(14, y, 182, 40, 2, 2, 'FD');
   
   doc.setFontSize(10);
   doc.setTextColor(50, 50, 50);
   
-  addLabelValuePair(doc, "Current Status:", "Pending Department Approval", 20, y + 8, 40);
-  addLabelValuePair(doc, "Management Approval Expected:", timeline.approval, 20, y + 16, 65);
-  addLabelValuePair(doc, "Procurement Process Expected:", timeline.processing, 20, y + 24, 65);
-  addLabelValuePair(doc, "Estimated Delivery:", timeline.delivery, 20, y + 32, 65);
+  // Add timeline details with better spacing
+  addLabelValuePair(doc, "Current Status:", "Pending Department Approval", 20, y + 8, 60);
+  addLabelValuePair(doc, "Management Approval Expected:", timeline.approval, 20, y + 16, 85);
+  addLabelValuePair(doc, "Procurement Process Expected:", timeline.processing, 20, y + 24, 85);
+  addLabelValuePair(doc, "Estimated Delivery:", timeline.delivery, 20, y + 32, 85);
   
   y += 50;
   
@@ -740,7 +786,8 @@ const generatePDF = async () => {
   doc.setFontSize(9);
   doc.setTextColor(80, 80, 80);
   
-  const terms = [
+  // Terms with better spacing
+  const terms: string[] = [
     "1. All asset requests are subject to company approval policies and budget availability.",
     "2. The requestor is responsible for the proper use and care of company assets.",
     "3. Assets remain company property and must be returned upon request or termination.",
@@ -756,7 +803,8 @@ const generatePDF = async () => {
   // Policy agreement
   y += 5;
   doc.setFillColor(240, 248, 240);
-  doc.roundedRect(14, y, 182, 20, 2, 2, 'F');
+  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.roundedRect(14, y, 182, 20, 2, 2, 'FD');
   
   doc.setFontSize(9);
   doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
@@ -766,8 +814,8 @@ const generatePDF = async () => {
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(80, 80, 80);
-  const policyText = "The requestor has acknowledged and agreed to comply with all company policies related to asset usage, maintenance, and return as specified in the Asset Management Procedure document (Ref: AMP-2023-01).";
-  const splitPolicy = doc.splitTextToSize(policyText, 172);
+  const policyText: string = "The requestor has acknowledged and agreed to comply with all company policies related to asset usage, maintenance, and return as specified in the Asset Management Procedure document (Ref: AMP-2023-01).";
+  const splitPolicy: string[] = doc.splitTextToSize(policyText, 172);
   doc.text(splitPolicy, 19, y + 12);
   
   // APPROVAL SECTION
@@ -781,14 +829,14 @@ const generatePDF = async () => {
   y += 10;
   
   // Draw signature boxes
-  const signatureWidth = 80;
-  const signatureHeight = 35;
-  const leftSigX = 14;
-  const rightSigX = 116;
+  const signatureWidth: number = 80;
+  const signatureHeight: number = 35;
+  const leftSigX: number = 14;
+  const rightSigX: number = 116;
   
-  // Requestor signature box
-  doc.setDrawColor(180, 180, 180);
-  doc.setLineWidth(0.5);
+  // Requestor signature box with better borders
+  doc.setDrawColor(150, 150, 150);
+  doc.setLineWidth(0.3);
   doc.rect(leftSigX, y, signatureWidth, signatureHeight);
   
   doc.setFontSize(9);
@@ -804,8 +852,8 @@ const generatePDF = async () => {
   doc.text("Date: " + format(new Date(), "dd/MM/yyyy"), leftSigX + 40, y + 23, { align: 'center' });
   doc.text("Employee ID: " + formData.employeeCode, leftSigX + 40, y + 30, { align: 'center' });
   
-  // Approver signature box
-  doc.setDrawColor(180, 180, 180);
+  // Approver signature box with consistent styling
+  doc.setDrawColor(150, 150, 150);
   doc.rect(rightSigX, y, signatureWidth, signatureHeight);
   
   doc.setFontSize(9);
@@ -819,7 +867,7 @@ const generatePDF = async () => {
   doc.text("Date: _________________________", rightSigX + 40, y + 30, { align: 'center' });
   
   // Footer for all pages
-  const pageCount = doc.getNumberOfPages();
+  const pageCount: number = doc.getNumberOfPages();
   for (let i = 1; i <= pageCount; i++) {
     doc.setPage(i);
     
@@ -827,16 +875,14 @@ const generatePDF = async () => {
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.rect(0, 287, 210, 10, 'F');
     
-    // Footer text
+    // Footer text with improved alignment
     doc.setFontSize(8);
     doc.setTextColor(255, 255, 255);
-    doc.text(`Request #${requestId} | Page ${i} of ${pageCount}`, 105, 293, { align: 'center' });
+    doc.text(`Request #${budgetId} | Page ${i} of ${pageCount}`, 105, 293, { align: 'center' });
     doc.text(`Asset Management System`, 14, 293);
     doc.text(`Confidential Document`, 196, 293, { align: 'right' });
   }
-  
-  // Save the PDF
-  doc.save(`Asset_Request_${requestId}.pdf`);
+  doc.save(`Asset_Request_${budgetId}.pdf`);
 };
 
 // Helper function to add section headers
@@ -972,7 +1018,6 @@ function addLabelValuePair(doc : any, label : any, value : any, x : any, y : any
   };
 
   const timeline = getEstimatedTimeline();
-  const requestId = getRequestId();
 
   return (
     <div className="container py-4 mx-auto max-w-[95%] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
@@ -1002,7 +1047,7 @@ function addLabelValuePair(doc : any, label : any, value : any, x : any, y : any
             <div className="flex items-center mb-6 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
               <FileCheck className="h-5 w-5 mr-2 text-green-600 dark:text-green-400" />
               <p className="text-sm font-medium text-green-800 dark:text-green-300">
-                Request #{requestId}
+                Request #{budgetId}
               </p>
             </div>
         

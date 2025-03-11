@@ -19,6 +19,7 @@ export function DeleteDialog({
   onClose,
   onConfirm,
   userId,
+  isLoading,
 }: DeleteDialogProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>
