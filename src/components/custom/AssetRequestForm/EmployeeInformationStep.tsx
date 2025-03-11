@@ -1,11 +1,22 @@
 import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { slideVariants } from "./animations";
 import { FormStepProps } from "./types";
 import useAxios from "@/app/hooks/use-axios";
-import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface BusinessUnit {
   id: number;
@@ -18,6 +29,12 @@ interface Department {
   business_unit: number;
 }
 
+interface Designation {
+  id: number;
+  name: string;
+  department: number;
+}
+
 export const EmployeeInformationStep: React.FC<FormStepProps> = ({
   formData,
   handleChange,
@@ -27,7 +44,18 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
   const api = useAxios();
   const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
+  const [designations, setDesignations] = useState<Designation[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+
+  // Custom handler for select components
+  const handleSelectChange = (name: string, value: string) => {
+    handleChange({
+      target: {
+        name,
+        value,
+      },
+    } as React.ChangeEvent<HTMLSelectElement>);
+  };
 
   // Fetch business units (plants) when component mounts
   useEffect(() => {
@@ -35,7 +63,6 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
       setLoading(true);
       try {
         const response = await api.get('business-units/');
-        // console.log(response.data)
         setBusinessUnits(response.data);
       } catch (error) {
         console.error("Error fetching business units:", error);
@@ -66,6 +93,49 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
     fetchDepartments();
   }, [formData.plant]);
 
+  // Fetch designations whenever selected department changes
+  useEffect(() => {
+    const fetchDesignations = async () => {
+      if (!formData.initiateDept) return;
+      
+      setLoading(true);
+      try {
+        const response = await api.get(`/designations/?department=${formData.initiateDept}`);
+        setDesignations(response.data);
+      } catch (error) {
+        console.error("Error fetching designations:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDesignations();
+  }, [formData.initiateDept]);
+
+  // Animation variants
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1,
+      transition: {
+        type: "spring",
+        stiffness: 300,
+        damping: 24,
+      },
+    },
+  };
+
   return (
     <motion.div
       key="step1"
@@ -76,18 +146,28 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
       exit="exit"
       className="space-y-6"
     >
-      <div className="space-y-1 mb-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+      <motion.div 
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="space-y-1 mb-6 bg-white p-6 rounded-lg shadow-sm"
+      >
+        <h3 className="text-lg font-medium text-gray-900">
           Requestor Summary
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-gray-500">
           Please fill in your requestor details
         </p>
-      </div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-2">
-          <Label htmlFor="employeeName">Employee Name</Label>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-2 gap-6"
+      >
+        <motion.div variants={itemVariants} className="space-y-2">
+          <Label htmlFor="employeeName" className="text-gray-700">Employee Name</Label>
           <Input
             id="employeeName"
             name="employeeName"
@@ -96,11 +176,12 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             value={formData.employeeName || ""}
             onChange={handleChange}
             required
+            className="bg-white border-gray-200 focus:border-blue-500"
           />
-        </div>
+        </motion.div>
 
-        <div className="space-y-2">
-          <Label htmlFor="employeeCode">Employee Code</Label>
+        <motion.div variants={itemVariants} className="space-y-2">
+          <Label htmlFor="employeeCode" className="text-gray-700">Employee Code</Label>
           <Input
             id="employeeCode"
             name="employeeCode"
@@ -109,134 +190,118 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             disabled
             onChange={handleChange}
             required
+            className="bg-white border-gray-200 focus:border-blue-500"
           />
-        </div>
+        </motion.div>
 
-        <div className="space-y-2">
-          <Label htmlFor="plant">Business Unit / Plant</Label>
-          <select
-            id="plant"
-            name="plant"
-            value={formData.plant || ""}
-            onChange={handleChange}
+        <motion.div variants={itemVariants} className="space-y-2">
+          <Label htmlFor="plant" className="text-gray-700">Business Unit / Plant</Label>
+          <Select
             disabled={loading || businessUnits.length === 0}
-            className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-100 dark:focus:border-blue-100"
+            value={formData.plant.toString()}
+            onValueChange={(value) => handleSelectChange("plant", value)}
           >
-            <option value="">
-              {loading ? "Loading..." : "Select Business Unit"}
-            </option>
-            {businessUnits.map((bu) => (
-              <option key={bu.id} value={bu.id}>
-                {bu.name}
-              </option>
-            ))}
-          </select>
-        </div>
+            <SelectTrigger className="bg-white border-gray-200 text-gray-700">
+              <SelectValue placeholder={loading ? "Loading..." : "Select Business Unit"} />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {businessUnits.map((bu) => (
+                <SelectItem key={bu.id} value={bu.id.toString()} className="text-gray-700">
+                  {bu.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </motion.div>
 
-        <div className="space-y-2">
-          <Label htmlFor="initiateDept">Initiate Department</Label>
-          <select
-            id="initiateDept"
-            name="initiateDept"
-            value={formData.initiateDept || ""}
-            onChange={handleChange}
-            className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-100 dark:focus:border-blue-100"
-          >
-            <option value="">Select Initiate Department</option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.id}>
-                {dept.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* <div className="space-y-2">
-          <Label htmlFor="department">Department</Label>
-          <select
-            id="department"
-            name="department"
-            value={formData.department || ""}
-            onChange={handleChange}
+        <motion.div variants={itemVariants} className="space-y-2">
+          <Label htmlFor="initiateDept" className="text-gray-700">Initiate Department</Label>
+          <Select
             disabled={loading || !formData.plant || departments.length === 0}
-            className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-100 dark:focus:border-blue-100"
+            value={formData.initiateDept.toString()}
+            onValueChange={(value) => handleSelectChange("initiateDept", value)}
           >
-            <option value="">
-              {loading 
-                ? "Loading..." 
-                : !formData.plant 
-                  ? "Select Business Unit first" 
-                  : "Select Department"}
-            </option>
-            {departments.map((dept) => (
-              <option key={dept.id} value={dept.id}>
-                {dept.name}
-              </option>
-            ))}
-          </select>
-        </div> */}
+            <SelectTrigger className="bg-white border-gray-200 text-gray-700">
+              <SelectValue 
+                placeholder={loading 
+                  ? "Loading..." 
+                  : !formData.plant 
+                    ? "Select Business Unit first" 
+                    : "Select Initiate Department"} 
+              />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {departments.map((dept) => (
+                <SelectItem key={dept.id} value={dept.id.toString()} className="text-gray-700">
+                  {dept.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </motion.div>
 
-        {/* <div className="space-y-2">
-          <Label htmlFor="designation">Designation</Label>
-          <Input
-            id="designation"
-            name="designation"
-            placeholder="Enter your designation"
-            value={formData.designation || ""}
-            onChange={handleChange}
-            required
-          />
-        </div> */}
-
-        <div className="space-y-2">
-          <Label htmlFor="date">Date</Label>
-          <Input
-            id="date"
-            name="date"
-            type="date"
-            value={formData.date || ""}
-            disabled
-            onChange={handleChange}
-            required
-          />
-        </div>
-        
-        
-
-        {/* <div className="space-y-2">
-          <Label htmlFor="currentStatus">Current Status</Label>
-          <Input
-            id="currentStatus"
-            name="currentStatus"
-            placeholder="Enter current status"
-            value={formData.currentStatus || ""}
-            onChange={handleChange}
-            required
-          />
-        </div> */}
-
-      </div>
-
-      {/* <div className="space-y-2">
-        <div className="flex items-center space-x-2">
-          <Checkbox
-            id="policyAgreement"
-            checked={formData.policyAgreement === true}
-            onCheckedChange={(checked) => {
-              if (handleCheckboxChange) {
-                handleCheckboxChange("policyAgreement");
-              }
-            }}
-          />
-          <Label
-            htmlFor="policyAgreement"
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+        <motion.div variants={itemVariants} className="space-y-2">
+          <Label htmlFor="designation" className="text-gray-700">Designation</Label>
+          <Select
+            disabled={loading || !formData.initiateDept || designations.length === 0}
+              value={formData.designation.toString()}
+            onValueChange={(value) => handleSelectChange("designation", value)}
           >
-            I agree to the company asset policy
-          </Label>
-        </div>
-      </div> */}
+            <SelectTrigger className="bg-white border-gray-200 text-gray-700">
+              <SelectValue 
+                placeholder={loading 
+                  ? "Loading..." 
+                  : !formData.initiateDept 
+                    ? "Select Department first" 
+                    : "Select Designation"} 
+              />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+              {designations.map((designation) => (
+                <SelectItem key={designation.id} value={designation.id.toString()} className="text-gray-700">
+                  {designation.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </motion.div>
 
+        <motion.div variants={itemVariants} className="space-y-2">
+          <Label htmlFor="date" className="text-gray-700">Date</Label>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                id="date"
+                disabled
+                className={cn(
+                  "w-full flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-left text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 h-10",
+                )}
+              >
+                {formData.date ? format(new Date(formData.date), "PPP") : <span>Select date</span>}
+                <CalendarIcon className="h-4 w-4 opacity-50" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0 bg-white" align="start">
+              <Calendar
+                mode="single"
+                selected={formData.date ? new Date(formData.date) : undefined}
+                onSelect={(date) => {
+                  if (date) {
+                    handleChange({
+                      target: {
+                        name: "date",
+                        value: format(date, "yyyy-MM-dd"),
+                      },
+                    } as React.ChangeEvent<HTMLInputElement>);
+                  }
+                }}
+                disabled
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+        </motion.div>
+      </motion.div>
     </motion.div>
   );
 };

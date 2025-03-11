@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { slideVariants } from "./animations";
 import { AssetDetailsProps } from "./types";
+import { ChevronDown, Search, X } from "lucide-react";
 
 // Dummy data for dropdowns
 const approvalCategories = [
@@ -19,20 +20,68 @@ const approvalTypes = [
   { value: "Type C", label: "Type C" },
 ];
 
-const notifyToOptions = [
-  { value: "Finance Manager", label: "Finance Manager" },
-  { value: "Operations Manager", label: "Operations Manager" },
-  { value: "Department Head", label: "Department Head" },
-  { value: "IT Manager", label: "IT Manager" },
-];
-
 export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   formData,
   handleChange,
   direction,
   navigateToStep,
   handleCheckboxChange,
+  user
 }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  
+  // Find the selected user's name for display
+  const selectedUser = user.find((u: any) => u.id === formData.notifyTo && u.name);
+  
+  // Filter users based on search term
+  const filteredUsers = user.filter((u: any) => 
+    u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Handle selecting a user
+  const handleUserSelect = (userId: string) => {
+    // Create a synthetic event object to work with existing handleChange
+    const event = {
+      target: {
+        name: "notifyTo",
+        value: userId
+      }
+    } as React.ChangeEvent<HTMLSelectElement>;
+    
+    handleChange(event);
+    setIsOpen(false);
+    setSearchTerm("");
+  };
+
+  // Handle clicking outside to close dropdown
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Clear selection
+  const clearSelection = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const event = {
+      target: {
+        name: "notifyTo",
+        value: ""
+      }
+    } as React.ChangeEvent<HTMLSelectElement>;
+    
+    handleChange(event);
+  };
+
   return (
     <motion.div
       key="step3"
@@ -199,20 +248,75 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
             <Label htmlFor="notifyTo" className="text-sm font-medium">
               Notify To <span className="text-red-500">*</span>
             </Label>
-            <select
-              id="notifyTo"
-              name="notifyTo"
-              value={formData.notifyTo || ""}
-              onChange={handleChange}
-              className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white dark:focus:ring-blue-100 dark:focus:border-blue-100"
-            >
-              <option value="">Select Person to Notify</option>
-              {notifyToOptions.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+            <div className="relative" ref={dropdownRef}>
+              {/* Combobox Trigger */}
+              <div 
+                className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                <div className="flex items-center w-full">
+                  {selectedUser ? (
+                    <div className="flex items-center justify-between w-full">
+                      <span>{selectedUser.name}</span>
+                      <button 
+                        onClick={clearSelection}
+                        className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Select Person to Notify</span>
+                  )}
+                </div>
+                <ChevronDown size={18} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+              </div>
+
+              {/* Dropdown Menu */}
+              {isOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-auto">
+                  {/* Search Input */}
+                  <div className="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search users..."
+                        className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                      />
+                    </div>
+                  </div>
+
+                  {/* User List */}
+                  <div>
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.map((person: any) => (
+                        <div
+                          key={person.id}
+                          className={`px-3 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 ${
+                            formData.notifyTo === person.id ? 'bg-blue-100 dark:bg-gray-600' : ''
+                          }`}
+                          onClick={() => handleUserSelect(person.id)}
+                        >
+                          <div className="flex items-center">
+                            <div className={`w-2 h-2 rounded-full mr-2 ${
+                              formData.notifyTo === person.id ? 'bg-blue-500' : 'bg-transparent'
+                            }`}></div>
+                            <span className="text-gray-800 dark:text-gray-200">{person.name}</span>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-center">
+                        No users found
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 

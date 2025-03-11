@@ -76,22 +76,22 @@ const formSteps = [
 
 // Initial form data
 const getInitialFormData = (): FormData => ({
-  plant: "",
+  plant: 0,
   date: format(new Date(), "yyyy-MM-dd"),
   employeeCode: "",
   employeeName: "",
-  department: "",
-  designation: "",
+  department: 0,
+  designation: 0,
   assets: [],
   assetAmount: "",
   reason: "",
   policyAgreement: false,
-  initiateDept: "",
+  initiateDept: 0,
   currentStatus: "",
   benefitToOrg: "",
   approvalCategory: "",
   approvalType: "",
-  notifyTo: "",
+  notifyTo: 0,
 });
 
 export default function AssetRequestForm() {
@@ -102,7 +102,10 @@ export default function AssetRequestForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const {userInfo} = useContext(GFContext);
-  const [expandedView, setExpandedView] = useState(false);
+  const [user, setUser] = useState<any>(null);
+
+  const api = useAxios();
+
 
   // Pre-fill form data with user information when userInfo is available
   useEffect(() => {
@@ -114,6 +117,15 @@ export default function AssetRequestForm() {
       }));
     }
   }, [userInfo]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      const response = await api.get('/userInfo/');
+      setUser(response.data);
+      console.log('Fetched:', response.data);
+    };
+    fetchData();
+  }, []);
 
   // State for asset management
   const [currentAsset, setCurrentAsset] = useState<AssetItem>({
@@ -245,6 +257,7 @@ export default function AssetRequestForm() {
     setEditingAssetIndex(null);
   };
 
+
   // Cancel editing
   const cancelEditing = () => {
     setCurrentAsset({
@@ -292,7 +305,6 @@ export default function AssetRequestForm() {
     setCurrentStep((prev) => prev + 1);
   };
 
-  const api = useAxios();
 
   // Submit the form
   const handleSubmit = async () => {
@@ -304,14 +316,14 @@ export default function AssetRequestForm() {
     const submittingFormData: SubmittingFormData = {
       user: userInfo?.id || 0,
       business_unit: formData.plant,
-      department: formData.department,
+      department: formData.initiateDept,
       designation: formData.designation,
-      date: formData.date,
-      total: formData.assetAmount,
+      total: Number(formData.assetAmount),
       reason: formData.reason,
       policy_agreement: formData.policyAgreement,
-      initiate_dept: formData.initiateDept,
-      current_status: formData.currentStatus,
+      // initiate_dept: formData.initiateDept,
+      initiate_dept: "",
+      current_status: "pending",
       benefit_to_organisation: formData.benefitToOrg,
       approval_category: formData.approvalCategory,
       approval_type: formData.approvalType,
@@ -324,16 +336,16 @@ export default function AssetRequestForm() {
         name: asset.title,
         description: asset.description,
         quantity: asset.quantity,
-        per_unit_price: asset.pricePerUnit.toString(),
+        per_unit_price: Number(asset.pricePerUnit),
         sap_code: asset.sapItemCode,
       }))
     }
     
     console.log("submittingFormData" , submittingFormData)
 
-    // const response = await api.post("approval-items/", submittingAssetItems);
+    const response = await api.post("approval-requests/", submittingFormData);
 
-    // console.log(response.data)
+    console.log("response" , response.data)
     
     setIsSubmitting(false);
     setIsSubmitted(true);
@@ -357,9 +369,11 @@ export default function AssetRequestForm() {
     switch (currentStep) {
       case 0:
         return (
-          formData.plant.trim() !== "" &&
-          formData.employeeCode.trim() !== "" &&
-          formData.employeeName.trim() !== ""
+          formData.plant !== 0 &&
+          formData.employeeCode !== "" &&
+          formData.employeeName !== "" &&
+          formData.initiateDept !== 0 &&
+          formData.designation !== 0
         );
       case 1:
         return formData.assets.length > 0;
@@ -377,10 +391,10 @@ export default function AssetRequestForm() {
     switch (step) {
       case 0:
         return (
-          formData.plant.trim() !== "" &&
-          formData.employeeCode.trim() !== "" &&
-          formData.employeeName.trim() !== "" &&
-          formData.department.trim() !== ""
+          formData.plant !== 0 &&
+          formData.employeeCode !== "" &&
+          formData.employeeName !== "" &&
+          formData.department !== 0 
         );
       case 1:
         return formData.assets.length > 0;
@@ -396,7 +410,7 @@ export default function AssetRequestForm() {
   // Get request ID
   const getRequestId = () => {
     const prefix = formData.plant
-      ? formData.plant.substring(0, 2).toUpperCase()
+      ? formData.plant
       : "AR";
     return `${prefix}-${Math.floor(10000 + Math.random() * 90000)}`;
   };
@@ -411,7 +425,33 @@ export default function AssetRequestForm() {
   };
 
   // Generate PDF with all details
-  const generatePDF = () => {
+// Generate PDF with all details
+  const generatePDF = async () => {
+    // First, fetch the business unit and department names
+    let businessUnitName = "N/A";
+    let departmentName = "N/A";
+    
+    try {
+      // Fetch business unit name
+      if (formData.plant) {
+      // const response = await api.get(`business-units/${id}/`);
+        const businessUnitResponse = await api.get(`business-units/${formData.plant}/`);
+        if (businessUnitResponse.data && businessUnitResponse.data.name) {
+          businessUnitName = businessUnitResponse.data.name;
+        }
+      }
+      
+      // Fetch department name
+      if (formData.department) {
+        const departmentResponse = await api.get(`/departments/?business_unit=${formData.plant}`);
+        if (departmentResponse.data) {
+          departmentName = departmentResponse.data.name;
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching entity names:", error);
+    }
+    
     // Create a new PDF document
     const doc = new jsPDF();
     const requestId = getRequestId();
@@ -456,18 +496,18 @@ export default function AssetRequestForm() {
     doc.setTextColor(0, 0, 0);
     doc.text(formData.employeeCode, leftColumnX + 40, y);
     
-    // Plant
+    // Plant (Business Unit)
     doc.setTextColor(100, 100, 100);
     doc.text("Plant Location:", rightColumnX, y);
     doc.setTextColor(0, 0, 0);
-    doc.text(formData.plant, rightColumnX + 40, y);
+    doc.text(businessUnitName, rightColumnX + 40, y);
     
     // Department
     y += 8;
     doc.setTextColor(100, 100, 100);
     doc.text("Department:", leftColumnX, y);
     doc.setTextColor(0, 0, 0);
-    doc.text(formData.department, leftColumnX + 40, y);
+    doc.text(departmentName, leftColumnX + 40, y);
     
     // Current Status
     doc.setTextColor(100, 100, 100);
@@ -481,7 +521,19 @@ export default function AssetRequestForm() {
       doc.setTextColor(100, 100, 100);
       doc.text("Designation:", leftColumnX, y);
       doc.setTextColor(0, 0, 0);
-      doc.text(formData.designation, leftColumnX + 40, y);
+      
+      // Fetch designation name if we have the ID
+      let designationName = "N/A";
+      try {
+        const designationResponse = await api.get(`/designations/?department=${formData.initiateDept}`);
+        if (designationResponse.data && designationResponse.data.name) {
+          designationName = designationResponse.data.name;
+        }
+      } catch (error) {
+        console.error("Error fetching designation name:", error);
+      }
+      
+      doc.text(designationName, leftColumnX + 40, y);
     }
     
     // Asset Summary
@@ -491,7 +543,7 @@ export default function AssetRequestForm() {
     doc.text("Asset Summary", 14, y);
     
     y += 10;
-  
+
     if (formData.assets.length > 0) {
       const tableColumn = ["Asset", "Description", "Qty", "Unit Price", "Total"];
       const tableRows = formData.assets.map(asset => [
@@ -688,6 +740,7 @@ export default function AssetRequestForm() {
               handleCheckboxChange={handleCheckboxChange}
               direction={direction}
               navigateToStep={navigateToStep}
+              user={user}
             />
           </motion.div>
         );
@@ -786,8 +839,8 @@ export default function AssetRequestForm() {
                   <p className="font-medium text-gray-900 dark:text-white">{formData.employeeName}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">Department</p>
-                  <p className="font-medium text-gray-900 dark:text-white">{formData.department}</p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Department</p> 
+                  <p className="font-medium text-gray-900 dark:text-white">{formData.initiateDept}</p>
                 </div>
                 <div>
                   <p className="text-sm text-gray-500 dark:text-gray-400">Submission Date</p>

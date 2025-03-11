@@ -9,54 +9,52 @@ export interface AssetItem {
 
 
 export interface FormData {
-  plant: string;
+  plant: number;
   date: string;
   employeeCode: string;
   employeeName: string;
-  department: string;
-  designation: string;
+  department: number;
+  designation: number;
   assets: AssetItem[];
   assetAmount: string;
   reason: string;
   policyAgreement: boolean;
-  initiateDept: string;
+  initiateDept: number;
   currentStatus: string;
   benefitToOrg: string;
   approvalCategory: string;
   approvalType: string;
-  notifyTo: string;
+  notifyTo: number;
 }
 
 export interface SubmittingFormData {
-  user: number; 
-  business_unit: string; 
-  department: string; 
-  designation: string; 
-  date: string; 
-  total: string; 
-  reason: string; 
-  policy_agreement: boolean; 
-  initiate_dept: string; 
-  current_status: string; 
-  items : SubmittingAssetItem[];
-  benefit_to_organisation: string; 
-  approval_category: string; 
-  approval_type: string; 
-  notify_to: string | null; 
-  current_level: number; 
-  max_level: number; 
-  rejected: boolean; 
-  rejection_reason: string | null; 
+  business_unit: number;           // Changed from string to number
+  department: number;              // Changed from string to number
+  designation: number;             // Changed from string to number
+  total: number;                   // Changed from string to number
+  reason: string;
+  policy_agreement: boolean;
+  initiate_dept: string;
+  current_status: string;
+  items: SubmittingAssetItem[];    // Changed from 'items' to match your data
+  benefit_to_organisation: string; // Using UK spelling as in your data
+  approval_category: string;
+  approval_type: string;
+  notify_to: number | null;        // Changed from string to number to match your data
+  current_level?: number;          // Made optional as it's not in your sample data
+  max_level?: number;              // Made optional as it's not in your sample data
+  rejected?: boolean;              // Made optional as it's not in your sample data
+  rejection_reason?: string | null; // Made optional as it's not in your sample data
+  user?: number;                    // Made optional as it's not in your sample data
 }
 
 export interface SubmittingAssetItem {
-  name: string; 
-  description: string; 
-  quantity: number; 
-  per_unit_price: string; 
-  sap_code: string; 
+  name: string;                     // Changed from 'title' in your component
+  description: string;
+  quantity: number;
+  per_unit_price: number;           // Changed from string to number based on your data
+  sap_code: string;                 // Added this field that was in your data
 }
-
 
 
 export interface FormStepProps {
@@ -84,6 +82,7 @@ export interface AssetTableProps {
 
 export interface AssetDetailsProps extends FormStepProps {
   navigateToStep: (step: number) => void;
+  user: any[];
 }
 
 export interface FormNavigationProps {
