@@ -426,256 +426,441 @@ export default function AssetRequestForm() {
 
   // Generate PDF with all details
 // Generate PDF with all details
-  const generatePDF = async () => {
-    // First, fetch the business unit and department names
-    let businessUnitName = "N/A";
-    let departmentName = "N/A";
-    
-    try {
-      // Fetch business unit name
-      if (formData.plant) {
-      // const response = await api.get(`business-units/${id}/`);
-        const businessUnitResponse = await api.get(`business-units/${formData.plant}/`);
-        if (businessUnitResponse.data && businessUnitResponse.data.name) {
-          businessUnitName = businessUnitResponse.data.name;
-        }
+  // Generate PDF with professional formatting and corporate style
+const generatePDF = async () => {
+  // First, fetch the business unit and department names
+  let businessUnitName = "N/A";
+  let departmentName = "N/A";
+  let designationName = "N/A";
+  
+  try {
+    // Fetch business unit name
+    if (formData.plant) {
+      const businessUnitResponse = await api.get(`business-units/${formData.plant}/`);
+      if (businessUnitResponse.data && businessUnitResponse.data.name) {
+        businessUnitName = businessUnitResponse.data.name;
       }
-      
-      // Fetch department name
-      if (formData.department) {
-        const departmentResponse = await api.get(`/departments/?business_unit=${formData.plant}`);
-        if (departmentResponse.data) {
-          departmentName = departmentResponse.data.name;
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching entity names:", error);
     }
     
-    // Create a new PDF document
-    const doc = new jsPDF();
-    const requestId = getRequestId();
-    const timeline = getEstimatedTimeline();
+    // Fetch department name
+    if (formData.department) {
+      const departmentResponse = await api.get(`/departments/?business_unit=${formData.plant}`);
+      if (departmentResponse.data) {
+        departmentName = departmentResponse.data.name;
+      }
+    }
     
-    // Add title
-    doc.setFontSize(20);
-    doc.setTextColor(0, 102, 51); // Green color
-    doc.text(`Asset Request Summary #${requestId}`, 105, 20, { align: 'center' });
-    
-    // Add header with logo placeholder
-    doc.setDrawColor(0, 102, 51);
-    doc.setLineWidth(0.5);
-    doc.line(14, 25, 196, 25);
-    
-    // Basic Information
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Request Information", 14, 35);
-    
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    const leftColumnX = 14;
-    const rightColumnX = 110;
-    let y = 45;
-    
-    // Basic info - left column
-    doc.text("Submitted By:", leftColumnX, y);
-    doc.setTextColor(0, 0, 0);
-    doc.text(formData.employeeName, leftColumnX + 40, y);
-    
-    // Basic info - right column
-    doc.setTextColor(100, 100, 100);
-    doc.text("Submission Date:", rightColumnX, y);
-    doc.setTextColor(0, 0, 0);
-    doc.text(format(new Date(), "MMMM dd, yyyy"), rightColumnX + 40, y);
-    
-    // Employee code
-    y += 8;
-    doc.setTextColor(100, 100, 100);
-    doc.text("Employee Code:", leftColumnX, y);
-    doc.setTextColor(0, 0, 0);
-    doc.text(formData.employeeCode, leftColumnX + 40, y);
-    
-    // Plant (Business Unit)
-    doc.setTextColor(100, 100, 100);
-    doc.text("Plant Location:", rightColumnX, y);
-    doc.setTextColor(0, 0, 0);
-    doc.text(businessUnitName, rightColumnX + 40, y);
-    
-    // Department
-    y += 8;
-    doc.setTextColor(100, 100, 100);
-    doc.text("Department:", leftColumnX, y);
-    doc.setTextColor(0, 0, 0);
-    doc.text(departmentName, leftColumnX + 40, y);
-    
-    // Current Status
-    doc.setTextColor(100, 100, 100);
-    doc.text("Current Status:", rightColumnX, y);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Pending Approval", rightColumnX + 40, y);
-    
-    // Designation if available
+    // Fetch designation name
     if (formData.designation) {
-      y += 8;
-      doc.setTextColor(100, 100, 100);
-      doc.text("Designation:", leftColumnX, y);
-      doc.setTextColor(0, 0, 0);
-      
-      // Fetch designation name if we have the ID
-      let designationName = "N/A";
-      try {
-        const designationResponse = await api.get(`/designations/?department=${formData.initiateDept}`);
-        if (designationResponse.data && designationResponse.data.name) {
-          designationName = designationResponse.data.name;
-        }
-      } catch (error) {
-        console.error("Error fetching designation name:", error);
+      const designationResponse = await api.get(`/designations/?department=${formData.initiateDept}`);
+      if (designationResponse.data && designationResponse.data.name) {
+        designationName = designationResponse.data.name;
       }
-      
-      doc.text(designationName, leftColumnX + 40, y);
     }
+  } catch (error) {
+    console.error("Error fetching entity names:", error);
+  }
+  
+  // Create a new PDF document
+  const doc = new jsPDF();
+  const requestId = getRequestId();
+  const timeline = getEstimatedTimeline();
+  
+  // Define colors
+  const primaryColor = [0, 102, 51]; // Green
+  const secondaryColor = [0, 71, 36]; // Darker green
+  const accentColor = [0, 153, 76]; // Lighter green
+  const grayColor = [100, 100, 100];
+  const lightGrayBg = [248, 250, 248];
+  
+  // Add company logo
+  try {
+    const imgData = "/green.png"; // Path to logo in assets folder
+    doc.addImage(imgData, 'PNG', 14, 10, 30, 15);
+  } catch (error) {
+    console.error("Error adding logo:", error);
+    // Fallback: Write company name instead of logo
+    doc.setFontSize(18);
+    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFont("helvetica", "bold");
+    doc.text("GREEN CORP", 14, 20);
+  }
+  
+  // Document title
+  doc.setFontSize(22);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setFont("helvetica", "bold");
+  doc.text("ASSET REQUEST", 105, 20, { align: 'center' });
+  
+  // Document subtitle with request ID
+  doc.setFontSize(14);
+  doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+  doc.text(`Request #${requestId}`, 105, 28, { align: 'center' });
+  
+  // Add header decorative element
+  doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
+  doc.rect(0, 35, 210, 12, 'F');
+  
+  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setLineWidth(1);
+  doc.line(14, 35, 196, 35);
+  
+  // Date and confidentiality
+  doc.setFontSize(9);
+  doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generated: ${format(new Date(), "MMMM dd, yyyy")}`, 14, 42);
+  doc.text("CONFIDENTIAL - INTERNAL USE ONLY", 196, 42, { align: 'right' });
+  
+  // Add decorative element
+  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setLineWidth(0.5);
+  doc.line(14, 47, 196, 47);
+  
+  // Introduction paragraph
+  doc.setFontSize(10);
+  doc.setTextColor(50, 50, 50);
+  doc.setFont("helvetica", "normal");
+  const introText = "This document contains a formal request for company assets as submitted through the Asset Management System. The request is subject to approval according to company policies and budgetary constraints. Please review all details carefully before proceeding with the approval process.";
+  const splitIntro = doc.splitTextToSize(introText, 180);
+  doc.text(splitIntro, 14, 55);
+  
+  let y = 55 + (splitIntro.length * 5) + 8;
+  
+  // REQUESTOR INFORMATION SECTION
+  addSectionHeader(doc, "REQUESTOR INFORMATION", y, primaryColor);
+  y += 8;
+  
+  // Create two-column layout for requestor info
+  const leftColX = 14;
+  const rightColX = 110;
+  const labelWidth = 40;
+  
+  // Add field labels and values
+  addLabelValuePair(doc, "Name:", formData.employeeName, leftColX, y, labelWidth);
+  addLabelValuePair(doc, "Submission Date:", format(new Date(), "MMMM dd, yyyy"), rightColX, y, labelWidth);
+  y += 8;
+  
+  addLabelValuePair(doc, "Employee ID:", formData.employeeCode, leftColX, y, labelWidth);
+  addLabelValuePair(doc, "Business Unit:", businessUnitName, rightColX, y, labelWidth);
+  y += 8;
+  
+  addLabelValuePair(doc, "Department:", departmentName, leftColX, y, labelWidth);
+  addLabelValuePair(doc, "Designation:", designationName, rightColX, y, labelWidth);
+  y += 8;
+  
+  addLabelValuePair(doc, "Request Status:", "Pending Approval", leftColX, y, labelWidth);
+  addLabelValuePair(doc, "Approval Level:", "Initial", rightColX, y, labelWidth);
+  
+  y += 16;
+  
+  // ASSET SUMMARY SECTION
+  addSectionHeader(doc, "ASSET SUMMARY", y, primaryColor);
+  y += 10;
+  
+  if (formData.assets.length > 0) {
+    const tableColumn = [
+      { header: "Asset", dataKey: "asset" },
+      { header: "Description", dataKey: "description" },
+      { header: "SAP Code", dataKey: "sapCode" },
+      { header: "Qty", dataKey: "qty" },
+      { header: "Unit Price", dataKey: "unitPrice" },
+      { header: "Total", dataKey: "total" }
+    ];
     
-    // Asset Summary
+    const tableRows = formData.assets.map(asset => ({
+      asset: asset.title,
+      description: asset.description || "-",
+      sapCode: asset.sapItemCode || "N/A",
+      qty: asset.quantity.toString(),
+      unitPrice: formatCurrency(Number(asset.pricePerUnit)).replace("₹", "INR "),
+      total: formatCurrency(Number(asset.total)).replace("₹", "INR ")
+    }));
+    
+    autoTable(doc, {
+      head: [tableColumn.map(col => col.header)],
+      body: tableRows.map(row => [
+        row.asset,
+        row.description,
+        row.sapCode,
+        row.qty,
+        row.unitPrice,
+        row.total
+      ]),
+      startY: y,
+      styles: { fontSize: 9, cellPadding: 3 },
+      headStyles: { 
+        fillColor: [primaryColor[0], primaryColor[1], primaryColor[2]],
+        textColor: [255, 255, 255],
+        fontStyle: 'bold'
+      },
+      alternateRowStyles: { fillColor: [245, 250, 245] },
+      footStyles: { 
+        fillColor: [240, 248, 240],
+        fontStyle: 'bold' 
+      },
+      foot: [['', '', '', '', 'Total Request Value:', formatCurrency(Number(formData.assetAmount)).replace("₹", "INR ")]],
+    });
+    
+    y = (doc as any).lastAutoTable.finalY + 15;
+  } else {
+    doc.setFontSize(10);
+    doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+    doc.text("No assets have been requested.", 14, y);
     y += 15;
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Asset Summary", 14, y);
-    
-    y += 10;
-
-    if (formData.assets.length > 0) {
-      const tableColumn = ["Asset", "Description", "Qty", "Unit Price", "Total"];
-      const tableRows = formData.assets.map(asset => [
-        asset.title,
-        asset.description || "-",
-        asset.quantity.toString(),
-        formatCurrency(Number(asset.pricePerUnit)).replace("₹", "INR "),
-        formatCurrency(Number(asset.total)).replace("₹", "INR ")
-      ]);
-      
-      autoTable(doc, {
-        head: [tableColumn],
-        body: tableRows,
-        startY: y,
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [0, 102, 51] },
-        footStyles: { fillColor: [240, 248, 240] },
-        foot: [['', '', '', 'Total Amount:', formatCurrency(Number(formData.assetAmount)).replace("₹", "INR ")]],
-      });
-      
-      y = (doc as any).lastAutoTable.finalY + 15;
-    } else {
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text("No assets requested", 14, y);
-      y += 10;
-    }
-    
-    // Request Reason
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Request Justification", 14, y);
-    
+  }
+  
+  // Business Justification Section
+  addSectionHeader(doc, "BUSINESS JUSTIFICATION", y, primaryColor);
+  y += 8;
+  
+  // Add boxed justification
+  doc.setFillColor(248, 250, 248);
+  doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.roundedRect(14, y, 182, 40, 2, 2, 'FD');
+  
+  doc.setFontSize(10);
+  doc.setTextColor(50, 50, 50);
+  doc.setFont("helvetica", "normal");
+  
+  // Handle multiline text for reason
+  const splitReason = doc.splitTextToSize(formData.reason, 170);
+  doc.text(splitReason, 19, y + 8);
+  
+  y += 45;
+  
+  // Benefits to Organization
+  if (formData.benefitToOrg) {
+    addSectionHeader(doc, "ORGANIZATIONAL BENEFITS", y, primaryColor);
     y += 8;
+    
+    // Add boxed benefits
+    doc.setFillColor(248, 250, 248);
+    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.roundedRect(14, y, 182, 35, 2, 2, 'FD');
+    
     doc.setFontSize(10);
     doc.setTextColor(50, 50, 50);
+    const splitBenefits = doc.splitTextToSize(formData.benefitToOrg, 170);
+    doc.text(splitBenefits, 19, y + 8);
     
-    // Handle multiline text for reason
-    const splitReason = doc.splitTextToSize(formData.reason, 180);
-    doc.text(splitReason, 14, y);
+    y += 40;
+  }
+  
+  // Check if need to add a new page
+  if (y > 240) {
+    doc.addPage();
+    y = 20;
+  }
+  
+  // APPROVAL WORKFLOW SECTION
+  addSectionHeader(doc, "APPROVAL WORKFLOW", y, primaryColor);
+  y += 10;
+  
+  // Draw workflow steps
+  const workflowSteps = [
+    { title: "Request Submitted", status: "Complete", date: format(new Date(), "MMM dd, yyyy") },
+    { title: "Department Approval", status: "Pending", date: timeline.approval },
+    { title: "Financial Approval", status: "Pending", date: "TBD" },
+    { title: "Procurement Process", status: "Pending", date: timeline.processing },
+    { title: "Delivery & Handover", status: "Pending", date: timeline.delivery }
+  ];
+  
+  // Draw workflow diagram
+  const startX = 25;
+  const colWidth = 35;
+  
+  workflowSteps.forEach((step, index) => {
+    const x = startX + (index * colWidth);
     
-    y += splitReason.length * 5 + 10;
+    // Draw circle
+    if (step.status === "Complete") {
+        doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
+    } else {
+      doc.setFillColor(220, 220, 220);
+    }
+    doc.circle(x, y, 5, 'F');
     
-    // Benefits to Organization
-    if (formData.benefitToOrg) {
-      if (y > 240) {
-        doc.addPage();
-        y = 20;
-      }
-      
-      doc.setFontSize(14);
-      doc.setTextColor(0, 0, 0);
-      doc.text("Benefits to Organization", 14, y);
-      
-      y += 8;
-      doc.setFontSize(10);
-      doc.setTextColor(50, 50, 50);
-      
-      const splitBenefits = doc.splitTextToSize(formData.benefitToOrg, 180);
-      doc.text(splitBenefits, 14, y);
-      
-      y += splitBenefits.length * 5 + 10;
+    // Draw connecting line
+    if (index < workflowSteps.length - 1) {
+      doc.setDrawColor(150, 150, 150);
+      doc.setLineWidth(0.5);
+      doc.line(x + 5, y, x + colWidth - 5, y);
     }
     
-    // Estimated Timeline
-    if (y > 240) {
-      doc.addPage();
-      y = 20;
-    }
+    // Draw text
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(step.title, x, y + 10, { align: 'center' });
     
-    doc.setFontSize(14);
-    doc.setTextColor(0, 0, 0);
-    doc.text("Estimated Timeline", 14, y);
-    
-    y += 8;
-    doc.setFontSize(10);
-    
-    doc.setTextColor(100, 100, 100);
-    doc.text("Current Status:", leftColumnX, y);
-    doc.setTextColor(0, 102, 204);
-    doc.text("Pending Approval", leftColumnX + 40, y);
-    
-    y += 8;
-    doc.setTextColor(100, 100, 100);
-    doc.text("Management Approval:", leftColumnX, y);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Expected by ${timeline.approval}`, leftColumnX + 40, y);
-    
-    y += 8;
-    doc.setTextColor(100, 100, 100);
-    doc.text("Processing & Procurement:", leftColumnX, y);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Expected by ${timeline.processing}`, leftColumnX + 40, y);
-    
-    y += 8;
-    doc.setTextColor(100, 100, 100);
-    doc.text("Delivery & Handover:", leftColumnX, y);
-    doc.setTextColor(0, 0, 0);
-    doc.text(`Expected by ${timeline.delivery}`, leftColumnX + 40, y);
-    
-    // Important Note
-    y += 15;
-    doc.setFillColor(255, 250, 230);
-    doc.rect(14, y, 182, 25, 'F');
-    
-    y += 5;
-    doc.setFontSize(10);
-    doc.setTextColor(153, 102, 0);
-    doc.text("Important Information:", 18, y);
-    
-    y += 5;
-    doc.setFontSize(9);
-    doc.text("This asset request will be reviewed by your department head and the procurement team.", 18, y);
-    y += 5;
-    doc.text("You will receive notifications about any status changes to your request.", 18, y);
-    y += 5;
-    doc.text("For inquiries, please reference your request number when contacting the IT department.", 18, y);
-    
-    // Footer
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
+    // Draw status
+    doc.setFontSize(7);
+    if (step.status === "Complete") {
+      doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
+    } else {
       doc.setTextColor(150, 150, 150);
-      doc.text(`Page ${i} of ${pageCount}`, 196, 287, { align: 'right' });
-      doc.text(`Generated on ${format(new Date(), "MMMM dd, yyyy")}`, 14, 287);
-      doc.text("Asset Management System", 105, 287, { align: 'center' });
     }
+    doc.text(step.status, x, y + 15, { align: 'center' });
     
-    // Save the PDF
-    doc.save(`Asset_Request_${requestId}.pdf`);
-  };
+    // Draw date
+    doc.setFontSize(7);
+    doc.setTextColor(100, 100, 100);
+    doc.text(step.date, x, y + 20, { align: 'center' });
+  });
+  
+  y += 30;
+  
+  // ESTIMATED TIMELINE
+  addSectionHeader(doc, "ESTIMATED TIMELINE", y, primaryColor);
+  y += 10;
+  
+  // Add timeline information in a box
+  doc.setFillColor(248, 250, 248);
+  doc.roundedRect(14, y, 182, 40, 2, 2, 'F');
+  
+  doc.setFontSize(10);
+  doc.setTextColor(50, 50, 50);
+  
+  addLabelValuePair(doc, "Current Status:", "Pending Department Approval", 20, y + 8, 40);
+  addLabelValuePair(doc, "Management Approval Expected:", timeline.approval, 20, y + 16, 65);
+  addLabelValuePair(doc, "Procurement Process Expected:", timeline.processing, 20, y + 24, 65);
+  addLabelValuePair(doc, "Estimated Delivery:", timeline.delivery, 20, y + 32, 65);
+  
+  y += 50;
+  
+  // TERMS AND CONDITIONS
+  if (y > 240) {
+    doc.addPage();
+    y = 20;
+  }
+  
+  addSectionHeader(doc, "TERMS & CONDITIONS", y, primaryColor);
+  y += 10;
+  
+  doc.setFontSize(9);
+  doc.setTextColor(80, 80, 80);
+  
+  const terms = [
+    "1. All asset requests are subject to company approval policies and budget availability.",
+    "2. The requestor is responsible for the proper use and care of company assets.",
+    "3. Assets remain company property and must be returned upon request or termination.",
+    "4. Damaged or lost assets may result in financial liability as per company policy.",
+    "5. Use of assets for purposes other than company business is strictly prohibited."
+  ];
+  
+  terms.forEach(term => {
+    doc.text(term, 14, y);
+    y += 6;
+  });
+  
+  // Policy agreement
+  y += 5;
+  doc.setFillColor(240, 248, 240);
+  doc.roundedRect(14, y, 182, 20, 2, 2, 'F');
+  
+  doc.setFontSize(9);
+  doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.setFont("helvetica", "bold");
+  doc.text("Policy Agreement Confirmation", 19, y + 6);
+  
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  const policyText = "The requestor has acknowledged and agreed to comply with all company policies related to asset usage, maintenance, and return as specified in the Asset Management Procedure document (Ref: AMP-2023-01).";
+  const splitPolicy = doc.splitTextToSize(policyText, 172);
+  doc.text(splitPolicy, 19, y + 12);
+  
+  // APPROVAL SECTION
+  y += 30;
+  if (y > 250) {
+    doc.addPage();
+    y = 20;
+  }
+  
+  addSectionHeader(doc, "APPROVAL SECTION", y, primaryColor);
+  y += 10;
+  
+  // Draw signature boxes
+  const signatureWidth = 80;
+  const signatureHeight = 35;
+  const leftSigX = 14;
+  const rightSigX = 116;
+  
+  // Requestor signature box
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineWidth(0.5);
+  doc.rect(leftSigX, y, signatureWidth, signatureHeight);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Requestor", leftSigX + 2, y + 5);
+  
+  doc.setFontSize(10);
+  doc.setTextColor(50, 50, 50);
+  doc.text(formData.employeeName, leftSigX + 40, y + 15, { align: 'center' });
+  
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Date: " + format(new Date(), "dd/MM/yyyy"), leftSigX + 40, y + 23, { align: 'center' });
+  doc.text("Employee ID: " + formData.employeeCode, leftSigX + 40, y + 30, { align: 'center' });
+  
+  // Approver signature box
+  doc.setDrawColor(180, 180, 180);
+  doc.rect(rightSigX, y, signatureWidth, signatureHeight);
+  
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Department Approver", rightSigX + 2, y + 5);
+  
+  doc.setFontSize(8);
+  doc.setTextColor(100, 100, 100);
+  doc.text("Signature: _________________________", rightSigX + 40, y + 15, { align: 'center' });
+  doc.text("Name: _________________________", rightSigX + 40, y + 23, { align: 'center' });
+  doc.text("Date: _________________________", rightSigX + 40, y + 30, { align: 'center' });
+  
+  // Footer for all pages
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    
+    // Add green footer bar
+    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.rect(0, 287, 210, 10, 'F');
+    
+    // Footer text
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text(`Request #${requestId} | Page ${i} of ${pageCount}`, 105, 293, { align: 'center' });
+    doc.text(`Asset Management System`, 14, 293);
+    doc.text(`Confidential Document`, 196, 293, { align: 'right' });
+  }
+  
+  // Save the PDF
+  doc.save(`Asset_Request_${requestId}.pdf`);
+};
+
+// Helper function to add section headers
+function addSectionHeader(doc : any, title : any, y : any, primaryColor : any) {
+  doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+  doc.rect(14, y, 182, 6, 'F');
+  
+  doc.setFontSize(10);
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.text(title, 17, y + 4);
+}
+
+// Helper function to add label-value pairs
+function addLabelValuePair(doc : any, label : any, value : any, x : any, y : any, labelWidth : any) {
+  doc.setFontSize(9);
+  doc.setTextColor(100, 100, 100);
+  doc.setFont("helvetica", "normal");
+  doc.text(label, x, y);
+  
+  doc.setTextColor(0, 0, 0);
+  doc.setFont("helvetica", "bold");
+  doc.text(value || "N/A", x + labelWidth, y);
+}
 
   // Render form step content
   const renderFormStep = () => {
