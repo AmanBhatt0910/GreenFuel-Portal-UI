@@ -994,18 +994,6 @@ const BudgetRequestsList = () => {
                                       </div>
                                       <div className="flex justify-between">
                                         <span className="text-sm font-medium">
-                                          Initiated by Dept.
-                                        </span>
-                                        <span className="text-sm">
-                                          {request.initiate_dept
-                                            ? getDepartmentName(
-                                                request.initiate_dept
-                                              )
-                                            : "N/A"}
-                                        </span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-sm font-medium">
                                           Notified to
                                         </span>
                                         <span className="text-sm">
