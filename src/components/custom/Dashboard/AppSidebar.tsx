@@ -123,7 +123,7 @@ const AppSidebar = () => {
     }
   }, [userInfo]);
 
-  console.log("designation", userInfo);
+  // console.log("designation", userInfo);  
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
