@@ -76,12 +76,6 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
               : bu
           )
         );
-
-        // Auto-expand the new department
-        setExpandedDepartments({
-          ...expandedDepartments,
-          [newDepartment.id]: true,
-        });
       }
 
       // Reset form
@@ -117,10 +111,13 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
     <>
       {/* Department Info Header */}
       <Card className="mb-6 bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-lg text-gray-800 dark:text-gray-100">
             Departments for {activeBusinessUnit?.name || "Selected Business Unit"}
           </CardTitle>
+          <div className="text-sm text-gray-500">
+            {activeBusinessUnit?.departments?.length || 0} Department{activeBusinessUnit?.departments?.length !== 1 ? 's' : ''}
+          </div>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-3">
@@ -153,8 +150,6 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
               activeBusinessUnitId={activeBusinessUnitId}
               setActiveBusinessUnitId={setActiveBusinessUnitId}
               setActiveTab={setActiveTab}
-              expandedDepartments={expandedDepartments}
-              setExpandedDepartments={setExpandedDepartments}
               selectedDepartmentId={selectedDepartmentId}
               setSelectedDepartmentId={setSelectedDepartmentId}
               setIsAddDesignationDialogOpen={setIsAddDesignationDialogOpen}
@@ -172,4 +167,4 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
       )}
     </>
   );
-}; 
+};

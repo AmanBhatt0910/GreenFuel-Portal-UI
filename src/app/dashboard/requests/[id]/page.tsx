@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useEffect, useRef } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import {
   CheckCircle,
   XCircle,
@@ -22,6 +22,7 @@ import {
   ChevronRight,
   ChevronDown,
   Paperclip,
+  PlusCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -134,9 +135,22 @@ interface ChatMessage {
   toLevel: number;
 }
 
+interface EntityInfo {
+  id: number;
+  name: string;
+}
+
+interface Designation extends EntityInfo {
+  level: number;
+  department_name?: string;
+  department?: number;
+}
+
 const RequestDetailsPage = () => {
   const params = useParams();
   const requestId = params.id as string;
+  const searchParams = useSearchParams();
+  const userIdParam = searchParams.get('userId');
 
   const [request, setRequest] = useState<BudgetRequest | null>(null);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
@@ -160,27 +174,47 @@ const RequestDetailsPage = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
   const commentInputRef = useRef<HTMLTextAreaElement>(null);
+  const [businessUnits, setBusinessUnits] = useState<EntityInfo[]>([]);
+  const [departments, setDepartments] = useState<EntityInfo[]>([]);
+  const [designations, setDesignations] = useState<Designation[]>([]);
+  const [users, setUsers] = useState<any[]>([]);
+
+  const [designationMap, setDesignationMap] = useState<Map<number, Designation>>(new Map());
+const [departmentMap, setDepartmentMap] = useState<Map<number, EntityInfo>>(new Map());
+const [businessUnitMap, setBusinessUnitMap] = useState<Map<number, EntityInfo>>(new Map());
+
 
   const api = useAxios();
 
   // Set progress percentage based on current level and approval statuses
-  useEffect(() => {
-    if (request && approvalLevels.length > 0) {
-      const approvedLevels = approvalLevels.filter(
-        (level) => level.status.toLowerCase() === "approved"
-      ).length;
-      setApprovalProgress(
-        Math.round((approvedLevels / request.max_level) * 100)
-      );
-    }
-  }, [request, approvalLevels]);
+  // useEffect(() => {
+  //   if (request && approvalLevels.length > 0) {
+  //     const approvedLevels = approvalLevels.filter(
+  //       (level) => level.status.toLowerCase() === "approved"
+  //     ).length;
+  //     setApprovalProgress(
+  //       Math.round((approvedLevels / request.max_level) * 100)
+  //     );
+  //   }
+  // }, [request, approvalLevels]);s
 
   // Fetch user info
   useEffect(() => {
     const fetchUserInfo = async () => {
       try {
-        const response = await api.get("/userInfo/");
+        // Get current user info - either from params or get current user
+        const endpoint = userIdParam ? `/userInfo/${userIdParam}` : "/userInfo/";
+        console.log("Fetching user info from:", endpoint);
+        const response = await api.get(endpoint);
+        
+        // Get the current user's info
         setUserInfo(response.data);
+        console.log("User info loaded:", response.data);
+        
+        // Fetch designations to get the user's level
+        const designationsRes = await api.get("/designations/");
+        setDesignations(designationsRes.data);
+        
       } catch (err) {
         console.error("Error fetching user info:", err);
         setError("Failed to load user information");
@@ -188,7 +222,7 @@ const RequestDetailsPage = () => {
     };
 
     fetchUserInfo();
-  }, []);
+  }, [userIdParam]);
 
   // Fetch request data
   useEffect(() => {
@@ -196,38 +230,64 @@ const RequestDetailsPage = () => {
       const fetchRequestData = async () => {
         try {
           setLoading(true);
-          const response = await api.get(`approval-requests/`);
+          // Fetch request data
+          const response = await api.get(`/approval-requests/${requestId}/`);
+          console.log("response", response)
           const requestData = response.data;
-          console.log("requestData", requestData);
           setRequest(requestData);
-
+  
+          // Fetch related entity data
+          const [businessUnitsRes, departmentsRes, designationsRes, usersRes] =
+            await Promise.all([
+              api.get("/business-units/"),
+              api.get("/departments/"),
+              api.get("/designations/"),
+              api.get("/userInfo/"),
+            ]);
+  
+          // Create maps for faster lookups
+          const businessUnitsData = businessUnitsRes.data;
+          const businessUnitsMapObj = new Map();
+          businessUnitsData.forEach((unit: EntityInfo) => {
+            businessUnitsMapObj.set(unit.id, unit);
+          });
+          setBusinessUnitMap(businessUnitsMapObj);
+          setBusinessUnits(businessUnitsData);
+  
+          const departmentsData = departmentsRes.data;
+          const departmentsMapObj = new Map();
+          departmentsData.forEach((dept: EntityInfo) => {
+            departmentsMapObj.set(dept.id, dept);
+          });
+          setDepartmentMap(departmentsMapObj);
+          setDepartments(departmentsData);
+  
+          const designationsData = designationsRes.data;
+          const designationsMapObj = new Map();
+          designationsData.forEach((desig: Designation) => {
+            designationsMapObj.set(desig.id, desig);
+          });
+          setDesignationMap(designationsMapObj);
+          setDesignations(designationsData);
+  
+          setUsers(usersRes.data);
+  
           if (requestData.approval_levels) {
             setApprovalLevels(requestData.approval_levels);
           }
-
+  
           if (requestData.documents) {
             setDocuments(requestData.documents);
           }
-
+  
           if (requestData.comments) {
             setComments(requestData.comments);
           }
-
-          // Fetch chat messages if available
+  
           if (requestData.chatMessages) {
             setChatMessages(requestData.chatMessages);
-          } else {
-            // If not available in the main request, try to fetch them separately
-            try {
-              const chatResponse = await api.get(
-                `/approval-requests/${requestId}/chat/`
-              );
-              setChatMessages(chatResponse.data);
-            } catch (chatErr) {
-              console.error("Error fetching chat messages:", chatErr);
-            }
           }
-
+  
           setError(null);
         } catch (err) {
           console.error("Error fetching request data:", err);
@@ -236,10 +296,15 @@ const RequestDetailsPage = () => {
           setLoading(false);
         }
       };
-
+  
       fetchRequestData();
     }
   }, [requestId]);
+  
+
+  // console.log(designations)
+  // console.log(departments)
+  console.log(businessUnits)
 
   // Scroll to bottom of chat when new messages arrive
   useEffect(() => {
@@ -262,7 +327,7 @@ const RequestDetailsPage = () => {
 
       // Send approval to API
       await api.post(`/approval-requests/${requestId}/approve/`, {
-        level: userInfo?.approval_level,
+        level: getUserDesignationLevel(),
         designation: userInfo?.designation,
         comments: "Approved",
       });
@@ -299,7 +364,7 @@ const RequestDetailsPage = () => {
 
       // Send rejection to API
       await api.post(`/approval-requests/${requestId}/reject/`, {
-        level: userInfo?.approval_level,
+        level: getUserDesignationLevel(),
         designation: userInfo?.designation,
         rejection_reason: rejectionReason,
       });
@@ -330,18 +395,50 @@ const RequestDetailsPage = () => {
     }
   };
 
-  // Check if the current user can take action on this request
+  // Check if the current user can take action
   const canTakeAction = (): boolean => {
-    if (!request || !userInfo) return false;
-
-    // Check if both current_level and designation match
-    return (
-      userInfo.approval_level === request.current_level &&
-      userInfo.designation === request.designation &&
-      !request.rejected
-    );
+    if (!request || !userInfo) {
+      console.log("Cannot take action: Missing request or userInfo data");
+      return false;
+    }
+    
+    // Get the user's designation using the map for efficient lookup
+    const userDesignation = designationMap.get(userInfo.designation);
+    
+    if (!userDesignation) {
+      console.log("Cannot take action: User designation not found in map", userInfo.designation);
+      return false;
+    }
+    
+    // Log all relevant information for debugging
+    console.log("Checking authorization:");
+    console.log("- User ID:", userInfo.id);
+    console.log("- Request User ID:", request.user);
+    console.log("- User Designation:", userInfo.designation);
+    console.log("- User Designation Level:", userDesignation.level);
+    console.log("- Request Current Level:", request.current_level);
+    console.log("- User Department:", userInfo.department);
+    console.log("- Request Department:", request.department);
+    console.log("- Request Rejected:", request.rejected);
+    
+    // First check: Don't allow creator to approve their own request
+    if (userInfo.id === request.user) {
+      console.log("Cannot take action: User is the creator of the request");
+      return false;
+    }
+    
+    // Check if:
+    // 1. User's designation level matches the request's current_level
+    // 2. User's department matches the request's department
+    // 3. Request is not already rejected
+    const canApprove = 
+      userDesignation.level === request.current_level &&
+      Number(userInfo.department) === request.department &&
+      !request.rejected;
+    
+    console.log("Authorization result:", canApprove);
+    return canApprove;
   };
-
   // Handle posting a new comment
   const handleAddComment = async () => {
     if (!newComment.trim() || !userInfo) return;
@@ -394,29 +491,29 @@ const RequestDetailsPage = () => {
   };
 
   // Get status badge color and icon
-  const getStatusBadge = (status: string): StatusBadge => {
-    switch (status.toLowerCase()) {
-      case "approved":
-        return {
-          color: "text-green-800 border-green-200",
-          bgColor: "bg-green-50",
-          icon: <CheckCircle className="h-4 w-4 mr-1 text-green-600" />,
-        };
-      case "rejected":
-        return {
-          color: "text-red-800 border-red-200",
-          bgColor: "bg-red-50",
-          icon: <XCircle className="h-4 w-4 mr-1 text-red-600" />,
-        };
-      case "pending":
-      default:
-        return {
-          color: "text-amber-800 border-amber-200",
-          bgColor: "bg-amber-50",
-          icon: <Clock className="h-4 w-4 mr-1 text-amber-600" />,
-        };
-    }
-  };
+  // const getStatusBadge = (status: string): StatusBadge => {
+  //   switch (status.toLowerCase()) {
+  //     case "approved":
+  //       return {
+  //         color: "text-green-800 border-green-200",
+  //         bgColor: "bg-green-50",
+  //         icon: <CheckCircle className="h-4 w-4 mr-1 text-green-600" />,
+  //       };
+  //     case "rejected":
+  //       return {
+  //         color: "text-red-800 border-red-200",
+  //         bgColor: "bg-red-50",
+  //         icon: <XCircle className="h-4 w-4 mr-1 text-red-600" />,
+  //       };
+  //     case "pending":
+  //     default:
+  //       return {
+  //         color: "text-amber-800 border-amber-200",
+  //         bgColor: "bg-amber-50",
+  //         icon: <Clock className="h-4 w-4 mr-1 text-amber-600" />,
+  //       };
+  //   }
+  // };
 
   // Format date for display
   const formatDate = (dateString: string | null): string => {
@@ -456,6 +553,39 @@ const RequestDetailsPage = () => {
       .map((n) => n[0])
       .join("")
       .toUpperCase();
+  };
+
+  // Add these helper functions
+  const getBusinessUnitName = (id: number) => {
+    const unit = businessUnitMap.get(id);
+    return unit?.name || `Business Unit #${id}`;
+  };
+  
+  const getDepartmentName = (id: number) => {
+    const department = departmentMap.get(id);
+    return department?.name || `Department #${id}`;
+  };
+  
+  const getDesignationName = (id: number) => {
+    const designation = designationMap.get(id);
+    return designation?.name || `Designation #${id}`;
+  };
+
+  const getUserName = (id: number) => {
+    const user = users.find((user) => user.id === id);
+    if (user?.first_name && user?.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    }
+    return user?.name || user?.username || `User #${id}`;
+  };
+
+  // Helper function to get the user's designation level
+  const getUserDesignationLevel = (): number => {
+    if (!userInfo) return 0;
+    
+    const userDesignation = designationMap.get(userInfo.designation);
+    
+    return userDesignation ? userDesignation.level : 0;
   };
 
   if (loading && !request) {
@@ -519,7 +649,7 @@ const RequestDetailsPage = () => {
     );
   }
 
-  const statusBadge = getStatusBadge(request.current_status);
+  // const statusBadge = getStatusBadge(request.current_status);
   const availableChatLevels = getAvailableChatLevels();
 
   return (
@@ -620,13 +750,17 @@ const RequestDetailsPage = () => {
               {formatDate(request.date)}
             </p>
           </div>
-          <Badge
-            className={`${statusBadge.color} ${statusBadge.bgColor} flex items-center mt-2 md:mt-0 px-3 py-1.5 text-sm font-medium border`}
-          >
-            {statusBadge.icon}
-            {request.current_status.charAt(0).toUpperCase() +
-              request.current_status.slice(1)}
-          </Badge>
+          
+          {userInfo && (
+            <Badge 
+              variant="outline" 
+              className="bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1"
+            >
+              <User className="h-3 w-3 mr-1" />
+              {userInfo.name || userInfo.email || `User #${userInfo.id}`}
+              {userIdParam && <span className="ml-1">(Viewing as user)</span>}
+            </Badge>
+          )}
         </div>
 
         <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
@@ -666,68 +800,37 @@ const RequestDetailsPage = () => {
         onValueChange={setCurrentTab}
       >
         <TabsList className="mb-6 p-1 bg-blue-50 rounded-lg gap-2.5">
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
-            <TabsTrigger
-              value="details"
-              className="data-[state=active]:bg-white"
-            >
-              <Info className="h-4 w-4 mr-2" />
-              Details
-            </TabsTrigger>
-          </motion.div>
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
-            <TabsTrigger
-              value="history"
-              className="data-[state=active]:bg-white"
-            >
-              <History className="h-4 w-4 mr-2" />
-              Approval History
-            </TabsTrigger>
-          </motion.div>
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
-            <TabsTrigger value="chat" className="data-[state=active]:bg-white">
+          {/* Only show tabs besides comments if user has sufficient level */}
+          {userInfo && getUserDesignationLevel() > 1 ? (
+            <>
+              <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
+                <TabsTrigger value="details" className="data-[state=active]:bg-white">
+                  <Info className="h-4 w-4 mr-2" />
+                  Details
+                </TabsTrigger>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
+                <TabsTrigger value="history" className="data-[state=active]:bg-white">
+                  <History className="h-4 w-4 mr-2" />
+                  Approval History
+                </TabsTrigger>
+              </motion.div>
+              {documents.length > 0 && (
+                <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
+                  <TabsTrigger value="documents" className="data-[state=active]:bg-white">
+                    <FileText className="h-4 w-4 mr-2" />
+                    Documents
+                  </TabsTrigger>
+                </motion.div>
+              )}
+            </>
+          ) : null}
+          <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
+            <TabsTrigger value="comments" className="data-[state=active]:bg-white">
               <MessageSquare className="h-4 w-4 mr-2" />
-              Chat
-            </TabsTrigger>
-          </motion.div>
-          {documents.length > 0 && (
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <TabsTrigger
-                value="documents"
-                className="data-[state=active]:bg-white"
-              >
-                <FileText className="h-4 w-4 mr-2" />
-                Documents
-              </TabsTrigger>
-            </motion.div>
-          )}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
-            <TabsTrigger
-              value="comments"
-              className="data-[state=active]:bg-white"
-            >
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Comments
+              Discussion
               {comments.length > 0 && (
-                <Badge
-                  variant="secondary"
-                  className="ml-2 bg-blue-100 text-blue-800"
-                >
+                <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800">
                   {comments.length}
                 </Badge>
               )}
@@ -815,7 +918,7 @@ const RequestDetailsPage = () => {
                             Department
                           </h3>
                           <p className="font-medium text-gray-900">
-                            ID: {request.department}
+                            {getDepartmentName(request.department)}
                           </p>
                         </div>
                       </motion.div>
@@ -832,7 +935,7 @@ const RequestDetailsPage = () => {
                             Requester
                           </h3>
                           <p className="font-medium text-gray-900">
-                            User ID: {request.user}
+                            User : {getUserName(request.user)}
                           </p>
                         </div>
                       </motion.div>
@@ -872,8 +975,8 @@ const RequestDetailsPage = () => {
                   </div>
                 </CardContent>
 
-                {/* Action buttons - only show if both level AND designation match */}
-                {canTakeAction() && (
+                {/* Action buttons - only show if level AND designation match */}
+                {canTakeAction() ? (
                   <CardFooter className="flex justify-end space-x-4 bg-gray-50 p-6 border-t">
                     <TooltipProvider>
                       <Tooltip>
@@ -908,6 +1011,25 @@ const RequestDetailsPage = () => {
                       </Tooltip>
                     </TooltipProvider>
                   </CardFooter>
+                ) : (
+                  <CardFooter className="bg-gray-50 p-6 border-t">
+                    <div className="w-full">
+                      <Alert className="bg-amber-50 border-amber-200 text-amber-800">
+                        <AlertCircle className="h-4 w-4 text-amber-600" />
+                        <AlertTitle>Form cannot be approved by you</AlertTitle>
+                        <AlertDescription className="mt-2">
+                          {!request ? "Request not found." : 
+                           userInfo?.id === request.user ? "You cannot approve your own request." :
+                           (userInfo && designationMap.get(userInfo.designation)?.level !== request.current_level) ? 
+                             `This request requires approval at level ${request.current_level}.` :
+                           Number(userInfo?.department) !== request.department ? 
+                             "This request must be approved by someone in the same department." :
+                           request.rejected ? "This request has already been rejected." :
+                           "You don't have permission to approve this request."}
+                        </AlertDescription>
+                      </Alert>
+                    </div>
+                  </CardFooter>
                 )}
               </Card>
             </TabsContent>
@@ -938,7 +1060,7 @@ const RequestDetailsPage = () => {
                           )}
 
                           {/* Status icon */}
-                          <div
+                          {/* <div
                             className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center mr-4 z-10 ${
                               level.status.toLowerCase() === "approved"
                                 ? "bg-green-100 text-green-600"
@@ -954,14 +1076,14 @@ const RequestDetailsPage = () => {
                             ) : (
                               <Clock className="h-5 w-5" />
                             )}
-                          </div>
+                          </div> */}
 
                           <div className="flex-1">
                             <div className="flex items-center mb-1">
                               <h4 className="text-lg font-semibold text-gray-900 mr-2">
                                 {level.title}
                               </h4>
-                              <Badge
+                              {/* <Badge
                                 className={`${
                                   getStatusBadge(level.status).color
                                 } ${
@@ -970,7 +1092,7 @@ const RequestDetailsPage = () => {
                               >
                                 {getStatusBadge(level.status).icon}
                                 {level.status}
-                              </Badge>
+                              </Badge> */}
                             </div>
 
                             <div className="text-sm text-gray-500 flex items-center mb-2">
@@ -1002,135 +1124,6 @@ const RequestDetailsPage = () => {
                         </div>
                       </div>
                     ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="chat" className="mt-0">
-              <Card>
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-                  <CardTitle className="text-xl font-bold flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-blue-600" />
-                    Communication
-                  </CardTitle>
-                  <CardDescription>
-                    Communicate with other approval levels
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-0">
-                  <div className="flex flex-col h-96">
-                    <ScrollArea className="flex-1 p-4">
-                      {chatMessages.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center h-64 text-gray-500">
-                          <MessageSquare className="h-12 w-12 text-gray-300 mb-4" />
-                          <p>No messages yet</p>
-                          <p className="text-sm">
-                            Start a conversation with other approval levels
-                          </p>
-                        </div>
-                      ) : (
-                        <div className="space-y-4">
-                          {Array.isArray(chatMessages) ? 
-                            chatMessages.map((message) => (
-                              <motion.div
-                                key={message.id}
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                className={`flex ${
-                                  message.senderId === userInfo?.id
-                                    ? "justify-end"
-                                    : "justify-start"
-                                }`}
-                              >
-                                <div
-                                  className={`max-w-xs md:max-w-md rounded-lg p-3 ${
-                                    message.senderId === userInfo?.id
-                                      ? "bg-blue-500 text-white"
-                                      : "bg-gray-100 text-gray-800"
-                                  }`}
-                                >
-                                  <div className="flex items-center mb-1">
-                                    <span className="text-xs font-medium">
-                                      {message.senderId === userInfo?.id
-                                        ? "You"
-                                        : message.senderName}{" "}
-                                      (Level {message.fromLevel})
-                                    </span>
-                                    <span className="mx-1">→</span>
-                                    <span className="text-xs">
-                                      Level {message.toLevel}
-                                    </span>
-                                  </div>
-                                  <p>{message.message}</p>
-                                  <p
-                                    className={`text-xs mt-1 text-right ${
-                                      message.senderId === userInfo?.id
-                                        ? "text-blue-100"
-                                        : "text-gray-500"
-                                    }`}
-                                  >
-                                    {formatDate(message.timestamp)}
-                                  </p>
-                                </div>
-                              </motion.div>
-                            ))
-                            : <p>No messages available</p>
-                          }
-                          <div ref={chatEndRef} />
-                        </div>
-                      )}
-                    </ScrollArea>
-
-                    {/* Chat input */}
-                    <div className="border-t p-4">
-                      <div className="flex flex-col gap-2">
-                        <div className="flex gap-2">
-                          <select
-                            className="rounded-md border border-gray-300 py-2 px-3 text-sm flex-grow-0 w-40"
-                            value={selectedChatLevel || ""}
-                            onChange={(e) =>
-                              setSelectedChatLevel(Number(e.target.value))
-                            }
-                          >
-                            <option value="">Select level</option>
-                            {availableChatLevels.map((level) => (
-                              <option key={level} value={level}>
-                                Level {level}
-                              </option>
-                            ))}
-                          </select>
-                          <Input
-                            placeholder="Type your message..."
-                            value={newChatMessage}
-                            onChange={(e) => setNewChatMessage(e.target.value)}
-                            className="flex-1"
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" && !e.shiftKey) {
-                                e.preventDefault();
-                                handleSendChatMessage();
-                              }
-                            }}
-                          />
-                          <Button
-                            size="icon"
-                            onClick={handleSendChatMessage}
-                            disabled={
-                              !newChatMessage.trim() ||
-                              selectedChatLevel === null
-                            }
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        {!selectedChatLevel && (
-                          <p className="text-xs text-amber-600">
-                            <AlertCircle className="h-3 w-3 inline mr-1" />
-                            Please select a level to send message to
-                          </p>
-                        )}
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -1193,10 +1186,10 @@ const RequestDetailsPage = () => {
                 <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
                   <CardTitle className="text-xl font-bold flex items-center gap-2">
                     <MessageSquare className="h-5 w-5 text-blue-600" />
-                    Comments
+                    Discussion Thread
                   </CardTitle>
                   <CardDescription>
-                    Comments and notes from approval process
+                    Team communication and approval notes
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-6">
@@ -1204,58 +1197,86 @@ const RequestDetailsPage = () => {
                     {comments.length === 0 ? (
                       <div className="text-center py-8 text-gray-500">
                         <MessageSquare className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                        <p>No comments yet</p>
+                        <p className="font-medium">No comments yet</p>
+                        <p className="text-sm mt-1">
+                          Start the discussion by adding a comment below
+                        </p>
                       </div>
                     ) : (
-                      comments.map((comment) => (
-                        <motion.div
-                          key={comment.id}
-                          initial={{ opacity: 0, y: 20 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          className="flex gap-4"
-                        >
-                          <Avatar className="h-10 w-10">
-                            <AvatarFallback className="bg-blue-100 text-blue-700">
-                              {getInitials(comment.author)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1">
-                            <div className="bg-gray-50 rounded-lg p-4">
-                              <div className="flex justify-between items-start mb-2">
-                                <div>
-                                  <h4 className="font-medium text-gray-900">
-                                    {comment.author}
-                                  </h4>
-                                  <p className="text-xs text-gray-500">
-                                    Level {comment.level} •{" "}
-                                    {formatDate(comment.timestamp)}
+                      <ScrollArea className="max-h-[400px] pr-4">
+                        <div className="space-y-6">
+                          {comments.map((comment) => (
+                            <motion.div
+                              key={comment.id}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className="flex gap-4"
+                            >
+                              <div className="flex-shrink-0">
+                                <Avatar className="h-10 w-10 border border-blue-100">
+                                  <AvatarImage
+                                    src={`https://avatars.dicebear.com/api/initials/${getInitials(
+                                      comment.author
+                                    )}.svg`}
+                                  />
+                                  <AvatarFallback className="bg-blue-100 text-blue-700">
+                                    {getInitials(comment.author)}
+                                  </AvatarFallback>
+                                </Avatar>
+                              </div>
+                              <div className="flex-1">
+                                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
+                                  <div className="flex justify-between items-start mb-2">
+                                    <div>
+                                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">
+                                        {comment.author}
+                                      </h4>
+                                      <div className="flex items-center text-xs text-gray-500">
+                                        <Badge
+                                          variant="outline"
+                                          className="mr-2 text-xs px-1.5 py-0 h-5"
+                                        >
+                                          Level {comment.level}
+                                        </Badge>
+                                        <CalendarDays className="h-3 w-3 mr-1" />
+                                        {formatDate(comment.timestamp)}
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <p className="text-gray-800 dark:text-gray-200">
+                                    {comment.text}
                                   </p>
                                 </div>
                               </div>
-                              <p className="text-gray-800">{comment.text}</p>
-                            </div>
-                          </div>
-                        </motion.div>
-                      ))
+                            </motion.div>
+                          ))}
+                        </div>
+                      </ScrollArea>
                     )}
 
                     {/* Add comment form */}
                     <div className="mt-6 pt-6 border-t">
-                      <h4 className="font-medium text-gray-900 mb-3">
-                        Add Comment
+                      <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+                        <PlusCircle className="h-4 w-4 mr-2 text-blue-600" />
+                        Add Your Comment
                       </h4>
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-3 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
                         <Textarea
-                          placeholder="Add your comment..."
-                          className="resize-none"
+                          placeholder="Share your thoughts or feedback..."
+                          className="resize-none min-h-[100px] border-gray-200 focus:border-blue-500"
                           value={newComment}
                           onChange={(e) => setNewComment(e.target.value)}
                           ref={commentInputRef}
                         />
-                        <div className="flex justify-end">
+                        <div className="flex justify-between items-center">
+                          <p className="text-xs text-gray-500">
+                            <Info className="h-3 w-3 inline mr-1" />
+                            Comments are visible to all stakeholders
+                          </p>
                           <Button
                             onClick={handleAddComment}
                             disabled={!newComment.trim()}
+                            className="bg-blue-600 hover:bg-blue-700"
                           >
                             <MessageSquare className="mr-2 h-4 w-4" />
                             Post Comment

@@ -123,7 +123,7 @@ const AppSidebar = () => {
     }
   }, [userInfo]);
 
-  // console.log("designation", userInfo);  
+  console.log("designation", userInfo);  
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
@@ -276,7 +276,7 @@ const AppSidebar = () => {
         </div>
 
         {/* Request Section with Dropdown */}
-        {designation && parseInt(designation) === 1 && (
+        {designation && parseInt(designation) > 1 && (
           <div className="mt-5">
             <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
               Requests

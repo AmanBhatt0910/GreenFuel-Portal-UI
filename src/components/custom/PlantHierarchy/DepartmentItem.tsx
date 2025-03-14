@@ -1,16 +1,13 @@
-"use client"
-import React, { useState } from 'react';
-import { Edit, Trash2, ChevronDown, ChevronRight, Plus, Check, X } from 'lucide-react';
+'use client'
+import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Department, DepartmentActionsProps } from './types';
-import { DesignationCard } from './DesignationCard';
+import { User, UserPlus, Settings } from 'lucide-react';
+import { BusinessUnitActionsProps } from './types';
 
-interface DepartmentItemProps extends DepartmentActionsProps {
-  department: Department;
+interface DepartmentItemProps extends BusinessUnitActionsProps {
+  department: any;
   selectedDepartmentId: string;
   setSelectedDepartmentId: React.Dispatch<React.SetStateAction<string>>;
   setIsAddDesignationDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -21,255 +18,83 @@ export const DepartmentItem: React.FC<DepartmentItemProps> = ({
   businessUnits,
   setBusinessUnits,
   activeBusinessUnitId,
-  setActiveBusinessUnitId,
-  setActiveTab,
-  expandedDepartments,
-  setExpandedDepartments,
   selectedDepartmentId,
   setSelectedDepartmentId,
   setIsAddDesignationDialogOpen,
 }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editingName, setEditingName] = useState(department.name);
-
-  // Toggle department expansion
-  const toggleExpanded = () => {
-    setExpandedDepartments({
-      ...expandedDepartments,
-      [department.id || '']: !expandedDepartments[department.id || ''],
-    });
-  };
-
-  // Start editing department name
-  const startEditing = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setEditingName(department.name);
-    setIsEditing(true);
-  };
-
-  // Save edited department name
-  const saveEditedDepartment = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    if (!editingName.trim()) {
-      return; // Don't save empty names
-    }
-    
-    setBusinessUnits(
-      businessUnits.map((bu) =>
-        bu.id === activeBusinessUnitId
-          ? {
-              ...bu,
-              departments: bu.departments?.map((dept) =>
-                dept.id === department.id
-                  ? { ...dept, name: editingName }
-                  : dept
-              ),
-            }
-          : bu
-      )
-    );
-    
-    setIsEditing(false);
-  };
-
-  // Cancel editing
-  const cancelEditing = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsEditing(false);
-  };
-
-  // Delete department
-  const deleteDepartment = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    
-    if (window.confirm('Are you sure you want to delete this department? This will also delete all associated designations.')) {
-      setBusinessUnits(
-        businessUnits.map((bu) =>
-          bu.id === activeBusinessUnitId
-            ? {
-                ...bu,
-                departments: bu.departments?.filter(
-                  (dept) => dept.id !== department.id
-                ),
-              }
-            : bu
-        )
-      );
-      
-      // If this was the selected department, clear the selection
-      if (selectedDepartmentId === department.id) {
-        setSelectedDepartmentId('');
-      }
-    }
-  };
-
-  // Add designation to department
-  const addDesignation = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setSelectedDepartmentId(department.id?.toString() || '');
+  // Handle designation selection
+  const handleAddDesignation = () => {
+    setSelectedDepartmentId(department.id);
     setIsAddDesignationDialogOpen(true);
   };
 
-  // Check if department is expanded
-  const isExpanded = department.id ? expandedDepartments[department.id] : false;
-
   return (
     <Card 
-      className={`
-        cursor-pointer transition-all duration-200 
-        ${isExpanded ? 'shadow-md' : 'shadow-sm'}
-        ${
-          selectedDepartmentId === department.id
-            ? 'border-blue-500 dark:border-blue-700'
-            : 'border-gray-200 dark:border-gray-700'
-        }
-      `}
-      onClick={toggleExpanded}
+      className={`border-l-4 transition-all duration-200 ${
+        selectedDepartmentId === department.id 
+          ? 'border-l-blue-600 shadow-md dark:border-l-blue-500' 
+          : 'border-l-gray-200 dark:border-l-gray-700'
+      }`}
     >
       <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <div className="flex items-center gap-2">
-          {isExpanded ? (
-            <ChevronDown className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          ) : (
-            <ChevronRight className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-          )}
-          
-          {isEditing ? (
-            <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
-              <Input
-                value={editingName}
-                onChange={(e) => setEditingName(e.target.value)}
-                className="bg-white dark:bg-gray-700"
-                autoFocus
-              />
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={saveEditedDepartment}
-                      className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                    >
-                      <Check className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Save changes</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={cancelEditing}
-                      className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Cancel</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-          ) : (
-            <CardTitle className="text-lg text-gray-900 dark:text-gray-100">
-              {department.name}
-            </CardTitle>
-          )}
+        <div>
+          <CardTitle className="text-lg font-medium">{department.name}</CardTitle>
+          <p className="text-sm text-gray-500 mt-1">
+            {department.designations?.length || 0} Designation{department.designations?.length !== 1 ? 's' : ''}
+          </p>
         </div>
-        
-        <div className="flex space-x-1" onClick={(e) => e.stopPropagation()}>
-          <Badge variant="outline" className="mr-2">
-            {department.designations?.length || 0} Designations
-          </Badge>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={addDesignation}
-                  className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                >
-                  <Plus className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Add designation</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={startEditing}
-                  className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Edit department</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-          
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  onClick={deleteDepartment}
-                  className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Delete department</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800"
+          onClick={handleAddDesignation}
+        >
+          <UserPlus className="h-4 w-4 mr-1" />
+          Add Designation
+        </Button>
       </CardHeader>
       
-      {isExpanded && (
-        <CardContent className="pt-2">
-          {department.designations && department.designations.length > 0 ? (
-            <div className="space-y-2">
-              {department.designations.map((designation) => (
-                <DesignationCard
-                  key={designation.id}
-                  designation={designation}
-                  department={department}
-                  businessUnits={businessUnits}
-                  setBusinessUnits={setBusinessUnits}
-                  activeBusinessUnitId={activeBusinessUnitId}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                No designations added yet. Click the "+" button to add a designation.
-              </p>
-            </div>
-          )}
-        </CardContent>
-      )}
+      <CardContent>
+        {department.designations && department.designations.length > 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {department.designations.map((designation: any) => (
+              <div 
+                key={designation.id} 
+                className="bg-gray-50 dark:bg-gray-800 rounded-md p-3 flex items-center justify-between border border-gray-100 dark:border-gray-700"
+              >
+                <div className="flex items-center">
+                  <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center mr-3">
+                    <User className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{designation.name}</p>
+                    <Badge 
+                      variant="outline" 
+                      className="mt-1 text-xs bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800"
+                    >
+                      Level {designation.level}
+                    </Badge>
+                  </div>
+                </div>
+                <Button variant="ghost" size="icon" className="h-8 w-8">
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-gray-50 dark:bg-gray-800 rounded-md p-4 text-center">
+            <p className="text-gray-500 dark:text-gray-400">No designations found</p>
+            <Button 
+              variant="link" 
+              className="text-blue-600 dark:text-blue-400 mt-1 p-0"
+              onClick={handleAddDesignation}
+            >
+              Add your first designation
+            </Button>
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
-}; 
+};
