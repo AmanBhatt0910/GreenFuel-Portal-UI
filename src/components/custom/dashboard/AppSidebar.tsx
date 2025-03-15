@@ -25,6 +25,7 @@ import {
   PanelRight,
   Key,
   Building,
+  CheckCircle,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -48,6 +49,11 @@ const DashboardItems = [
     url: "/dashboard",
     icon: Home,
   },
+  {
+    title: "Approval Dasboard",
+    url: "/dashboard/approvals",
+    icon: CheckCircle
+  }
 ];
 
 const ApprovalItems = [
