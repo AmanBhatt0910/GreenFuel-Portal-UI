@@ -448,7 +448,7 @@ const AppSidebar = () => {
               </Avatar>
               <div className="flex flex-col items-start">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                  {userInfo && userInfo.username}
+                  {userInfo && (userInfo.first_name ? userInfo.first_name + ' ' + userInfo.last_name : userInfo.email) }
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   {userInfo && userInfo.email}

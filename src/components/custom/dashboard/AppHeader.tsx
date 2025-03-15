@@ -128,7 +128,7 @@ const AppHeader = () => {
             <Button variant="ghost" className="relative h-8 w-8 rounded-full">
               <Avatar>
                 <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                <AvatarFallback className="bg-indigo-700 text-white">{userInfo?.first_name + '' + userInfo?.last_login}</AvatarFallback>
+                <AvatarFallback className="bg-indigo-700 text-white">{userInfo && (userInfo.first_name ? userInfo.first_name.charAt(0) + userInfo.last_name.charAt(0) : "JH")}</AvatarFallback>
               </Avatar>
             </Button>
           </DropdownMenuTrigger>
