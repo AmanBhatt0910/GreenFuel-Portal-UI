@@ -10,6 +10,7 @@ export interface Department {
   id?: string | number;
   name: string;
   business_unit: number;
+  approvers?: Approver[];
   designations?: Designation[];
 }
 
@@ -65,4 +66,30 @@ export interface DesignationActionsProps extends DepartmentActionsProps {
 }
 
 // Helper function to generate unique IDs (for frontend use before API saves)
-export const generateId = () => Math.random().toString(36).substr(2, 9); 
+export const generateId = () => Math.random().toString(36).substr(2, 9);
+
+export interface Approver {
+  id?: string | number;
+  user: number;
+  user_name?: string;
+  business_unit: number;
+  department: number;
+  level: number;
+}
+
+export interface NewApprover {
+  user: number;
+  business_unit: number;
+  department: number;
+  level: number;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  username: string;
+  email: string;
+  employee_code?: string;
+  department?: number;
+  business_unit?: number;
+} 

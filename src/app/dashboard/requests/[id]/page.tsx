@@ -23,6 +23,8 @@ import {
   ChevronDown,
   Paperclip,
   PlusCircle,
+  Bookmark,
+  Stamp,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -180,23 +182,11 @@ const RequestDetailsPage = () => {
   const [users, setUsers] = useState<any[]>([]);
 
   const [designationMap, setDesignationMap] = useState<Map<number, Designation>>(new Map());
-const [departmentMap, setDepartmentMap] = useState<Map<number, EntityInfo>>(new Map());
-const [businessUnitMap, setBusinessUnitMap] = useState<Map<number, EntityInfo>>(new Map());
+  const [departmentMap, setDepartmentMap] = useState<Map<number, EntityInfo>>(new Map());
+  const [businessUnitMap, setBusinessUnitMap] = useState<Map<number, EntityInfo>>(new Map());
 
 
   const api = useAxios();
-
-  // Set progress percentage based on current level and approval statuses
-  // useEffect(() => {
-  //   if (request && approvalLevels.length > 0) {
-  //     const approvedLevels = approvalLevels.filter(
-  //       (level) => level.status.toLowerCase() === "approved"
-  //     ).length;
-  //     setApprovalProgress(
-  //       Math.round((approvedLevels / request.max_level) * 100)
-  //     );
-  //   }
-  // }, [request, approvalLevels]);s
 
   // Fetch user info
   useEffect(() => {
@@ -301,11 +291,6 @@ const [businessUnitMap, setBusinessUnitMap] = useState<Map<number, EntityInfo>>(
     }
   }, [requestId]);
   
-
-  // console.log(designations)
-  // console.log(departments)
-  console.log(businessUnits)
-
   // Scroll to bottom of chat when new messages arrive
   useEffect(() => {
     if (chatEndRef.current) {
@@ -439,6 +424,7 @@ const [businessUnitMap, setBusinessUnitMap] = useState<Map<number, EntityInfo>>(
     console.log("Authorization result:", canApprove);
     return canApprove;
   };
+  
   // Handle posting a new comment
   const handleAddComment = async () => {
     if (!newComment.trim() || !userInfo) return;
@@ -489,197 +475,94 @@ const [businessUnitMap, setBusinessUnitMap] = useState<Map<number, EntityInfo>>(
       setError("Failed to send message");
     }
   };
-
-  // Get status badge color and icon
-  // const getStatusBadge = (status: string): StatusBadge => {
-  //   switch (status.toLowerCase()) {
-  //     case "approved":
-  //       return {
-  //         color: "text-green-800 border-green-200",
-  //         bgColor: "bg-green-50",
-  //         icon: <CheckCircle className="h-4 w-4 mr-1 text-green-600" />,
-  //       };
-  //     case "rejected":
-  //       return {
-  //         color: "text-red-800 border-red-200",
-  //         bgColor: "bg-red-50",
-  //         icon: <XCircle className="h-4 w-4 mr-1 text-red-600" />,
-  //       };
-  //     case "pending":
-  //     default:
-  //       return {
-  //         color: "text-amber-800 border-amber-200",
-  //         bgColor: "bg-amber-50",
-  //         icon: <Clock className="h-4 w-4 mr-1 text-amber-600" />,
-  //       };
-  //   }
-  // };
-
   // Format date for display
-  const formatDate = (dateString: string | null): string => {
-    if (!dateString) return "N/A";
+  const formatDate = (dateString: string): string => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
+    return new Intl.DateTimeFormat('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
     }).format(date);
   };
 
-  // Get available levels for chat that aren't the current user's level
-  const getAvailableChatLevels = (): number[] => {
-    if (!userInfo || !approvalLevels.length) return [];
-
-    return approvalLevels
-      .map((level) => level.level)
-      .filter((level) => level !== userInfo.approval_level);
-  };
-
-  // Get document icon based on file type
-  const getDocumentIcon = (type: string) => {
-    if (type.includes("pdf")) return "pdf";
-    if (type.includes("word")) return "doc";
-    if (type.includes("excel") || type.includes("sheet")) return "xls";
-    if (type.includes("image")) return "img";
-    return "file";
-  };
-
-  // Generate initials for avatar fallback
-  const getInitials = (name: string): string => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
-
-  // Add these helper functions
-  const getBusinessUnitName = (id: number) => {
-    const unit = businessUnitMap.get(id);
-    return unit?.name || `Business Unit #${id}`;
-  };
-  
-  const getDepartmentName = (id: number) => {
-    const department = departmentMap.get(id);
-    return department?.name || `Department #${id}`;
-  };
-  
-  const getDesignationName = (id: number) => {
-    const designation = designationMap.get(id);
-    return designation?.name || `Designation #${id}`;
-  };
-
-  const getUserName = (id: number) => {
-    const user = users.find((user) => user.id === id);
-    if (user?.first_name && user?.last_name) {
-      return `${user.first_name} ${user.last_name}`;
-    }
-    return user?.name || user?.username || `User #${id}`;
-  };
-
-  // Helper function to get the user's designation level
+  // Get user's designation level
   const getUserDesignationLevel = (): number => {
-    if (!userInfo) return 0;
-    
-    const userDesignation = designationMap.get(userInfo.designation);
-    
-    return userDesignation ? userDesignation.level : 0;
+    if (!userInfo || !designationMap) return 0;
+    const designation = designationMap.get(userInfo.designation);
+    return designation ? designation.level : 0;
   };
+
+  // Get status badge properties
+  const getStatusBadge = (status: string): StatusBadge => {
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return { color: 'text-amber-500', icon: <Clock className="h-4 w-4" />, bgColor: 'bg-amber-100' };
+      case 'approved':
+        return { color: 'text-green-500', icon: <CheckCircle className="h-4 w-4" />, bgColor: 'bg-green-100' };
+      case 'rejected':
+        return { color: 'text-red-500', icon: <XCircle className="h-4 w-4" />, bgColor: 'bg-red-100' };
+      default:
+        return { color: 'text-gray-500', icon: <Info className="h-4 w-4" />, bgColor: 'bg-gray-100' };
+    }
+  };
+
+  // Get entity name by ID
+  const getEntityName = (entityMap: Map<number, EntityInfo>, id: number): string => {
+    const entity = entityMap.get(id);
+    return entity ? entity.name : 'Unknown';
+  };
+
+  // Get user name by ID
+  const getUserName = (userId: number): string => {
+    const user = users.find(u => u.id === userId);
+    return user ? user.name : 'Unknown User';
+  };
+
+  // Calculate approval progress
+  useEffect(() => {
+    if (request && request.max_level > 0) {
+      const progress = (request.current_level / request.max_level) * 100;
+      setApprovalProgress(progress);
+    }
+  }, [request]);
 
   if (loading && !request) {
     return (
-      <div className="container mx-auto py-10 px-4 max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center h-64 gap-4"
-        >
-          <div className="relative inline-flex">
-            <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-              <BarChart className="h-6 w-6 text-blue-600 animate-pulse" />
-            </div>
-            <span className="absolute top-0 right-0 h-3 w-3 rounded-full bg-blue-500"></span>
-          </div>
-          <p className="text-lg font-medium text-gray-700">
-            Loading request details...
-          </p>
-          <div className="w-64">
-            <Progress value={45} className="h-2" />
-          </div>
-        </motion.div>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <p className="text-gray-500">Loading request details...</p>
+        </div>
       </div>
     );
   }
 
-  if (error && !request) {
+  if (error) {
     return (
-      <div className="container mx-auto py-10 px-4 max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        </motion.div>
-      </div>
+      <Alert variant="destructive" className="max-w-4xl mx-auto mt-8">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+      </Alert>
     );
   }
 
   if (!request) {
     return (
-      <div className="container mx-auto py-10 px-4 max-w-6xl">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <Alert>
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Notice</AlertTitle>
-            <AlertDescription>No request data available.</AlertDescription>
-          </Alert>
-        </motion.div>
+      <div className="max-w-4xl mx-auto mt-8">
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Not Found</AlertTitle>
+          <AlertDescription>The requested budget request was not found.</AlertDescription>
+        </Alert>
       </div>
     );
   }
 
-  // const statusBadge = getStatusBadge(request.current_status);
-  const availableChatLevels = getAvailableChatLevels();
-
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      className="container mx-auto py-8 px-4 max-w-6xl"
-    >
-      {/* Loading overlay */}
-      <AnimatePresence>
-        {loading && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50"
-          >
-            <motion.div
-              initial={{ scale: 0.9 }}
-              animate={{ scale: 1 }}
-              className="bg-white p-6 rounded-lg shadow-lg flex items-center gap-3"
-            >
-              <div className="animate-spin h-5 w-5 border-b-2 border-blue-600 rounded-full"></div>
-              <p className="font-medium">Processing...</p>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
       {/* Success message */}
       <AnimatePresence>
         {successMessage && (
@@ -687,438 +570,476 @@ const [businessUnitMap, setBusinessUnitMap] = useState<Map<number, EntityInfo>>(
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="mb-4"
+            className="mb-6"
           >
-            <Alert className="bg-green-50 border border-green-200 text-green-800">
-              <CheckCircle className="h-4 w-4 text-green-600" />
-              <AlertTitle>Success</AlertTitle>
-              <AlertDescription>{successMessage}</AlertDescription>
+            <Alert className="bg-green-50 border border-green-200">
+              <CheckCircle className="h-4 w-4 text-green-500" />
+              <AlertTitle className="text-green-700">Success</AlertTitle>
+              <AlertDescription className="text-green-600">
+                {successMessage}
+              </AlertDescription>
             </Alert>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Error message */}
-      <AnimatePresence>
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="mb-4"
-          >
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="absolute top-1 right-1"
-                onClick={() => setError(null)}
-              >
-                <XCircle className="h-4 w-4" />
-              </Button>
-            </Alert>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Header section */}
-      <motion.div
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="mb-8"
-      >
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+      {/* Header */}
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-2">
-              <motion.div
-                initial={{ rotate: -10 }}
-                animate={{ rotate: 0 }}
-                transition={{ duration: 0.5 }}
-              >
-                <DollarSign className="h-8 w-8 text-blue-600" />
-              </motion.div>
-              Budget Request
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">
+              Budget Request {request.budget_id}
             </h1>
-            <p className="text-gray-500 mt-1 flex items-center gap-2">
-              <span className="font-medium text-gray-700">ID:</span>{" "}
-              {request.budget_id} <span className="mx-2">•</span>
-              <span className="font-medium text-gray-700">Date:</span>{" "}
-              {formatDate(request.date)}
-            </p>
-          </div>
-          
-          {userInfo && (
-            <Badge 
-              variant="outline" 
-              className="bg-blue-50 text-blue-800 border border-blue-200 flex items-center gap-1"
-            >
-              <User className="h-3 w-3 mr-1" />
-              {userInfo.name || userInfo.email || `User #${userInfo.id}`}
-              {userIdParam && <span className="ml-1">(Viewing as user)</span>}
-            </Badge>
-          )}
-        </div>
-
-        <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-100">
-          <CardContent className="p-4">
-            <div className="flex flex-col md:flex-row justify-between items-center">
-              <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                <div className="bg-blue-600 text-white p-3 rounded-full">
-                  <BarChart className="h-6 w-6" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg text-gray-900">
-                    Approval Progress
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Level {request.current_level} of {request.max_level}
-                  </p>
-                </div>
-              </div>
-              <div className="w-full md:w-2/3">
-                <div className="flex justify-between mb-1 text-sm font-medium">
-                  <span>Current Progress</span>
-                  <span>{approvalProgress}%</span>
-                </div>
-                <Progress
-                  value={approvalProgress}
-                  className="h-2.5 bg-blue-100"
-                />
-              </div>
+            <div className="flex items-center space-x-4">
+              <Badge 
+                className={`px-3 py-1 text-sm font-medium ${getStatusBadge(request.current_status).bgColor} ${getStatusBadge(request.current_status).color}`}
+              >
+                <span className="flex items-center">
+                  {getStatusBadge(request.current_status).icon}
+                  <span className="ml-1">{request.current_status}</span>
+                </span>
+              </Badge>
+              <p className="text-sm text-gray-600 flex items-center">
+                <CalendarDays className="h-4 w-4 mr-1" />
+                {formatDate(request.date)}
+              </p>
             </div>
-          </CardContent>
-        </Card>
-      </motion.div>
+          </div>
 
-      <Tabs
-        defaultValue="details"
-        className="w-full"
-        onValueChange={setCurrentTab}
-      >
-        <TabsList className="mb-6 p-1 bg-blue-50 rounded-lg gap-2.5">
-          {/* Only show tabs besides comments if user has sufficient level */}
-          {userInfo && getUserDesignationLevel() > 1 ? (
-            <>
-              <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
-                <TabsTrigger value="details" className="data-[state=active]:bg-white">
-                  <Info className="h-4 w-4 mr-2" />
-                  Details
-                </TabsTrigger>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
-                <TabsTrigger value="history" className="data-[state=active]:bg-white">
-                  <History className="h-4 w-4 mr-2" />
-                  Approval History
-                </TabsTrigger>
-              </motion.div>
-              {documents.length > 0 && (
-                <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
-                  <TabsTrigger value="documents" className="data-[state=active]:bg-white">
-                    <FileText className="h-4 w-4 mr-2" />
-                    Documents
-                  </TabsTrigger>
-                </motion.div>
-              )}
-            </>
-          ) : null}
-          <motion.div whileHover={{ scale: 1.05 }} transition={{ type: "spring", stiffness: 400 }}>
-            <TabsTrigger value="comments" className="data-[state=active]:bg-white">
-              <MessageSquare className="h-4 w-4 mr-2" />
-              Discussion
-              {comments.length > 0 && (
-                <Badge variant="secondary" className="ml-2 bg-blue-100 text-blue-800">
-                  {comments.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </motion.div>
-        </TabsList>
+          <div className="flex flex-wrap gap-3">
+            {canTakeAction() && (
+              <>
+                <Button
+                  onClick={handleApprove}
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Approve
+                </Button>
+                <Button
+                  onClick={() => setShowRejectionDialog(true)}
+                  variant="destructive"
+                  disabled={loading}
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Reject
+                </Button>
+              </>
+            )}
+            <Button variant="outline" className="border-gray-300">
+              <DownloadCloud className="h-4 w-4 mr-2" />
+              Export
+            </Button>
+          </div>
+        </div>
+      </div>
 
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={currentTab}
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -20 }}
-            transition={{ duration: 0.2 }}
-          >
+      {/* Main content */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left column */}
+        <div className="lg:col-span-2 space-y-6">
+          <Tabs defaultValue="details" onValueChange={setCurrentTab} className="w-full">
+            <TabsList className="w-full justify-start mb-6 bg-white p-1 rounded-lg border border-gray-200">
+              <TabsTrigger value="details" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+                <FileText className="h-4 w-4 mr-2" />
+                Details
+              </TabsTrigger>
+              <TabsTrigger value="documents" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+                <Paperclip className="h-4 w-4 mr-2" />
+                Documents
+              </TabsTrigger>
+              <TabsTrigger value="comments" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Comments
+              </TabsTrigger>
+              <TabsTrigger value="chat" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Chat
+              </TabsTrigger>
+              <TabsTrigger value="history" className="data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">
+                <History className="h-4 w-4 mr-2" />
+                History
+              </TabsTrigger>
+            </TabsList>
+
             <TabsContent value="details" className="mt-0">
-              <Card className="overflow-hidden">
-                <CardHeader className="bg-gradient-to-r  p-4">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <CardTitle className="text-xl font-bold flex items-center gap-2">
-                        <PieChart className="h-5 w-5 text-blue-600" />
-                        {request.approval_type} - {request.approval_category}
-                      </CardTitle>
-                      <CardDescription className="mt-1 text-gray-600">
-                        {request.reason}
-                      </CardDescription>
-                    </div>
-                    <div>
-                      <Badge
-                        variant="outline"
-                        className="font-semibold bg-white"
-                      >
-                        {request.current_status}
-                      </Badge>
-                    </div>
-                  </div>
+              <Card className="border border-gray-200">
+                <CardHeader className="border-b border-gray-200">
+                  <CardTitle className="text-xl font-semibold text-gray-900">Budget Request Details</CardTitle>
+                  <CardDescription className="text-gray-600">
+                    Complete information about this budget request
+                  </CardDescription>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="grid gap-8">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        className="flex items-start space-x-3 p-4 rounded-lg bg-gray-50"
-                      >
-                        <div className="p-2 bg-blue-100 rounded-full text-blue-700">
-                          <DollarSign className="h-5 w-5" />
+                <CardContent className="p-6 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div>
+                      <h3 className="font-medium text-gray-700 mb-4 text-lg">Basic Information</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Budget ID</p>
+                          <p className="text-base text-gray-900">{request.budget_id}</p>
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-500 text-sm">
-                            Total Amount
-                          </h3>
-                          <p className="font-bold text-lg text-gray-900">
+                          <p className="text-sm font-medium text-gray-500">Date Submitted</p>
+                          <p className="text-base text-gray-900">{formatDate(request.date)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Total Amount</p>
+                          <p className="text-base text-gray-900 flex items-center">
+                            <DollarSign className="h-4 w-4 mr-1 text-gray-600" />
                             {request.total}
                           </p>
                         </div>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        className="flex items-start space-x-3 p-4 rounded-lg bg-gray-50"
-                      >
-                        <div className="p-2 bg-blue-100 rounded-full text-blue-700">
-                          <CalendarDays className="h-5 w-5" />
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Approval Type</p>
+                          <p className="text-base text-gray-900">{request.approval_type}</p>
                         </div>
                         <div>
-                          <h3 className="font-medium text-gray-500 text-sm">
-                            Date Submitted
-                          </h3>
-                          <p className="font-medium text-gray-900">
-                            {formatDate(request.date)}
-                          </p>
+                          <p className="text-sm font-medium text-gray-500">Approval Category</p>
+                          <p className="text-base text-gray-900">{request.approval_category}</p>
                         </div>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        className="flex items-start space-x-3 p-4 rounded-lg bg-gray-50"
-                      >
-                        <div className="p-2 bg-blue-100 rounded-full text-blue-700">
-                          <Building className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-500 text-sm">
-                            Department
-                          </h3>
-                          <p className="font-medium text-gray-900">
-                            {getDepartmentName(request.department)}
-                          </p>
-                        </div>
-                      </motion.div>
-
-                      <motion.div
-                        whileHover={{ scale: 1.02 }}
-                        className="flex items-start space-x-3 p-4 rounded-lg bg-gray-50"
-                      >
-                        <div className="p-2 bg-blue-100 rounded-full text-blue-700">
-                          <User className="h-5 w-5" />
-                        </div>
-                        <div>
-                          <h3 className="font-medium text-gray-500 text-sm">
-                            Requester
-                          </h3>
-                          <p className="font-medium text-gray-900">
-                            User : {getUserName(request.user)}
-                          </p>
-                        </div>
-                      </motion.div>
-                    </div>
-
-                    <div>
-                      <h3 className="text-lg font-semibold mb-3 flex items-center">
-                        <Info className="h-5 w-5 mr-2 text-blue-600" />
-                        Benefit to Organization
-                      </h3>
-                      <div className="p-4 rounded-lg bg-blue-50 border border-blue-100">
-                        <p className="text-gray-800 leading-relaxed">
-                          {request.benefit_to_organisation}
-                        </p>
                       </div>
                     </div>
+                    
+                    <div>
+                      <h3 className="font-medium text-gray-700 mb-4 text-lg">Organizational Details</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Requester</p>
+                          <p className="text-base text-gray-900">{getUserName(request.user)}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Business Unit</p>
+                          <p className="text-base text-gray-900">
+                            {getEntityName(businessUnitMap, request.business_unit)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Department</p>
+                          <p className="text-base text-gray-900">
+                            {getEntityName(departmentMap, request.department)}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Initiating Department</p>
+                          <p className="text-base text-gray-900">
+                            {request.initiate_dept ? getEntityName(departmentMap, request.initiate_dept) : 'Same as Department'}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-500">Notify To</p>
+                          <p className="text-base text-gray-900">
+                            {request.notify_to ? getUserName(request.notify_to) : 'N/A'}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
-                    {request.rejected && request.rejection_reason && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                      >
-                        <Alert
-                          variant="destructive"
-                          className="bg-red-50 border-red-200 text-red-900"
-                        >
-                          <AlertCircle className="h-5 w-5 text-red-600" />
-                          <AlertTitle className="text-lg font-semibold">
-                            Rejection Reason
-                          </AlertTitle>
-                          <AlertDescription className="mt-1">
-                            {request.rejection_reason}
-                          </AlertDescription>
-                        </Alert>
-                      </motion.div>
-                    )}
+                  <Separator className="my-6" />
+
+                  <div>
+                    <h3 className="font-medium text-gray-700 mb-4 text-lg">Request Details</h3>
+                    <div className="space-y-4">
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Reason for Request</p>
+                        <p className="text-base text-gray-900 whitespace-pre-line mt-1">{request.reason}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Benefit to Organization</p>
+                        <p className="text-base text-gray-900 whitespace-pre-line mt-1">{request.benefit_to_organisation}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-gray-500">Policy Agreement</p>
+                        <p className="text-base mt-1">
+                          {request.policy_agreement ? (
+                            <span className="text-green-600 flex items-center">
+                              <CheckCircle className="h-4 w-4 mr-1" /> Agreed
+                            </span>
+                          ) : (
+                            <span className="text-red-600 flex items-center">
+                              <XCircle className="h-4 w-4 mr-1" /> Not Agreed
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      {request.rejected && (
+                        <div>
+                          <p className="text-sm font-medium text-red-500">Rejection Reason</p>
+                          <p className="text-base text-red-600 whitespace-pre-line mt-1">{request.rejection_reason}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
-
-                {/* Action buttons - only show if level AND designation match */}
-                {canTakeAction() ? (
-                  <CardFooter className="flex justify-end space-x-4 bg-gray-50 p-6 border-t">
-                    <TooltipProvider>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="outline"
-                            onClick={() => setShowRejectionDialog(true)}
-                            className="border-red-300 text-red-600 hover:bg-red-50 hover:text-red-700"
-                          >
-                            <XCircle className="mr-2 h-4 w-4" />
-                            Reject
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Reject this budget request</p>
-                        </TooltipContent>
-                      </Tooltip>
-
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            onClick={handleApprove}
-                            className="bg-green-600 text-white hover:bg-green-700"
-                          >
-                            <CheckCircle className="mr-2 h-4 w-4" />
-                            Approve
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>Approve this budget request</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  </CardFooter>
-                ) : (
-                  <CardFooter className="bg-gray-50 p-6 border-t">
-                    <div className="w-full">
-                      <Alert className="bg-amber-50 border-amber-200 text-amber-800">
-                        <AlertCircle className="h-4 w-4 text-amber-600" />
-                        <AlertTitle>Form cannot be approved by you</AlertTitle>
-                        <AlertDescription className="mt-2">
-                          {!request ? "Request not found." : 
-                           userInfo?.id === request.user ? "You cannot approve your own request." :
-                           (userInfo && designationMap.get(userInfo.designation)?.level !== request.current_level) ? 
-                             `This request requires approval at level ${request.current_level}.` :
-                           Number(userInfo?.department) !== request.department ? 
-                             "This request must be approved by someone in the same department." :
-                           request.rejected ? "This request has already been rejected." :
-                           "You don't have permission to approve this request."}
-                        </AlertDescription>
-                      </Alert>
-                    </div>
-                  </CardFooter>
-                )}
               </Card>
             </TabsContent>
 
-            <TabsContent value="history" className="mt-0">
+            <TabsContent value="documents">
               <Card>
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-                  <CardTitle className="text-xl font-bold flex items-center gap-2">
-                    <History className="h-5 w-5 text-blue-600" />
-                    Approval History
-                  </CardTitle>
+                <CardHeader>
+                  <CardTitle>Supporting Documents</CardTitle>
                   <CardDescription>
-                    Track the progress of this request through approval levels
+                    Files and documents related to this budget request
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-8">
-                    {approvalLevels.map((level, index) => (
-                      <div key={index} className="relative">
+                <CardContent>
+                  {documents.length > 0 ? (
+                    <div className="space-y-4">
+                      {documents.map((doc) => (
                         <div
-                          className={`flex items-start ${
-                            index !== approvalLevels.length - 1 ? "pb-8" : ""
-                          }`}
+                          key={doc.id}
+                          className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200"
                         >
-                          {/* Timeline connector */}
-                          {index !== approvalLevels.length - 1 && (
-                            <div className="absolute top-10 left-4 bottom-0 w-0.5 bg-gray-200"></div>
-                          )}
+                          <div className="flex items-center">
+                            <div className="bg-blue-100 p-2 rounded-md mr-3">
+                              <FileText className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{doc.name}</p>
+                              <p className="text-sm text-gray-500">
+                                {doc.type} • {doc.size}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-1" /> View
+                            </Button>
+                            <Button variant="outline" size="sm">
+                              <DownloadCloud className="h-4 w-4 mr-1" /> Download
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8">
+                      <FileText className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                      <p className="text-gray-500">No documents attached</p>
+                    </div>
+                  )}
+                </CardContent>
+                <CardFooter>
+                  <Button variant="outline" className="w-full">
+                    <PlusCircle className="h-4 w-4 mr-2" /> Add Document
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
 
-                          {/* Status icon */}
-                          {/* <div
-                            className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center mr-4 z-10 ${
-                              level.status.toLowerCase() === "approved"
-                                ? "bg-green-100 text-green-600"
-                                : level.status.toLowerCase() === "rejected"
-                                ? "bg-red-100 text-red-600"
-                                : "bg-amber-100 text-amber-600"
+            <TabsContent value="comments">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Comments</CardTitle>
+                  <CardDescription>
+                    Discussions and feedback about this request
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px] pr-4">
+                    {comments.length > 0 ? (
+                      <div className="space-y-4">
+                        {comments.map((comment) => (
+                          <div
+                            key={comment.id}
+                            className="p-3 bg-gray-50 rounded-md border border-gray-200"
+                          >
+                            <div className="flex items-center mb-2">
+                              <Avatar className="h-8 w-8 mr-2">
+                                <AvatarFallback>
+                                  {comment.author.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{comment.author}</p>
+                                <p className="text-xs text-gray-500">{formatDate(comment.timestamp)}</p>
+                              </div>
+                            </div>
+                            <p className="whitespace-pre-line">{comment.text}</p>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <MessageSquare className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                        <p className="text-gray-500">No comments yet</p>
+                      </div>
+                    )}
+                  </ScrollArea>
+                </CardContent>
+                <CardFooter>
+                  <div className="w-full space-y-3">
+                    <Textarea
+                      ref={commentInputRef}
+                      placeholder="Add your comment..."
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      className="resize-none"
+                      rows={3}
+                    />
+                    <Button 
+                      onClick={handleAddComment} 
+                      disabled={!newComment.trim()}
+                      className="ml-auto"
+                    >
+                      <Send className="h-4 w-4 mr-2" /> Add Comment
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="chat">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Communication</CardTitle>
+                  <CardDescription>
+                    Chat with approvers and stakeholders
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-4">
+                      {chatMessages.length > 0 ? (
+                        chatMessages.map((message) => (
+                          <div
+                            key={message.id}
+                            className={`p-3 rounded-md border ${
+                              message.senderId === userInfo?.id
+                                ? "bg-blue-50 border-blue-200 ml-8"
+                                : "bg-gray-50 border-gray-200 mr-8"
                             }`}
                           >
-                            {level.status.toLowerCase() === "approved" ? (
-                              <CheckCircle className="h-5 w-5" />
-                            ) : level.status.toLowerCase() === "rejected" ? (
-                              <XCircle className="h-5 w-5" />
-                            ) : (
-                              <Clock className="h-5 w-5" />
-                            )}
-                          </div> */}
-
-                          <div className="flex-1">
-                            <div className="flex items-center mb-1">
-                              <h4 className="text-lg font-semibold text-gray-900 mr-2">
-                                {level.title}
-                              </h4>
-                              {/* <Badge
-                                className={`${
-                                  getStatusBadge(level.status).color
-                                } ${
-                                  getStatusBadge(level.status).bgColor
-                                } flex items-center px-2 py-0.5 text-xs font-medium border`}
-                              >
-                                {getStatusBadge(level.status).icon}
-                                {level.status}
-                              </Badge> */}
-                            </div>
-
-                            <div className="text-sm text-gray-500 flex items-center mb-2">
-                              <span className="font-medium mr-1">
-                                Level {level.level}
-                              </span>
-                              {level.approvedBy && (
-                                <>
-                                  <span className="mx-2">•</span>
-                                  <User className="h-3 w-3 mr-1" />
-                                  <span>{level.approvedBy}</span>
-                                </>
-                              )}
-                              {level.approvedAt && (
-                                <>
-                                  <span className="mx-2">•</span>
-                                  <CalendarDays className="h-3 w-3 mr-1" />
-                                  <span>{formatDate(level.approvedAt)}</span>
-                                </>
-                              )}
-                            </div>
-
-                            {level.comments && (
-                              <div className="bg-gray-50 p-3 rounded-md text-gray-700 text-sm mt-2">
-                                <p className="italic">"{level.comments}"</p>
+                            <div className="flex items-center mb-2">
+                              <Avatar className="h-8 w-8 mr-2">
+                                <AvatarFallback>
+                                  {message.senderName.charAt(0)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{message.senderName}</p>
+                                <p className="text-xs text-gray-500">
+                                  {formatDate(message.timestamp)}
+                                </p>
                               </div>
+                            </div>
+                            <p className="whitespace-pre-line">{message.message}</p>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-center py-8">
+                          <MessageSquare className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+                          <p className="text-gray-500">No messages yet</p>
+                        </div>
+                      )}
+                      <div ref={chatEndRef}></div>
+                    </div>
+                  </ScrollArea>
+                </CardContent>
+                <CardFooter>
+                  <div className="w-full space-y-3">
+                    <div className="flex items-center">
+                      <label className="mr-2 text-sm text-gray-500">To:</label>
+                      <select
+                        className="border rounded p-1 text-sm"
+                        value={selectedChatLevel || ""}
+                        onChange={(e) => setSelectedChatLevel(Number(e.target.value))}
+                      >
+                        <option value="">Select recipient level</option>
+                        {approvalLevels.map((level) => (
+                          <option key={level.level} value={level.level}>
+                            {level.title}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <Textarea
+                      placeholder="Type your message..."
+                      value={newChatMessage}
+                      onChange={(e) => setNewChatMessage(e.target.value)}
+                      className="resize-none"
+                      rows={3}
+                    />
+                    <Button
+                      onClick={handleSendChatMessage}
+                      disabled={!newChatMessage.trim() || selectedChatLevel === null}
+                      className="ml-auto"
+                    >
+                      <Send className="h-4 w-4 mr-2" /> Send Message
+                    </Button>
+                  </div>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="history">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Approval History</CardTitle>
+                  <CardDescription>
+                    Timeline of approval workflow and actions
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    {approvalLevels.map((level, index) => (
+                      <div key={level.level} className="relative">
+                        {index < approvalLevels.length - 1 && (
+                          <div className="absolute top-6 left-3 bottom-0 w-0.5 bg-gray-200"></div>
+                        )}
+                        <div className="flex">
+                          <div
+                            className={`h-6 w-6 rounded-full flex items-center justify-center mr-4 ${
+                              level.status === "approved"
+                                ? "bg-green-100 text-green-600"
+                                : level.status === "rejected"
+                                ? "bg-red-100 text-red-600"
+                                : "bg-gray-100 text-gray-400"
+                            }`}
+                          >
+                            {level.status === "approved" ? (
+                              <CheckCircle className="h-4 w-4" />
+                            ) : level.status === "rejected" ? (
+                              <XCircle className="h-4 w-4" />
+                            ) : (
+                              <Clock className="h-4 w-4" />
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex items-center justify-between">
+                              <p className="font-medium">{level.title}</p>
+                              <Badge
+                                variant="outline"
+                                className={`${
+                                  level.status === "approved"
+                                    ? "text-green-600 border-green-200 bg-green-50"
+                                    : level.status === "rejected"
+                                    ? "text-red-600 border-red-200 bg-red-50"
+                                    : "text-amber-600 border-amber-200 bg-amber-50"
+                                }`}
+                              >
+                                {level.status}
+                              </Badge>
+                            </div>
+                            {level.approvedBy ? (
+                              <div className="mt-2 text-sm">
+                                <p className="text-gray-500">
+                                  {level.status === "approved" ? "Approved" : "Rejected"} by{" "}
+                                  <span className="font-medium">{level.approvedBy}</span> on{" "}
+                                  {formatDate(level.approvedAt || "")}
+                                </p>
+                                {level.comments && (
+                                  <p className="mt-1 text-gray-600">
+                                    "{level.comments}"
+                                  </p>
+                                )}
+                              </div>
+                            ) : (
+                              <p className="mt-2 text-sm text-gray-500">
+                                Waiting for approval
+                              </p>
                             )}
                           </div>
                         </div>
@@ -1128,197 +1049,154 @@ const [businessUnitMap, setBusinessUnitMap] = useState<Map<number, EntityInfo>>(
                 </CardContent>
               </Card>
             </TabsContent>
+          </Tabs>
+        </div>
 
-            <TabsContent value="documents" className="mt-0">
-              <Card>
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-                  <CardTitle className="text-xl font-bold flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-blue-600" />
-                    Documents
-                  </CardTitle>
-                  <CardDescription>
-                    View and download supporting documents
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                  {documents.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
-                      <FileText className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                      <p>No documents attached to this request</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {documents.map((doc) => (
-                        <motion.div
-                          key={doc.id}
-                          whileHover={{ scale: 1.02 }}
-                          className="flex items-center p-4 border rounded-lg"
-                        >
-                          <div className="h-10 w-10 rounded bg-blue-100 flex items-center justify-center text-blue-600 mr-4">
-                            <FileText className="h-5 w-5" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-gray-900 truncate">
-                              {doc.name}
-                            </h4>
-                            <p className="text-sm text-gray-500">
-                              {doc.size} • {doc.type}
-                            </p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button size="icon" variant="ghost">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="ghost">
-                              <DownloadCloud className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </TabsContent>
+        {/* Right sidebar */}
+        <div className="lg:col-span-1">
+          <div className="space-y-6">
+            {/* Progress card */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">
+                  Approval Progress
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>
+                      Level {request.current_level} of {request.max_level}
+                    </span>
+                    <span className="font-medium">{Math.round(approvalProgress)}%</span>
+                  </div>
+                  <Progress value={approvalProgress} className="h-2" />
+                </div>
+              </CardContent>
+            </Card>
 
-            <TabsContent value="comments" className="mt-0">
-              <Card>
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-blue-100">
-                  <CardTitle className="text-xl font-bold flex items-center gap-2">
-                    <MessageSquare className="h-5 w-5 text-blue-600" />
-                    Discussion Thread
-                  </CardTitle>
-                  <CardDescription>
-                    Team communication and approval notes
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="p-6">
-                  <div className="space-y-6">
-                    {comments.length === 0 ? (
-                      <div className="text-center py-8 text-gray-500">
-                        <MessageSquare className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                        <p className="font-medium">No comments yet</p>
-                        <p className="text-sm mt-1">
-                          Start the discussion by adding a comment below
-                        </p>
-                      </div>
-                    ) : (
-                      <ScrollArea className="max-h-[400px] pr-4">
-                        <div className="space-y-6">
-                          {comments.map((comment) => (
-                            <motion.div
-                              key={comment.id}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              className="flex gap-4"
-                            >
-                              <div className="flex-shrink-0">
-                                <Avatar className="h-10 w-10 border border-blue-100">
-                                  <AvatarImage
-                                    src={`https://avatars.dicebear.com/api/initials/${getInitials(
-                                      comment.author
-                                    )}.svg`}
-                                  />
-                                  <AvatarFallback className="bg-blue-100 text-blue-700">
-                                    {getInitials(comment.author)}
-                                  </AvatarFallback>
-                                </Avatar>
-                              </div>
-                              <div className="flex-1">
-                                <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                                  <div className="flex justify-between items-start mb-2">
-                                    <div>
-                                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">
-                                        {comment.author}
-                                      </h4>
-                                      <div className="flex items-center text-xs text-gray-500">
-                                        <Badge
-                                          variant="outline"
-                                          className="mr-2 text-xs px-1.5 py-0 h-5"
-                                        >
-                                          Level {comment.level}
-                                        </Badge>
-                                        <CalendarDays className="h-3 w-3 mr-1" />
-                                        {formatDate(comment.timestamp)}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <p className="text-gray-800 dark:text-gray-200">
-                                    {comment.text}
-                                  </p>
-                                </div>
-                              </div>
-                            </motion.div>
-                          ))}
-                        </div>
-                      </ScrollArea>
-                    )}
+            {/* Quick actions */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">
+                  Quick Actions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <Button variant="outline" className="w-full justify-start">
+                  <Bookmark className="h-4 w-4 mr-2" /> Save as Template
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Eye className="h-4 w-4 mr-2" /> Preview PDF
+                </Button>
+                <Button variant="outline" className="w-full justify-start">
+                  <Stamp className="h-4 w-4 mr-2" /> View Approval Signature
+                </Button>
+              </CardContent>
+            </Card>
 
-                    {/* Add comment form */}
-                    <div className="mt-6 pt-6 border-t">
-                      <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-                        <PlusCircle className="h-4 w-4 mr-2 text-blue-600" />
-                        Add Your Comment
-                      </h4>
-                      <div className="flex flex-col gap-3 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm border border-gray-100 dark:border-gray-700">
-                        <Textarea
-                          placeholder="Share your thoughts or feedback..."
-                          className="resize-none min-h-[100px] border-gray-200 focus:border-blue-500"
-                          value={newComment}
-                          onChange={(e) => setNewComment(e.target.value)}
-                          ref={commentInputRef}
-                        />
-                        <div className="flex justify-between items-center">
-                          <p className="text-xs text-gray-500">
-                            <Info className="h-3 w-3 inline mr-1" />
-                            Comments are visible to all stakeholders
-                          </p>
-                          <Button
-                            onClick={handleAddComment}
-                            disabled={!newComment.trim()}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <MessageSquare className="mr-2 h-4 w-4" />
-                            Post Comment
-                          </Button>
-                        </div>
-                      </div>
+            {/* Summary */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">
+                  Request Summary
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Type</span>
+                    <Badge variant="outline">{request.approval_type}</Badge>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Status</span>
+                    <Badge
+                      className={`${getStatusBadge(request.current_status).bgColor} ${
+                        getStatusBadge(request.current_status).color
+                      } border-none`}
+                    >
+                      <span className="flex items-center">
+                        {getStatusBadge(request.current_status).icon}
+                        <span className="ml-1">{request.current_status}</span>
+                      </span>
+                    </Badge>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Department</span>
+                    <span className="font-medium">
+                      {getEntityName(departmentMap, request.department)}
+                    </span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Amount</span>
+                    <span className="font-medium text-green-600">${request.total}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Related requests */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-gray-500">
+                  Related Requests
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                  <div className="flex items-center">
+                    <span className="bg-blue-100 text-blue-600 p-1 rounded mr-2">
+                      <FileText className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="font-medium">BUD-2023-0014</p>
+                      <p className="text-xs text-gray-500">Equipment purchase</p>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
-          </motion.div>
-        </AnimatePresence>
-      </Tabs>
+                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                </div>
+                <div className="flex items-center justify-between p-2 bg-gray-50 rounded border border-gray-200">
+                  <div className="flex items-center">
+                    <span className="bg-blue-100 text-blue-600 p-1 rounded mr-2">
+                      <FileText className="h-4 w-4" />
+                    </span>
+                    <div>
+                      <p className="font-medium">BUD-2023-0009</p>
+                      <p className="text-xs text-gray-500">Software license</p>
+                    </div>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-gray-400" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
 
-      {/* Rejection Reason Dialog */}
+      {/* Rejection Dialog */}
       <Dialog open={showRejectionDialog} onOpenChange={setShowRejectionDialog}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent>
           <DialogHeader>
-            <DialogTitle className="text-xl font-bold flex items-center gap-2">
-              <XCircle className="h-5 w-5 text-red-600" />
-              Reject Request
-            </DialogTitle>
+            <DialogTitle>Reject Budget Request</DialogTitle>
             <DialogDescription>
-              Please provide a detailed reason for rejecting this budget
-              request.
+              Please provide a reason for rejecting this budget request.
             </DialogDescription>
           </DialogHeader>
-          <div className="py-4">
+          <div className="space-y-4 my-4">
             <Textarea
-              placeholder="Reason for rejection"
-              className="resize-none h-32"
+              placeholder="Enter rejection reason..."
               value={rejectionReason}
               onChange={(e) => setRejectionReason(e.target.value)}
+              className="min-h-[100px]"
             />
-            {rejectionReason.trim().length > 0 &&
-              rejectionReason.trim().length < 10 && (
-                <p className="mt-2 text-sm text-red-600">
-                  <AlertCircle className="h-3 w-3 inline mr-1" />
-                  Rejection reason must be at least 10 characters long
-                </p>
-              )}
+            {rejectionReason.length < 10 && (
+              <p className="text-sm text-red-500">
+                Please provide a detailed reason (minimum 10 characters)
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -1332,13 +1210,13 @@ const [businessUnitMap, setBusinessUnitMap] = useState<Map<number, EntityInfo>>(
               onClick={handleReject}
               disabled={!formValid}
             >
-              <XCircle className="mr-2 h-4 w-4" />
+              <XCircle className="h-4 w-4 mr-2" />
               Confirm Rejection
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </div>
   );
 };
 

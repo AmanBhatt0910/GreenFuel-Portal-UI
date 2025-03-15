@@ -1,9 +1,11 @@
 import React from 'react';
 import { Building2 } from 'lucide-react';
+import { Card } from '@/components/ui/card';
 
 import { BusinessUnit, BusinessUnitActionsProps } from './types';
 import { BusinessUnitForm } from './BusinessUnitForm';
 import { BusinessUnitCard } from './BusinessUnitCard';
+
 interface PlantsTabProps extends BusinessUnitActionsProps {
   setError: React.Dispatch<React.SetStateAction<string | null>>;
   onAddBusinessUnit?: (name: string) => Promise<BusinessUnit | null>;
@@ -18,6 +20,11 @@ export const PlantsTab: React.FC<PlantsTabProps> = ({
   setError,
   onAddBusinessUnit,
 }) => {
+  const handleBusinessUnitClick = (id: string | number) => {
+    setActiveBusinessUnitId(id);
+    setActiveTab('departments'); // Navigate to departments tab
+  };
+
   return (
     <>
       <BusinessUnitForm
@@ -38,15 +45,20 @@ export const PlantsTab: React.FC<PlantsTabProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {businessUnits.map((businessUnit) => (
-            <BusinessUnitCard
-              key={businessUnit.id}
-              businessUnit={businessUnit}
-              businessUnits={businessUnits}
-              setBusinessUnits={setBusinessUnits}
-              activeBusinessUnitId={activeBusinessUnitId}
-              setActiveBusinessUnitId={setActiveBusinessUnitId}
-              setActiveTab={setActiveTab}
-            />
+            <Card 
+              key={businessUnit.id} 
+              className="mb-4 cursor-pointer hover:shadow-md transition-shadow"
+              onClick={() => handleBusinessUnitClick(businessUnit.id || '')}
+            >
+              <BusinessUnitCard
+                businessUnit={businessUnit}
+                businessUnits={businessUnits}
+                setBusinessUnits={setBusinessUnits}
+                activeBusinessUnitId={activeBusinessUnitId}
+                setActiveBusinessUnitId={setActiveBusinessUnitId}
+                setActiveTab={setActiveTab}
+              />
+            </Card>
           ))}
         </div>
       )}
