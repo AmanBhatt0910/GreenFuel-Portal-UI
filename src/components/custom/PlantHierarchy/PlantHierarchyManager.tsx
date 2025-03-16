@@ -10,7 +10,7 @@ import { PlantsTab } from './PlantsTab';
 import { DepartmentsTab } from './DepartmentsTab';
 import { HierarchyTab } from './HierarchyTab';
 import { EmployeeDialog } from './EmployeeDialog';
-import { ApproverDialog } from './ApproverDialog';
+import { DesignationDialog } from './DesignationDialog';
 import { 
   fetchBusinessUnits, 
   fetchDepartments, 
@@ -34,15 +34,14 @@ export const PlantHierarchyManager: React.FC = () => {
   // Expanded departments tracking
   const [expandedDepartments, setExpandedDepartments] = useState<Record<string, boolean>>({});
   
-  // Department and Approver selection state
+  // Department and Designation selection state
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
-  const [isAddApproverDialogOpen, setIsAddApproverDialogOpen] = useState(false);
+  const [isAddDesignationDialogOpen, setIsAddDesignationDialogOpen] = useState(false);
   
   // New designation data
   const [newDesignation, setNewDesignation] = useState<NewDesignation>({
     name: '',
-    department: 0,
-    level: 1
+    department: 0
   });
 
   // Load data on initial render
@@ -89,55 +88,33 @@ export const PlantHierarchyManager: React.FC = () => {
         const departments = response.data;
         console.log("Departments data:", departments);
         
-        // Get users data for populating approver names
-        let usersData: any[] = [];
-        try {
-          const usersResponse = await api.get('/userInfo/');
-          if (usersResponse.data && Array.isArray(usersResponse.data)) {
-            usersData = usersResponse.data;
-          }
-        } catch (err) {
-          console.error("Failed to load users for approver names:", err);
-        }
-        
-        // Process each department to load its approvers
-        const departmentsWithApprovers = await Promise.all(departments.map(async (dept: Department) => {
+        // Process each department to load its designations
+        const departmentsWithDesignations = await Promise.all(departments.map(async (dept: Department) => {
           try {
-            // Fetch approvers directly for this department using the dedicated endpoint
-            const approversResponse = await api.get(`/approver/?department=${dept.id}`);
-            console.log(`Approvers for department ${dept.id} (${dept.name}):`, approversResponse.data);
+            // Fetch designations for this department
+            const designationsResponse = await api.get(`/designations/?department=${dept.id}`);
+            console.log(`Designations for department ${dept.id} (${dept.name}):`, designationsResponse.data);
             
-            // Add user name information to approvers if available
-            const approversWithNames = Array.isArray(approversResponse.data) 
-              ? approversResponse.data.map(approver => {
-                  const user = usersData.find(u => u.id === approver.user);
-                  return {
-                    ...approver,
-                    user_name: user ? user.name : `User #${approver.user}`
-                  };
-                })
-              : [];
-            
-            // Return department with its approvers
+            // Return department with its designations
             return { 
               ...dept, 
-              approvers: approversWithNames 
+              designations: designationsResponse.data || []
             };
           } catch (err) {
-            console.error(`Failed to load approvers for department ${dept.id}:`, err);
-            // Return department without approvers in case of error
+            console.error(`Failed to load designations for department ${dept.id}:`, err);
+            // Return department without designations in case of error
             return {
               ...dept,
-              approvers: []
+              designations: []
             };
           }
         }));
         
-        // Update the business units with the new departments data including approvers
+        // Update the business units with the new departments data including designations
         setBusinessUnits(prevBusinessUnits => 
           prevBusinessUnits.map(bu => 
             bu.id === activeBusinessUnitId
-              ? { ...bu, departments: departmentsWithApprovers }
+              ? { ...bu, departments: departmentsWithDesignations }
               : bu
           )
         );
@@ -211,84 +188,32 @@ export const PlantHierarchyManager: React.FC = () => {
     }
   };
 
-  // Handle approver creation
-  const handleAddApprover = async (approverData: any) => {
+  // Handle adding a new designation
+  const handleAddDesignation = async (designation: NewDesignation) => {
     try {
       setError(null);
-      setLoading(true);
+      const newDesignation = await createDesignation(api, designation);
       
-      console.log("Creating new approver with data:", approverData);
-      
-      // Create approver through API
-      const response = await api.post('/approver/', approverData);
-      console.log("Approver creation response:", response.data);
-      
-      if (response.data) {
-        // After successfully adding the approver, fetch updated approvers for this department
-        try {
-          const departmentId = approverData.department;
-          console.log(`Refreshing approvers for department ${departmentId}`);
-          
-          // Get all users for mapping names
-          let usersData: any[] = [];
-          try {
-            const usersResponse = await api.get('/userInfo/');
-            if (usersResponse.data && Array.isArray(usersResponse.data)) {
-              usersData = usersResponse.data;
-            }
-          } catch (userErr) {
-            console.error("Failed to fetch users:", userErr);
-          }
-          
-          // Fetch approvers for this specific department
-          const departmentApproversResponse = await api.get(`/approver/?department=${departmentId}`);
-          
-          if (departmentApproversResponse.data && Array.isArray(departmentApproversResponse.data)) {
-            // Add user names to the approvers
-            const approversWithNames = departmentApproversResponse.data.map(approver => {
-              const user = usersData.find((u: any) => u.id === approver.user);
-              return {
-                ...approver,
-                user_name: user ? user.name : `User #${approver.user}`
-              };
-            });
-            
-            // Update the state with the refreshed approvers for this department
-            setBusinessUnits(prevBusinessUnits => 
-              prevBusinessUnits.map(bu => {
-                if (bu.id === approverData.business_unit) {
-                  return {
-                    ...bu,
-                    departments: bu.departments?.map(dept => {
-                      if (dept.id?.toString() === departmentId.toString()) {
-                        return {
-                          ...dept,
-                          approvers: approversWithNames
-                        };
-                      }
-                      return dept;
-                    })
-                  };
+      // Update local state with the new designation
+      setBusinessUnits(prevBusinessUnits => 
+        prevBusinessUnits.map(bu => ({
+          ...bu,
+          departments: (bu.departments || []).map(dept => 
+            dept.id === designation.department
+              ? { 
+                  ...dept, 
+                  designations: [...(dept.designations || []), newDesignation] 
                 }
-                return bu;
-              })
-            );
-            
-            console.log("Department approvers updated:", approversWithNames);
-          }
-        } catch (refreshErr) {
-          console.error("Failed to refresh department approvers:", refreshErr);
-          // Even if refresh fails, we still show success since the approver was created
-        }
-      }
+              : dept
+          )
+        }))
+      );
       
-      return response.data;
+      return newDesignation;
     } catch (err) {
-      console.error("Failed to add approver:", err);
-      setError("Failed to add approver. Please try again.");
-      return null;
-    } finally {
-      setLoading(false);
+      console.error("Failed to add designation", err);
+      setError("Failed to add designation. Please try again.");
+      throw err;
     }
   };
 
@@ -298,7 +223,7 @@ export const PlantHierarchyManager: React.FC = () => {
       data-component="plant-hierarchy-management"
     >
       {/* Main container */}
-      <div className="container py-4 mx-auto max-w-[95%] bg-white">
+      <div className="container py-4 mx-auto max-w-[95%] bg-transparent">
         {/* Breadcrumb navigation */}
         <CustomBreadcrumb
           items={[
@@ -312,10 +237,10 @@ export const PlantHierarchyManager: React.FC = () => {
         <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6 mt-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Approval Hierarchy Management
+              Department Management
             </h1>
             <p className="text-gray-500 mt-2">
-              Manage your organization's approval hierarchy for budget requests
+              Manage your organization's departments and designations
             </p>
           </div>
         </div>
@@ -368,29 +293,27 @@ export const PlantHierarchyManager: React.FC = () => {
               setActiveTab={setActiveTab}
               selectedDepartmentId={selectedDepartmentId}
               setSelectedDepartmentId={setSelectedDepartmentId}
-              setIsAddApproverDialogOpen={setIsAddApproverDialogOpen}
+              setIsAddDesignationDialogOpen={setIsAddDesignationDialogOpen}
             />
           </TabsContent>
 
           <TabsContent value="hierarchy">
             <HierarchyTab
               businessUnits={businessUnits}
-              setBusinessUnits={setBusinessUnits}
               activeBusinessUnitId={activeBusinessUnitId}
-              setActiveBusinessUnitId={setActiveBusinessUnitId}
-              setActiveTab={setActiveTab}
+              selectedDepartmentId={selectedDepartmentId}
             />
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Approver Dialog */}
-      <ApproverDialog
-        isOpen={isAddApproverDialogOpen}
-        onClose={() => setIsAddApproverDialogOpen(false)}
-        onAddApprover={handleAddApprover}
-        businessUnit={businessUnits.find(bu => bu.id === activeBusinessUnitId)}
+      {/* Designation Dialog */}
+      <DesignationDialog
+        isOpen={isAddDesignationDialogOpen}
+        onClose={() => setIsAddDesignationDialogOpen(false)}
+        onAddDesignation={handleAddDesignation}
         selectedDepartmentId={selectedDepartmentId}
+        businessUnits={businessUnits}
       />
     </div>
   );

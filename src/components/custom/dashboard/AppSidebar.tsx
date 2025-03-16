@@ -96,6 +96,11 @@ const BusinessUnits = [
     url: "/dashboard/business-units",
     icon: Building,
   },
+  {
+    title: "Approval Access",
+    url: "/dashboard/approval-access",
+    icon: Key,
+  },
 ];
 
 const AppSidebar = () => {
@@ -426,6 +431,8 @@ const AppSidebar = () => {
                             </span>
                           </Link>
                         </SidebarMenuButton>
+
+                       
                       </SidebarMenuItem>
                     );
                   })}
@@ -448,7 +455,7 @@ const AppSidebar = () => {
               </Avatar>
               <div className="flex flex-col items-start">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                  {userInfo && (userInfo.first_name ? userInfo.first_name + ' ' + userInfo.last_name : userInfo.email) }
+                  {userInfo && (userInfo.name ? userInfo.name : userInfo.email) }
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   {userInfo && userInfo.email}

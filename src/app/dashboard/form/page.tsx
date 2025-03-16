@@ -109,22 +109,62 @@ export default function AssetRequestForm() {
 
   // Pre-fill form data with user information when userInfo is available
   useEffect(() => {
-    if (userInfo) {
-      setFormData((prevData) => ({
-        ...prevData,
-        employeeName: userInfo.name || "",
-        employeeCode: userInfo.employee_code || "",
-      }));
-    }
-  }, [userInfo]);
-
-  useEffect(() => {
     const fetchData = async () => {
-      const response = await api.get("/userInfo/");
-      setUser(response.data);
+      try {
+        console.log("Fetching user data from API...");
+        const response = await api.get("/userInfo/");
+        const userData = response.data;
+        setUser(userData);
+        
+        console.log("Complete user data from API:", userData);
+        
+        // Create a merged data object with values from both userInfo context and API response
+        const mergedUserData = {
+          // Basic info
+          name: userInfo?.name || userData?.name || "",
+          employeeCode: userInfo?.employee_code || userData?.employee_code || "",
+          
+          // Organizational info - properly handle both object and primitive value cases
+          businessUnit: typeof userData?.business_unit === 'object' 
+            ? userData?.business_unit?.id || 0 
+            : userData?.business_unit || 0,
+          
+          department: typeof userData?.department === 'object' 
+            ? userData?.department?.id || 0 
+            : userData?.department || 0,
+          
+          designation: typeof userData?.designation === 'object' 
+            ? userData?.designation?.id || 0 
+            : userData?.designation || 0
+        };
+        
+        console.log("Merged user data for form with extracted IDs:", mergedUserData);
+        
+        // Apply all the data at once to prevent multiple renders
+        setFormData((prevData) => ({
+          ...prevData,
+          employeeName: mergedUserData.name,
+          employeeCode: mergedUserData.employeeCode,
+          plant: mergedUserData.businessUnit,
+          initiateDept: mergedUserData.department,
+          designation: mergedUserData.designation
+        }));
+
+        // Log the full extracted form data to make debugging easier
+        console.log("Setting form data with these extracted values:", {
+          name: mergedUserData.name,
+          employeeCode: mergedUserData.employeeCode,
+          plant: mergedUserData.businessUnit,
+          initiateDept: mergedUserData.department,
+          designation: mergedUserData.designation
+        });
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      }
     };
+    
     fetchData();
-  }, []);
+  }, [userInfo]); // Re-run when userInfo changes
 
   // State for asset management
   const [currentAsset, setCurrentAsset] = useState<AssetItem>({

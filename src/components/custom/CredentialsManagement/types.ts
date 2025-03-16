@@ -130,8 +130,8 @@ export interface CredentialStatsProps {
 export interface FormFieldProps {
   label: string;
   name: string;
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  value: string | number | null | undefined;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   type?: string;
   placeholder?: string;
   required?: boolean;

@@ -338,420 +338,305 @@ export default function ApprovalDetails() {
   };
 
   return (
-    <motion.div 
-      initial="hidden"
-      animate="visible"
-      exit="exit"
-      variants={pageVariants}
-      className="p-4 md:p-6 bg-gray-50 dark:bg-gray-900 min-h-screen"
-    >
-      <div className="max-w-6xl mx-auto">
-        <motion.div 
-          variants={itemVariants}
-          className="mb-6"
-        >
-          <motion.div whileHover={{ x: -5 }} whileTap={{ scale: 0.95 }}>
-            <Button
-              variant="ghost"
-              className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-              onClick={() => router.back()}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Approvals
-            </Button>
-          </motion.div>
-        </motion.div>
+    <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="max-w-full mx-auto">
+        <div className="p-4 md:p-6">
+          <Button
+            variant="ghost"
+            className="mb-6 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+            onClick={() => router.back()}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Approvals
+          </Button>
 
-        {loading ? (
-          <motion.div 
-            variants={itemVariants}
-            className="space-y-4 bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"
-          >
-            <Skeleton className="h-8 w-1/3" />
-            <Skeleton className="h-6 w-1/4" />
-            <Skeleton className="h-40 w-full" />
-          </motion.div>
-        ) : !form ? (
-          <motion.div 
-            variants={itemVariants}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-8 text-center"
-          >
-            <motion.div 
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-              className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4"
-            >
-              <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
-            </motion.div>
-            <h3 className="text-lg font-medium">Request Not Found</h3>
-            <p className="text-gray-500 dark:text-gray-400 mt-2">
-              The approval request you're looking for doesn't exist or you don't have permission to view it.
-            </p>
-            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          {loading ? (
+            <div className="space-y-4">
+              <Skeleton className="h-8 w-1/3" />
+              <Skeleton className="h-6 w-1/4" />
+              <Skeleton className="h-40 w-full" />
+            </div>
+          ) : !form ? (
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-8 text-center">
+              <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
+                <AlertCircle className="h-6 w-6 text-red-600 dark:text-red-400" />
+              </div>
+              <h3 className="text-lg font-medium">Request Not Found</h3>
+              <p className="text-gray-500 dark:text-gray-400 mt-2">
+                The approval request you're looking for doesn't exist or you don't have permission to view it.
+              </p>
               <Button className="mt-4" onClick={() => router.push("/dashboard/approvals")}>
                 Return to Dashboard
               </Button>
-            </motion.div>
-          </motion.div>
-        ) : (
-          <motion.div 
-            variants={itemVariants}
-            className="bg-white dark:bg-gray-800 rounded-xl shadow-sm overflow-hidden border border-gray-200 dark:border-gray-700"
-          >
-            {/* Header */}
-            <motion.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-              className="relative"
-            >
-              <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6 text-white">
-                <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
-                  <div>
-                    <div className="text-blue-100 text-sm mb-1">Request ID</div>
-                    <motion.h1 
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.2, type: "spring" }}
-                      className="text-2xl font-bold"
-                    >
-                      {form.id}
-                    </motion.h1>
-                    <motion.div 
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.3 }}
-                      className="flex items-center mt-2"
-                    >
-                      <span className="text-blue-100 mr-2">Status:</span>
-                      <Badge
-                        className={`${getStatusColor(form.status)} flex items-center px-2 py-1`}
-                      >
-                        {getStatusIcon(form.status)}
-                        {form.status}
-                      </Badge>
-                    </motion.div>
+            </div>
+          ) : (
+            <>
+              {/* Simple Header */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm mb-6">
+                <div className="p-6">
+                  <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                    <div>
+                      <div className="text-gray-500 dark:text-gray-400 text-sm mb-1">Request ID</div>
+                      <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {form.id}
+                      </h1>
+                      <div className="flex items-center mt-2">
+                        <span className="text-gray-500 dark:text-gray-400 mr-2">Status:</span>
+                        <Badge
+                          className={`${getStatusColor(form.status)} flex items-center px-2 py-1`}
+                        >
+                          {getStatusIcon(form.status)}
+                          {form.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <div className="flex items-center">
+                        <User className="w-4 h-4 mr-2 text-gray-400" />
+                        <span className="text-gray-500 dark:text-gray-400 mr-1">Requester:</span>
+                        <span className="font-medium">{form.submitter}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clock className="w-4 h-4 mr-2 text-gray-400" />
+                        <span className="text-gray-500 dark:text-gray-400 mr-1">Submitted:</span>
+                        <span className="font-medium">{form.updatedAt}</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Clipboard className="w-4 h-4 mr-2 text-gray-400" />
+                        <span className="text-gray-500 dark:text-gray-400 mr-1">Type:</span>
+                        <span className="font-medium">{form.formData.approvalType}</span>
+                      </div>
+                    </div>
                   </div>
-                  
-                  <motion.div 
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.3, type: "spring" }}
-                    className="space-y-2"
-                  >
-                    <div className="flex items-center">
-                      <User className="w-4 h-4 mr-2 text-blue-200" />
-                      <span className="text-blue-100 mr-1">Requester:</span>
-                      <span className="font-medium">{form.submitter}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Clock className="w-4 h-4 mr-2 text-blue-200" />
-                      <span className="text-blue-100 mr-1">Submitted:</span>
-                      <span className="font-medium">{form.updatedAt}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Clipboard className="w-4 h-4 mr-2 text-blue-200" />
-                      <span className="text-blue-100 mr-1">Type:</span>
-                      <span className="font-medium">{form.formData.approvalType}</span>
-                    </div>
-                  </motion.div>
                 </div>
               </div>
-            </motion.div>
 
-            {/* Tabs */}
-            <Tabs defaultValue="details" className="w-full" onValueChange={setActiveTab}>
-              <div className="border-b border-gray-200 dark:border-gray-700">
-                <TabsList className="h-14 bg-transparent p-0 w-full justify-start gap-0">
-                  <TabsTrigger
-                    value="details"
-                    className={`h-14 border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 rounded-none px-6 font-medium ${
-                      activeTab === "details"
-                        ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
-                        : "border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                    }`}
-                  >
-                    <Info className="w-4 h-4 mr-2" />
-                    Details
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="comments"
-                    className={`h-14 border-b-2 data-[state=active]:border-indigo-600 data-[state=active]:text-indigo-600 dark:data-[state=active]:text-indigo-400 rounded-none px-6 font-medium ${
-                      activeTab === "comments"
-                        ? "border-indigo-600 text-indigo-600 dark:text-indigo-400"
-                        : "border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
-                    }`}
-                  >
-                    <MessageSquare className="w-4 h-4 mr-2" />
-                    Comments ({comments.length})
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-
-              {/* Details Tab */}
-              <TabsContent value="details" className="p-0 mt-0">
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="grid md:grid-cols-2 gap-6 p-6"
-                >
-                  <div className="space-y-6">
-                    <motion.div 
-                      variants={itemVariants}
-                      className="space-y-2"
-                    >
-                      <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">
-                        Request Details
-                      </h3>
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+              {/* Tabs */}
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+                <Tabs defaultValue="details" className="w-full" onValueChange={setActiveTab}>
+                  <div className="border-b border-gray-200 dark:border-gray-700">
+                    <TabsList className="h-14 bg-transparent p-0 w-full justify-start gap-0">
+                      <TabsTrigger
+                        value="details"
+                        className={`h-14 border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 rounded-none px-6 font-medium ${
+                          activeTab === "details"
+                            ? "border-blue-600 text-blue-600 dark:text-blue-400"
+                            : "border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                        }`}
                       >
-                        <dl className="grid grid-cols-3 gap-x-3 gap-y-3 text-sm">
-                          <dt className="col-span-1 font-medium text-gray-500">Employee ID:</dt>
-                          <dd className="col-span-2">{form.formData.employeeCode}</dd>
-                          
-                          <dt className="col-span-1 font-medium text-gray-500">Employee Name:</dt>
-                          <dd className="col-span-2">{form.formData.employeeName}</dd>
-                          
-                          <dt className="col-span-1 font-medium text-gray-500">Department:</dt>
-                          <dd className="col-span-2">{form.department}</dd>
-                          
-                          <dt className="col-span-1 font-medium text-gray-500">Type:</dt>
-                          <dd className="col-span-2">{form.formData.approvalType}</dd>
-                          
-                          <dt className="col-span-1 font-medium text-gray-500">Category:</dt>
-                          <dd className="col-span-2">{form.formData.approvalCategory}</dd>
-                          
-                          <dt className="col-span-1 font-medium text-gray-500">Amount:</dt>
-                          <dd className="col-span-2 font-semibold text-indigo-600 dark:text-indigo-400">
-                            {form.formData.assetAmount}
-                          </dd>
-                        </dl>
-                      </motion.div>
-                    </motion.div>
-
-                    <motion.div 
-                      variants={itemVariants}
-                      className="space-y-2"
-                    >
-                      <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">Request Reason</h3>
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                        <Info className="w-4 h-4 mr-2" />
+                        Details
+                      </TabsTrigger>
+                      <TabsTrigger
+                        value="comments"
+                        className={`h-14 border-b-2 data-[state=active]:border-blue-600 data-[state=active]:text-blue-600 dark:data-[state=active]:text-blue-400 rounded-none px-6 font-medium ${
+                          activeTab === "comments"
+                            ? "border-blue-600 text-blue-600 dark:text-blue-400"
+                            : "border-transparent text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                        }`}
                       >
-                        <p className="text-sm">{form.formData.reason}</p>
-                      </motion.div>
-                    </motion.div>
-
-                    <motion.div 
-                      variants={itemVariants}
-                      className="space-y-2"
-                    >
-                      <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">Benefit to Organization</h3>
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                      >
-                        <p className="text-sm">{form.formData.benefitToOrg}</p>
-                      </motion.div>
-                    </motion.div>
+                        <MessageSquare className="w-4 h-4 mr-2" />
+                        Comments ({comments.length})
+                      </TabsTrigger>
+                    </TabsList>
                   </div>
 
-                  <div className="space-y-6">
-                    <motion.div 
-                      variants={itemVariants}
-                      className="space-y-2"
+                  {/* Details Tab */}
+                  <TabsContent value="details" className="p-0 mt-0" forceMount>
+                    <div 
+                      className="p-6"
+                      style={{ display: activeTab === "details" ? "block" : "none" }}
                     >
-                      <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">Assets Requested</h3>
-                      <motion.div 
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 }}
-                        className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4"
-                      >
-                        <table className="w-full">
-                          <thead>
-                            <tr className="border-b border-gray-200 dark:border-gray-700">
-                              <th className="text-left py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Item
-                              </th>
-                              <th className="text-right py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Quantity
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                            {form.formData.assets.map((asset, idx) => (
-                              <tr key={idx}>
-                                <td className="py-3">{asset.name}</td>
-                                <td className="py-3 text-right font-medium">
-                                  {asset.quantity} unit(s)
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </motion.div>
-                    </motion.div>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="space-y-6">
+                          <div>
+                            <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">
+                              Request Details
+                            </h3>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                              <dl className="grid grid-cols-3 gap-x-3 gap-y-3 text-sm">
+                                <dt className="col-span-1 font-medium text-gray-500">Employee ID:</dt>
+                                <dd className="col-span-2">{form.formData.employeeCode}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Employee Name:</dt>
+                                <dd className="col-span-2">{form.formData.employeeName}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Department:</dt>
+                                <dd className="col-span-2">{form.department}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Type:</dt>
+                                <dd className="col-span-2">{form.formData.approvalType}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Category:</dt>
+                                <dd className="col-span-2">{form.formData.approvalCategory}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Amount:</dt>
+                                <dd className="col-span-2 font-semibold text-blue-600 dark:text-blue-400">
+                                  {form.formData.assetAmount}
+                                </dd>
+                              </dl>
+                            </div>
+                          </div>
 
-                    {form.status === "Pending" && (
-                      <motion.div 
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.4, type: "spring" }}
-                        className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800/30 rounded-lg p-4"
-                      >
-                        <h3 className="text-lg font-medium mb-3 text-indigo-900 dark:text-indigo-300">
-                          Approval Action
-                        </h3>
-                        <div className="space-y-3">
-                          <Textarea
-                            placeholder="Add your review comments (required)"
-                            value={reviewComment}
-                            onChange={(e) => setReviewComment(e.target.value)}
-                            className="resize-none border-indigo-200 dark:border-indigo-800/50 h-24"
-                          />
-                          <div className="flex flex-col xs:flex-row md:flex-row lg:flex-row justify-center items-center gap-3">
-                            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                              <Button
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white flex-1"
-                                onClick={() => handleAction("approve")}
-                                disabled={!reviewComment}
-                              >
-                                <CheckCircle className="w-4 h-4 mr-2" /> Approve Request
-                              </Button>
-                            </motion.div>
-                            <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
-                              <Button
-                                className="bg-rose-600 hover:bg-rose-700 text-white flex-1"
-                                onClick={() => handleAction("reject")}
-                                disabled={!reviewComment}
-                              >
-                                <XCircle className="w-4 h-4 mr-2" /> Reject Request
-                              </Button>
-                            </motion.div>
+                          <div>
+                            <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">Request Reason</h3>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                              <p className="text-sm">{form.formData.reason}</p>
+                            </div>
+                          </div>
+
+                          <div>
+                            <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">Benefit to Organization</h3>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                              <p className="text-sm">{form.formData.benefitToOrg}</p>
+                            </div>
                           </div>
                         </div>
-                      </motion.div>
-                    )}
-                  </div>
-                </motion.div>
-              </TabsContent>
 
-              {/* Comments Tab */}
-              <TabsContent value="comments" className="p-0 mt-0">
-                <motion.div 
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="p-6"
-                >
-                  <div className="flex flex-col h-[500px]">
-                    <div className="flex-1 overflow-y-auto mb-4 space-y-4">
-                      <AnimatePresence>
-                        {comments.length === 0 ? (
-                          <motion.div 
-                            variants={itemVariants}
-                            className="flex flex-col items-center justify-center h-full text-center p-8"
-                          >
-                            <motion.div
-                              initial={{ scale: 0 }}
-                              animate={{ scale: 1 }}
-                              transition={{ type: "spring", stiffness: 260, damping: 20 }}
-                            >
-                              <MessageSquare className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
-                            </motion.div>
-                            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No comments yet</h3>
-                            <p className="mt-1 text-sm text-gray-500 max-w-md">
-                              Be the first to leave a comment on this request.
-                            </p>
-                          </motion.div>
-                        ) : (
-                          comments.map((comment, index) => (
-                            <motion.div 
-                              key={comment.id}
-                              variants={commentVariants}
-                              initial="hidden"
-                              animate="visible"
-                              exit="exit"
-                              transition={{ delay: index * 0.07 }}
-                              className="flex gap-3"
-                            >
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback className="bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
-                                  {comment.userInitials}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div className="flex-1">
-                                <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
-                                  <div className="flex justify-between items-start mb-1">
-                                    <div className="font-medium text-sm">{comment.user}</div>
-                                    <div className="text-xs text-gray-500">
-                                      {formatDate(comment.timestamp)}
-                                    </div>
-                                  </div>
-                                  <p className="text-sm">{comment.text}</p>
+                        <div className="space-y-6">
+                          <div>
+                            <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">Assets Requested</h3>
+                            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                              <table className="w-full">
+                                <thead>
+                                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                                    <th className="text-left py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Item
+                                    </th>
+                                    <th className="text-right py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                      Quantity
+                                    </th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                                  {form.formData.assets.map((asset, idx) => (
+                                    <tr key={idx}>
+                                      <td className="py-3">{asset.name}</td>
+                                      <td className="py-3 text-right font-medium">
+                                        {asset.quantity} unit(s)
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+
+                          {form.status === "Pending" && (
+                            <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                              <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">
+                                Approval Action
+                              </h3>
+                              <div className="space-y-3">
+                                <Textarea
+                                  placeholder="Add your review comments (required)"
+                                  value={reviewComment}
+                                  onChange={(e) => setReviewComment(e.target.value)}
+                                  className="resize-none border-gray-200 dark:border-gray-700 h-24"
+                                />
+                                <div className="flex flex-col xs:flex-row justify-end items-center gap-3">
+                                  <Button
+                                    variant="outline"
+                                    className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                                    onClick={() => handleAction("reject")}
+                                    disabled={!reviewComment}
+                                  >
+                                    <XCircle className="w-4 h-4 mr-2" /> Reject
+                                  </Button>
+                                  <Button
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => handleAction("approve")}
+                                    disabled={!reviewComment}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-2" /> Approve
+                                  </Button>
                                 </div>
-                                <div className="text-xs text-gray-500 mt-1 ml-2">{comment.userRole}</div>
                               </div>
-                            </motion.div>
-                          ))
-                        )}
-                      </AnimatePresence>
-                    </div>
-
-                    <Separator className="mb-4" />
-
-                    <motion.div 
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.5 }}
-                      className="bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700 p-3"
-                    >
-                      <div className="flex items-start gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback className="bg-indigo-100 text-indigo-600 dark:bg-indigo-950 dark:text-indigo-300">
-                            YO
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 relative">
-                          <Textarea
-                            placeholder="Add a comment..."
-                            value={newComment}
-                            onChange={(e) => setNewComment(e.target.value)}
-                            className="resize-none min-h-[80px] pr-12"
-                          />
-                          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-                            <Button
-                              size="icon"
-                              className="h-8 w-8 absolute bottom-2 right-2 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:text-indigo-400 dark:hover:bg-indigo-900/50"
-                              onClick={handleAddComment}
-                              disabled={!newComment.trim()}
-                            >
-                              <Send className="h-4 w-4" />
-                            </Button>
-                          </motion.div>
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              </TabsContent>
-            </Tabs>
-          </motion.div>
-        )}
+                    </div>
+                  </TabsContent>
+
+                  {/* Comments Tab */}
+                  <TabsContent value="comments" className="p-0 mt-0" forceMount>
+                    <div 
+                      className="p-6"
+                      style={{ display: activeTab === "comments" ? "block" : "none" }}
+                    >
+                      <div className="flex flex-col h-[500px]">
+                        <div className="flex-1 overflow-y-auto mb-4 space-y-4">
+                          {comments.length === 0 ? (
+                            <div className="flex flex-col items-center justify-center h-full text-center p-8">
+                              <MessageSquare className="h-12 w-12 text-gray-300 dark:text-gray-600 mb-4" />
+                              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">No comments yet</h3>
+                              <p className="mt-1 text-sm text-gray-500 max-w-md">
+                                Be the first to leave a comment on this request.
+                              </p>
+                            </div>
+                          ) : (
+                            comments.map((comment) => (
+                              <div key={comment.id} className="flex gap-3">
+                                <Avatar className="h-8 w-8">
+                                  <AvatarFallback className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                    {comment.userInitials}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div className="flex-1">
+                                  <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-3 border border-gray-200 dark:border-gray-700">
+                                    <div className="flex justify-between items-start mb-1">
+                                      <div className="font-medium text-sm">{comment.user}</div>
+                                      <div className="text-xs text-gray-500">
+                                        {formatDate(comment.timestamp)}
+                                      </div>
+                                    </div>
+                                    <p className="text-sm">{comment.text}</p>
+                                  </div>
+                                  <div className="text-xs text-gray-500 mt-1 ml-2">{comment.userRole}</div>
+                                </div>
+                              </div>
+                            ))
+                          )}
+                        </div>
+
+                        <Separator className="mb-4" />
+
+                        <div className="bg-gray-50 dark:bg-gray-800/30 rounded-lg border border-gray-200 dark:border-gray-700 p-3">
+                          <div className="flex items-start gap-3">
+                            <Avatar className="h-8 w-8">
+                              <AvatarFallback className="bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-300">
+                                YO
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1 relative">
+                              <Textarea
+                                placeholder="Add a comment..."
+                                value={newComment}
+                                onChange={(e) => setNewComment(e.target.value)}
+                                className="resize-none min-h-[80px] pr-12"
+                              />
+                              <Button
+                                size="icon"
+                                className="h-8 w-8 absolute bottom-2 right-2 text-blue-600 bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50"
+                                onClick={handleAddComment}
+                                disabled={!newComment.trim()}
+                              >
+                                <Send className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </>
+          )}
+        </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

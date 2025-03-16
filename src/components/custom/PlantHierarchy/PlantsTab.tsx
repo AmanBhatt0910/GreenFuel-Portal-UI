@@ -45,11 +45,7 @@ export const PlantsTab: React.FC<PlantsTabProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {businessUnits.map((businessUnit) => (
-            <Card 
-              key={businessUnit.id} 
-              className="mb-4 cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => handleBusinessUnitClick(businessUnit.id || '')}
-            >
+            <div key={businessUnit.id} className="mb-4">
               <BusinessUnitCard
                 businessUnit={businessUnit}
                 businessUnits={businessUnits}
@@ -58,7 +54,7 @@ export const PlantsTab: React.FC<PlantsTabProps> = ({
                 setActiveBusinessUnitId={setActiveBusinessUnitId}
                 setActiveTab={setActiveTab}
               />
-            </Card>
+            </div>
           ))}
         </div>
       )}

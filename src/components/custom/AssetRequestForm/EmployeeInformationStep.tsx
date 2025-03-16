@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,8 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { GFContext } from "@/context/AuthContext";
+
 
 interface BusinessUnit {
   id: number;
@@ -42,13 +44,32 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
   direction,
 }) => {
   const api = useAxios();
+  const { userInfo } = useContext(GFContext);
   const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [designations, setDesignations] = useState<Designation[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingDesignations, setLoadingDesignations] = useState<boolean>(false);
+
+  // Log the form data whenever it changes to track prefilled values
+  useEffect(() => {
+    console.log("EmployeeInformationStep - Current form data:", formData);
+    
+    // This helps to identify if the plant/department/designation values are populated
+    if (formData.plant) {
+      console.log("Plant is set to:", formData.plant);
+    }
+    if (formData.initiateDept) {
+      console.log("Department is set to:", formData.initiateDept);
+    }
+    if (formData.designation) {
+      console.log("Designation is set to:", formData.designation);
+    }
+  }, [formData]);
 
   // Custom handler for select components
   const handleSelectChange = (name: string, value: string) => {
+    console.log(`Dropdown selection changed: ${name} = ${value}`);
     handleChange({
       target: {
         name,
@@ -62,8 +83,30 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
     const fetchBusinessUnits = async () => {
       setLoading(true);
       try {
+        console.log("Initial form data state:", JSON.stringify(formData));
         const response = await api.get('business-units/');
+        console.log("Fetched business units:", response.data);
         setBusinessUnits(response.data);
+        
+        // If we already have prefilled plant/business unit, immediately load departments
+        if (formData.plant && formData.plant !== 0) {
+          console.log("Prefilled plant detected on mount, fetching departments for:", formData.plant);
+          try {
+            const deptResponse = await api.get(`/departments/?business_unit=${formData.plant}`);
+            console.log("Departments for prefilled plant:", deptResponse.data);
+            setDepartments(deptResponse.data);
+            
+            // If we also have a prefilled department, immediately load designations
+            if (formData.initiateDept && formData.initiateDept !== 0) {
+              console.log("Prefilled department detected on mount:", formData.initiateDept);
+              const desigResponse = await api.get(`/designations/?department=${formData.initiateDept}`);
+              console.log("Designations for prefilled department:", desigResponse.data);
+              setDesignations(desigResponse.data);
+            }
+          } catch (error) {
+            console.error("Error fetching data for prefilled values:", error);
+          }
+        }
       } catch (error) {
         console.error("Error fetching business units:", error);
       } finally {
@@ -72,17 +115,33 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
     };
 
     fetchBusinessUnits();
-  }, []);
+  }, []); // Only run once on component mount
 
-  // Fetch departments whenever selected business unit changes
+  // Fetch departments whenever selected business unit changes (for manual selection)
   useEffect(() => {
+    // Skip if this is the initial render or a reset to 0
+    if (!formData.plant || formData.plant === 0) return;
+    
     const fetchDepartments = async () => {
-      if (!formData.plant) return;
-      
       setLoading(true);
       try {
+        console.log(`User changed business unit to ${formData.plant}, fetching departments...`);
         const response = await api.get(`/departments/?business_unit=${formData.plant}`);
+        console.log("Departments data:", response.data);
         setDepartments(response.data);
+        
+        // If department ID is present but not in the new list, reset it
+        if (formData.initiateDept && formData.initiateDept !== 0) {
+          const departmentExists = response.data.some((dept: Department) => 
+            dept.id.toString() === formData.initiateDept.toString()
+          );
+          
+          if (!departmentExists) {
+            console.log("Department not found in new business unit, resetting...");
+            handleSelectChange("initiateDept", "0");
+            handleSelectChange("designation", "0");
+          }
+        }
       } catch (error) {
         console.error("Error fetching departments:", error);
       } finally {
@@ -90,27 +149,94 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
       }
     };
 
-    fetchDepartments();
+    // Only fetch if we're not already in a loading state
+    if (!loading) {
+      fetchDepartments();
+    }
   }, [formData.plant]);
 
-  // Fetch designations whenever selected department changes
+  // Fetch designations whenever selected department changes (for manual selection)
   useEffect(() => {
+    // Skip if this is the initial render or a reset to 0
+    if (!formData.initiateDept || formData.initiateDept === 0) {
+      setDesignations([]);
+      return;
+    }
+    
     const fetchDesignations = async () => {
-      if (!formData.initiateDept) return;
-      
-      setLoading(true);
+      setLoadingDesignations(true);
       try {
+        console.log(`User changed department to ${formData.initiateDept}, fetching designations...`);
         const response = await api.get(`/designations/?department=${formData.initiateDept}`);
+        console.log("Fetched designations:", response.data);
         setDesignations(response.data);
+        
+        // If designation ID is present but not in the new list, reset it
+        if (formData.designation && formData.designation !== 0) {
+          const designationExists = response.data.some((desig: Designation) => 
+            desig.id.toString() === formData.designation.toString()
+          );
+          
+          if (!designationExists) {
+            console.log("Designation not found in new department, resetting...");
+            handleSelectChange("designation", "0");
+          }
+        }
       } catch (error) {
         console.error("Error fetching designations:", error);
+        setDesignations([]);
       } finally {
-        setLoading(false);
+        setLoadingDesignations(false);
       }
     };
 
-    fetchDesignations();
+    // Only fetch if we're not already in a loading state
+    if (!loadingDesignations) {
+      fetchDesignations();
+    }
   }, [formData.initiateDept]);
+
+  // Track form data changes to ensure we select the correct values in dropdowns
+  useEffect(() => {
+    const findAndLogSelectedItem = () => {
+      // For business unit
+      if (formData.plant && formData.plant !== 0 && businessUnits.length > 0) {
+        const selectedBusinessUnit = businessUnits.find(
+          (bu) => bu.id === Number(formData.plant)
+        );
+        console.log(
+          `Selected business unit: ${selectedBusinessUnit?.name || "Not found"} (ID: ${formData.plant})`
+        );
+      }
+
+      // For department
+      if (formData.initiateDept && formData.initiateDept !== 0 && departments.length > 0) {
+        const selectedDepartment = departments.find(
+          (dept) => dept.id === Number(formData.initiateDept)
+        );
+        console.log(
+          `Selected department: ${selectedDepartment?.name || "Not found"} (ID: ${formData.initiateDept})`
+        );
+      }
+
+      // For designation
+      if (formData.designation && formData.designation !== 0 && designations.length > 0) {
+        const selectedDesignation = designations.find(
+          (desig) => desig.id === Number(formData.designation)
+        );
+        console.log(
+          `Selected designation: ${selectedDesignation?.name || "Not found"} (ID: ${formData.designation})`
+        );
+      }
+    };
+
+    // Delay the check slightly to make sure we have the latest data
+    const timeoutId = setTimeout(() => {
+      findAndLogSelectedItem();
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [formData, businessUnits, departments, designations]);
 
   // Animation variants
   const containerVariants = {
@@ -172,7 +298,6 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             id="employeeName"
             name="employeeName"
             placeholder="Enter your name"
-            disabled
             value={formData.employeeName || ""}
             onChange={handleChange}
             required
@@ -187,7 +312,6 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             name="employeeCode"
             placeholder="Enter your employee code"
             value={formData.employeeCode || ""}
-            disabled
             onChange={handleChange}
             required
             className="bg-white border-gray-200 focus:border-blue-500"
@@ -197,14 +321,15 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
         <motion.div variants={itemVariants} className="space-y-2">
           <Label htmlFor="plant" className="text-gray-700">Business Unit / Plant</Label>
           <Select
-            disabled={loading || businessUnits.length === 0}
-            value={formData.plant.toString()}
+            disabled={loading}
+            value={formData.plant ? formData.plant.toString() : "0"}
             onValueChange={(value) => handleSelectChange("plant", value)}
           >
             <SelectTrigger className="bg-white border-gray-200 text-gray-700">
               <SelectValue placeholder={loading ? "Loading..." : "Select Business Unit"} />
             </SelectTrigger>
             <SelectContent className="bg-white">
+              <SelectItem value="0" disabled className="text-gray-400">Select Business Unit</SelectItem>
               {businessUnits.map((bu) => (
                 <SelectItem key={bu.id} value={bu.id.toString()} className="text-gray-700">
                   {bu.name}
@@ -217,20 +342,21 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
         <motion.div variants={itemVariants} className="space-y-2">
           <Label htmlFor="initiateDept" className="text-gray-700">Initiate Department</Label>
           <Select
-            disabled={loading || !formData.plant || departments.length === 0}
-            value={formData.initiateDept.toString()}
+            disabled={loading || !formData.plant || formData.plant.toString() === "0" || departments.length === 0}
+            value={formData.initiateDept ? formData.initiateDept.toString() : "0"}
             onValueChange={(value) => handleSelectChange("initiateDept", value)}
           >
             <SelectTrigger className="bg-white border-gray-200 text-gray-700">
               <SelectValue 
                 placeholder={loading 
                   ? "Loading..." 
-                  : !formData.plant 
+                  : !formData.plant || formData.plant.toString() === "0"
                     ? "Select Business Unit first" 
-                    : "Select Initiate Department"} 
+                    : "Select Department"} 
               />
             </SelectTrigger>
             <SelectContent className="bg-white">
+              <SelectItem value="0" disabled className="text-gray-400">Select Department</SelectItem>
               {departments.map((dept) => (
                 <SelectItem key={dept.id} value={dept.id.toString()} className="text-gray-700">
                   {dept.name}
@@ -243,25 +369,31 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
         <motion.div variants={itemVariants} className="space-y-2">
           <Label htmlFor="designation" className="text-gray-700">Designation</Label>
           <Select
-            disabled={loading || !formData.initiateDept || designations.length === 0}
-              value={formData.designation.toString()}
+            disabled={loadingDesignations || !formData.initiateDept || formData.initiateDept.toString() === "0"}
+            value={formData.designation ? formData.designation.toString() : "0"}
             onValueChange={(value) => handleSelectChange("designation", value)}
           >
             <SelectTrigger className="bg-white border-gray-200 text-gray-700">
               <SelectValue 
-                placeholder={loading 
-                  ? "Loading..." 
-                  : !formData.initiateDept 
+                placeholder={loadingDesignations 
+                  ? "Loading Designations..." 
+                  : !formData.initiateDept || formData.initiateDept.toString() === "0"
                     ? "Select Department first" 
-                    : "Select Designation"} 
+                    : designations.length === 0
+                      ? "No designations available"
+                      : "Select Designation"} 
               />
             </SelectTrigger>
             <SelectContent className="bg-white">
+              <SelectItem value="0" disabled className="text-gray-400">Select Designation</SelectItem>
               {designations.map((designation) => (
                 <SelectItem key={designation.id} value={designation.id.toString()} className="text-gray-700">
                   {designation.name}
                 </SelectItem>
               ))}
+              {!loadingDesignations && formData.initiateDept && designations.length === 0 && (
+                <div className="px-2 py-1 text-sm text-gray-500">No designations available</div>
+              )}
             </SelectContent>
           </Select>
         </motion.div>

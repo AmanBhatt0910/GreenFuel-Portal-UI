@@ -48,7 +48,7 @@ const FormField = memo(({
         id={name}
         name={name}
         type={type}
-        value={value || ""}
+        value={value === null || value === undefined ? "" : String(value)}
         onChange={onChange}
         placeholder={placeholder}
         className="w-full"
@@ -91,7 +91,7 @@ const SelectField = memo(({
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
       <Select
-        value={value ? value.toString() : undefined}
+        value={value !== null && value !== undefined ? value.toString() : undefined}
         onValueChange={(value) => onChange(name, value)}
         disabled={disabled}
       >
@@ -166,7 +166,7 @@ const CascadingDropdowns = memo(({
           Business Unit / Plant
         </Label>
         <Select
-          value={selectedBusinessUnit ? selectedBusinessUnit.toString() : undefined}
+          value={selectedBusinessUnit !== null && selectedBusinessUnit !== undefined ? selectedBusinessUnit.toString() : undefined}
           onValueChange={(value) => {
             onBusinessUnitChange(value ? parseInt(value, 10) : null);
             // Reset department and designation when business unit changes
@@ -194,7 +194,7 @@ const CascadingDropdowns = memo(({
           Department
         </Label>
         <Select
-          value={selectedDepartment ? selectedDepartment.toString() : undefined}
+          value={selectedDepartment !== null && selectedDepartment !== undefined ? selectedDepartment.toString() : undefined}
           onValueChange={(value) => {
             onDepartmentChange(value ? parseInt(value, 10) : null);
             // Reset designation when department changes
@@ -227,7 +227,7 @@ const CascadingDropdowns = memo(({
           Designation
         </Label>
         <Select
-          value={selectedDesignation ? selectedDesignation.toString() : undefined}
+          value={selectedDesignation !== null && selectedDesignation !== undefined ? selectedDesignation.toString() : undefined}
           onValueChange={(value) =>
             onDesignationChange(value ? parseInt(value, 10) : null)
           }
@@ -337,7 +337,7 @@ function CredentialFormContent({
     if (isOpen) {
       fetchData();
     }
-  }, [isOpen, designations, businessUnits, departments, api]);
+  }, [isOpen, designations, businessUnits, departments]);
 
   // Initialize form data when selectedUser changes or component mounts
   useEffect(() => {
@@ -669,7 +669,7 @@ function CredentialFormContent({
             <Textarea
               id="address"
               name="address"
-              value={formData.address || ""}
+              value={formData.address === null ? "" : formData.address || ""}
               onChange={handleInputChange}
               placeholder="Street address"
               className="w-full"

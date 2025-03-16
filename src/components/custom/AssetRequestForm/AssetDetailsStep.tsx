@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { slideVariants } from "./animations";
 import { AssetDetailsProps } from "./types";
-import { ChevronDown, Search, X } from "lucide-react";
+import { ChevronDown, Search, X, Check } from "lucide-react";
 
 // Dummy data for dropdowns
 const approvalCategories = [
@@ -203,6 +203,129 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
           />
         </div>
 
+        <div className="space-y-2">
+            <Label htmlFor="notifyTo" className="text-sm font-medium">
+              Notify To <span className="text-red-500">*</span>
+            </Label>
+            <div className="relative" ref={dropdownRef}>
+              {/* Combobox Trigger */}
+              <div 
+                className={`h-10 w-full rounded-md border ${
+                  isOpen 
+                    ? 'border-blue-500 ring-2 ring-blue-200 dark:ring-blue-800' 
+                    : 'border-gray-300 dark:border-gray-700'
+                } bg-white px-3 py-2 flex items-center justify-between cursor-pointer focus:outline-none hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-150 dark:bg-gray-800 dark:text-gray-200`}
+                onClick={() => setIsOpen(!isOpen)}
+              >
+                <div className="flex items-center w-full">
+                  {selectedUser ? (
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex items-center space-x-2">
+                        <div className="flex-shrink-0 w-6 h-6 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
+                          <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                            {selectedUser.name.charAt(0).toUpperCase()}
+                          </span>
+                        </div>
+                        <span className="truncate">{selectedUser.name}</span>
+                      </div>
+                      <button 
+                        onClick={clearSelection}
+                        className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors ml-1"
+                        aria-label="Clear selection"
+                      >
+                        <X size={14} />
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="text-sm text-gray-500 dark:text-gray-400">Select Person to Notify</span>
+                  )}
+                </div>
+                <ChevronDown size={18} className={`transition-transform duration-200 text-gray-500 ${isOpen ? 'rotate-180' : ''}`} />
+              </div>
+
+              {/* Dropdown Menu */}
+              {isOpen && (
+                <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-auto animate-in fade-in slide-in-from-top-2 duration-150">
+                  {/* Search Input */}
+                  <div className="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
+                      <input
+                        type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        placeholder="Search users..."
+                        className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                        autoFocus
+                      />
+                    </div>
+                  </div>
+
+                  {/* User List */}
+                  <div className="py-1">
+                    {filteredUsers.length > 0 ? (
+                      filteredUsers.map((person: any) => (
+                        <div
+                          key={person.id}
+                          className={`px-3 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors ${
+                            formData.notifyTo === person.id ? 'bg-blue-50 dark:bg-gray-600' : ''
+                          }`}
+                          onClick={() => handleUserSelect(person.id)}
+                        >
+                          <div className="flex items-center">
+                            <div className={`w-6 h-6 rounded-full flex-shrink-0 mr-2 flex items-center justify-center ${
+                              formData.notifyTo === person.id 
+                                ? 'bg-blue-100 dark:bg-blue-900' 
+                                : 'bg-gray-100 dark:bg-gray-800'
+                            }`}>
+                              <span className={`text-xs font-medium ${
+                                formData.notifyTo === person.id 
+                                  ? 'text-blue-700 dark:text-blue-300' 
+                                  : 'text-gray-600 dark:text-gray-400'
+                              }`}>
+                                {person.name.charAt(0).toUpperCase()}
+                              </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className={`text-sm ${
+                                formData.notifyTo === person.id 
+                                  ? 'text-blue-700 font-medium dark:text-blue-300' 
+                                  : 'text-gray-800 dark:text-gray-200'
+                              }`}>
+                                {person.name}
+                              </span>
+                              {person.email && (
+                                <span className="text-xs text-gray-500 dark:text-gray-400 truncate max-w-[200px]">
+                                  {person.email}
+                                </span>
+                              )}
+                            </div>
+                            {formData.notifyTo === person.id && (
+                              <div className="ml-auto">
+                                <Check size={16} className="text-blue-500" />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="px-4 py-8 text-gray-500 dark:text-gray-400 text-center flex flex-col items-center">
+                        <Search className="h-6 w-6 mb-2 text-gray-400 opacity-50" />
+                        <p>No users found matching "{searchTerm}"</p>
+                        <button 
+                          className="mt-2 text-xs text-blue-500 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
+                          onClick={() => setSearchTerm('')}
+                        >
+                          Clear search
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
             <Label htmlFor="approvalCategory" className="text-sm font-medium">
@@ -244,80 +367,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
             </select>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="notifyTo" className="text-sm font-medium">
-              Notify To <span className="text-red-500">*</span>
-            </Label>
-            <div className="relative" ref={dropdownRef}>
-              {/* Combobox Trigger */}
-              <div 
-                className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 flex items-center justify-between cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-                onClick={() => setIsOpen(!isOpen)}
-              >
-                <div className="flex items-center w-full">
-                  {selectedUser ? (
-                    <div className="flex items-center justify-between w-full">
-                      <span>{selectedUser.name}</span>
-                      <button 
-                        onClick={clearSelection}
-                        className="p-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700"
-                      >
-                        <X size={14} />
-                      </button>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Select Person to Notify</span>
-                  )}
-                </div>
-                <ChevronDown size={18} className={`transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-              </div>
-
-              {/* Dropdown Menu */}
-              {isOpen && (
-                <div className="absolute z-10 mt-1 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 max-h-60 overflow-auto">
-                  {/* Search Input */}
-                  <div className="p-2 border-b border-gray-200 dark:border-gray-700 sticky top-0 bg-white dark:bg-gray-800 z-10">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-400" />
-                      <input
-                        type="text"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        placeholder="Search users..."
-                        className="w-full pl-8 pr-3 py-2 border border-gray-300 dark:border-gray-600 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-                      />
-                    </div>
-                  </div>
-
-                  {/* User List */}
-                  <div>
-                    {filteredUsers.length > 0 ? (
-                      filteredUsers.map((person: any) => (
-                        <div
-                          key={person.id}
-                          className={`px-3 py-2 cursor-pointer hover:bg-blue-50 dark:hover:bg-gray-700 ${
-                            formData.notifyTo === person.id ? 'bg-blue-100 dark:bg-gray-600' : ''
-                          }`}
-                          onClick={() => handleUserSelect(person.id)}
-                        >
-                          <div className="flex items-center">
-                            <div className={`w-2 h-2 rounded-full mr-2 ${
-                              formData.notifyTo === person.id ? 'bg-blue-500' : 'bg-transparent'
-                            }`}></div>
-                            <span className="text-gray-800 dark:text-gray-200">{person.name}</span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="px-3 py-2 text-gray-500 dark:text-gray-400 text-center">
-                        No users found
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          
         </div>
 
         <div className="flex items-start mt-4">

@@ -1,7 +1,7 @@
 'use client'
 import React, { useState } from 'react';
-import { Edit, Trash2, Check, X } from 'lucide-react';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Edit, Trash2, Check, X, Building2, Layers, ChevronRight } from 'lucide-react';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -22,6 +22,7 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
 }) => {
   const [editingName, setEditingName] = useState('');
   const [isEditing, setIsEditing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   // Start editing
   const startEditing = () => {
@@ -82,125 +83,139 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
     ) || 0;
   };
 
+  const isActive = activeBusinessUnitId === businessUnit.id;
+  const deptCount = businessUnit.departments?.length || 0;
+  const desigCount = getTotalDesignations();
+
   return (
     <Card 
       className={`
-        transition-all duration-200 ease-in-out cursor-pointer hover:shadow-md
-        ${activeBusinessUnitId === businessUnit.id 
-          ? 'border-green-500 dark:border-green-700 shadow-green-100 dark:shadow-none' 
-          : 'border-gray-200 dark:border-gray-700'}
+        transition-all duration-200 ease-in-out cursor-pointer relative overflow-hidden
+        ${isActive 
+          ? 'border-green-500 dark:border-green-600' 
+          : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700'}
       `}
       onClick={selectBusinessUnit}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
     >
-      <CardHeader className="pb-2">
-        {isEditing ? (
-          <div className="flex space-x-2">
-            <Input
-              value={editingName}
-              onChange={(e) => setEditingName(e.target.value)}
-              onClick={(e) => e.stopPropagation()}
-              className="bg-white dark:bg-gray-700"
-              autoFocus
-            />
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={saveEditedBusinessUnit}
-                    className="h-8 w-8 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
-                  >
-                    <Check className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Save changes</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={cancelEditing}
-                    className="h-8 w-8 text-gray-600 hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>Cancel</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        ) : (
-          <CardTitle className="text-lg text-gray-900 dark:text-gray-100">
-            {businessUnit.name}
-          </CardTitle>
-        )}
-      </CardHeader>
+      {/* Active indicator */}
+      {isActive && (
+        <div className="absolute top-0 left-0 w-0.5 h-full bg-green-500 dark:bg-green-400"></div>
+      )}
       
-      <CardContent className="pb-2">
-        <div className="flex flex-col space-y-2">
-          <div className="flex space-x-2 text-sm text-gray-600 dark:text-gray-400">
-            <span>ID: {businessUnit.id}</span>
-          </div>
-          
-          <div className="flex space-x-2">
-            <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-200 dark:bg-purple-900/40 dark:text-purple-400 border border-purple-200 dark:border-purple-800">
-              {businessUnit.departments?.length || 0} Departments
-            </Badge>
-            <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900/40 dark:text-blue-400 border border-blue-200 dark:border-blue-800">
-              {getTotalDesignations()} Designations
-            </Badge>
-          </div>
+      <div className="flex items-stretch">
+        {/* Left icon section */}
+        <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800/30">
+          <Building2 className={`h-9 w-9 ${isActive ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`} />
         </div>
-      </CardContent>
-      
-      <CardFooter className="pt-2 flex justify-end border-t border-gray-100 dark:border-gray-800 mt-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  startEditing();
-                }}
-                className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20"
-              >
-                <Edit className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Edit business unit</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
         
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                onClick={deleteBusinessUnit}
-                className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Delete business unit</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </CardFooter>
+        <div className="flex-1">
+          <CardHeader className="pb-3 pt-3">
+            {isEditing ? (
+              <div className="flex space-x-2">
+                <Input
+                  value={editingName}
+                  onChange={(e) => setEditingName(e.target.value)}
+                  onClick={(e) => e.stopPropagation()}
+                  className="bg-white dark:bg-gray-800 border-gray-300 dark:border-gray-700"
+                  autoFocus
+                />
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={saveEditedBusinessUnit}
+                  className="h-9 w-9 text-green-600 hover:text-green-700 hover:bg-green-50 dark:hover:bg-green-900/20"
+                >
+                  <Check className="h-4 w-4" />
+                </Button>
+                <Button
+                  size="icon"
+                  variant="outline"
+                  onClick={cancelEditing}
+                  className="h-9 w-9 text-gray-600 hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center">
+                <h3 className={`text-lg font-semibold ${isActive ? 'text-green-800 dark:text-green-300' : 'text-gray-800 dark:text-gray-200'}`}>
+                  {businessUnit.name}
+                </h3>
+                
+                <div className="flex space-x-1">
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            startEditing();
+                          }}
+                          className="h-8 w-8 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800"
+                        >
+                          <Edit className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Edit business unit</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                  
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          onClick={deleteBusinessUnit}
+                          className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>Delete business unit</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                </div>
+              </div>
+            )}
+          </CardHeader>
+          
+          <CardContent className="pb-4">
+            <div className="space-y-3">
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                ID: {businessUnit.id}
+              </div>
+              
+              <div className="flex flex-wrap gap-2">
+                <div className="flex items-center px-3 py-1.5 rounded-full text-sm bg-purple-50 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300">
+                  <Layers className="h-3.5 w-3.5 mr-1.5" />
+                  <span className="font-medium">{deptCount}</span>
+                  <span className="ml-1 text-gray-600 dark:text-gray-400">Departments</span>
+                </div>
+                
+                <div className="flex items-center px-3 py-1.5 rounded-full text-sm bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300">
+                  <Layers className="h-3.5 w-3.5 mr-1.5" />
+                  <span className="font-medium">{desigCount}</span>
+                  <span className="ml-1 text-gray-600 dark:text-gray-400">Designations</span>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </div>
+        
+        {/* Right chevron indicator */}
+        <div className={`flex items-center pr-2 ${isActive ? 'text-green-500' : 'text-gray-400'}`}>
+          <ChevronRight className="h-5 w-5" />
+        </div>
+      </div>
     </Card>
   );
 }; 

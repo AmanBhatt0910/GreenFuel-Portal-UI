@@ -18,7 +18,6 @@ export interface Designation {
   id?: string | number;
   name: string;
   department: number;
-  level: number;
 }
 
 export interface NewBusinessUnit {
@@ -33,7 +32,6 @@ export interface NewDepartment {
 export interface NewDesignation {
   name: string;
   department: number;
-  level: number;
 }
 
 export interface HierarchyItem {
