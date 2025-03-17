@@ -24,39 +24,27 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import useAxios from "@/app/hooks/use-axios";
 
-// Use the same interfaces from the main page
-interface Asset {
-  name: string;
-  quantity: number;
-}
-
-interface FormDetails {
-  plant: number;
-  date: string;
-  employeeCode: string;
-  employeeName: string;
-  department: number;
-  designation: number;
-  assets: Asset[];
-  assetAmount: string;
-  reason: string;
-  policyAgreement: boolean;
-  initiateDept: number;
-  currentStatus: string;
-  benefitToOrg: string;
-  approvalCategory: string;
-  approvalType: string;
-  notifyTo: number;
-}
-
 interface ApprovalForm {
   id: string;
-  submitter: string;
+  user: string;
+  business_unit: string;
   department: string;
+  designation: string;
+  date: string;
+  total: number;
+  reason: string;
+  policy_agreement: boolean;
+  initiate_dept: string;
   status: string;
-  level: number;
-  updatedAt: string;
-  formData: FormDetails;
+  benefit_to_organisation: string;
+  approval_category: string;
+  approval_type: string;
+  notify_to: string;
+  current_level: number;
+  max_level: number;
+  rejected: boolean;
+  rejection_reason: string | null;
+  budget_id: string;
 }
 
 interface Comment {
@@ -72,87 +60,69 @@ interface Comment {
 const mockForms: ApprovalForm[] = [
   {
     id: "REQ-2025-006",
-    submitter: "Aman Bhatt",
+    user: "Aman Bhatt",
+    business_unit: "BU001",
     department: "HR",
+    designation: "Senior Manager",
+    date: "2025-03-10",
+    total: 1200,
+    reason: "Remote work requirement",
+    policy_agreement: true,
+    initiate_dept: "2",
     status: "Pending",
-    level: 2,
-    updatedAt: "2025-03-10",
-    formData: {
-      plant: 101,
-      date: "2025-03-10",
-      employeeCode: "EMP001",
-      employeeName: "Aman Bhatt",
-      department: 2,
-      designation: 5,
-      assets: [{ name: "Laptop", quantity: 1 }],
-      assetAmount: "1200 INR",
-      reason: "Remote work requirement",
-      policyAgreement: true,
-      initiateDept: 2,
-      currentStatus: "Pending",
-      benefitToOrg: "Increased productivity",
-      approvalCategory: "Hardware",
-      approvalType: "New Request",
-      notifyTo: 3,
-    },
+    benefit_to_organisation: "Increased productivity",
+    approval_category: "Hardware",
+    approval_type: "New Request",
+    notify_to: "3",
+    current_level: 2,
+    max_level: 3,
+    rejected: false,
+    rejection_reason: null,
+    budget_id: "BU001",
   },
   {
     id: "REQ-2025-007",
-    submitter: "Priya Singh",
+    user: "Priya Singh",
+    business_unit: "BU002",
     department: "Engineering",
+    designation: "Lead Engineer",
+    date: "2025-03-11",
+    total: 800,
+    reason: "Current equipment malfunctioning",
+    policy_agreement: true,
+    initiate_dept: "3",
     status: "Pending",
-    level: 1,
-    updatedAt: "2025-03-11",
-    formData: {
-      plant: 102,
-      date: "2025-03-11",
-      employeeCode: "EMP145",
-      employeeName: "Priya Singh",
-      department: 3,
-      designation: 4,
-      assets: [
-        { name: "Monitor", quantity: 2 },
-        { name: "Keyboard", quantity: 1 }
-      ],
-      assetAmount: "800 INR",
-      reason: "Current equipment malfunctioning",
-      policyAgreement: true,
-      initiateDept: 3,
-      currentStatus: "Pending",
-      benefitToOrg: "Improved productivity with proper equipment",
-      approvalCategory: "Hardware",
-      approvalType: "Replacement",
-      notifyTo: 5,
-    },
+    benefit_to_organisation: "Improved productivity with proper equipment",
+    approval_category: "Hardware",
+    approval_type: "Replacement",
+    notify_to: "5",
+    current_level: 1,
+    max_level: 3,
+    rejected: false,
+    rejection_reason: null,
+    budget_id: "BU002",
   },
   {
     id: "REQ-2025-008",
-    submitter: "Rahul Verma",
+    user: "Rahul Verma",
+    business_unit: "BU003",
     department: "Marketing",
+    designation: "Marketing Manager",
+    date: "2025-03-12",
+    total: 3500,
+    reason: "New content creation requirements",
+    policy_agreement: true,
+    initiate_dept: "4",
     status: "Pending",
-    level: 3,
-    updatedAt: "2025-03-12",
-    formData: {
-      plant: 101,
-      date: "2025-03-12",
-      employeeCode: "EMP089",
-      employeeName: "Rahul Verma",
-      department: 4,
-      designation: 3,
-      assets: [
-        { name: "Photography Equipment", quantity: 1 },
-        { name: "Editing Software License", quantity: 1 }
-      ],
-      assetAmount: "3500 INR",
-      reason: "New content creation requirements",
-      policyAgreement: true,
-      initiateDept: 4,
-      currentStatus: "Pending",
-      benefitToOrg: "Enhanced marketing materials and brand visibility",
-      approvalCategory: "Software & Equipment",
-      approvalType: "New Request",
-      notifyTo: 6,
-    },
+    benefit_to_organisation: "Enhanced marketing materials and brand visibility",
+    approval_category: "Software & Equipment",
+    approval_type: "New Request",
+    notify_to: "6",
+    current_level: 3,
+    max_level: 3,
+    rejected: false,
+    rejection_reason: null,
+    budget_id: "BU003",
   },
 ];
 
@@ -206,6 +176,46 @@ const commentVariants = {
   }
 };
 
+// Modify interface for API responses
+interface UserInfo {
+  id: number;
+  name: string;
+  email: string;
+  username?: string;
+}
+
+interface Department {
+  id: number;
+  name: string;
+}
+
+interface BusinessUnit {
+  id: number;
+  name: string;
+}
+
+interface Designation {
+  id: number;
+  name: string;
+}
+
+// Add cache interfaces to reduce API calls
+interface UserCache {
+  [key: string]: UserInfo;
+}
+
+interface DepartmentCache {
+  [key: string]: Department;
+}
+
+interface BusinessUnitCache {
+  [key: string]: BusinessUnit;
+}
+
+interface DesignationCache {
+  [key: string]: Designation;
+}
+
 export default function ApprovalDetails() {
   const params = useParams();
   const router = useRouter();
@@ -216,24 +226,237 @@ export default function ApprovalDetails() {
   const [newComment, setNewComment] = useState("");
   const [reviewComment, setReviewComment] = useState("");
   const [activeTab, setActiveTab] = useState("details");
+  
+  // Add caches for API data
+  const [userCache, setUserCache] = useState<UserCache>({});
+  const [departmentCache, setDepartmentCache] = useState<DepartmentCache>({});
+  const [businessUnitCache, setBusinessUnitCache] = useState<BusinessUnitCache>({});
+  const [designationCache, setDesignationCache] = useState<DesignationCache>({});
+  
+  // Add enriched data state
+  const [enrichedForm, setEnrichedForm] = useState<any>(null);
+  
+  // Format date in a readable way
+  const formatDate = (dateString: string): string => {
+    if (!dateString) return '';
+    
+    try {
+      const date = new Date(dateString);
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        return dateString;
+      }
+      
+      // Format: March 21, 2025, 3:30 PM
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+      }).format(date);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
+  };
+  
+  // Fetch user details
+  const fetchUserDetails = async (userId: number): Promise<UserInfo> => {
+    const userKey = userId.toString();
+    
+    // Check cache first
+    if (userCache[userKey]) {
+      return userCache[userKey];
+    }
+    
+    try {
+      const response = await api.get(`/userInfo/${userId}/`);
+      const userData = response.data;
+      const userInfo: UserInfo = {
+        id: userId,
+        name: userData.name || userData.username || `User ${userId}`,
+        email: userData.email || 'No email available'
+      };
+      
+      // Update cache
+      setUserCache(prev => ({
+        ...prev,
+        [userKey]: userInfo
+      }));
+      
+      return userInfo;
+    } catch (error) {
+      console.error(`Error fetching user details for ID ${userId}:`, error);
+      return { 
+        id: userId,
+        name: `User ${userId}`, 
+        email: 'No email available'
+      };
+    }
+  };
+  
+  // Fetch department details
+  const fetchDepartmentDetails = async (deptId: number): Promise<Department> => {
+    const deptKey = deptId.toString();
+    
+    // Check cache first
+    if (departmentCache[deptKey]) {
+      return departmentCache[deptKey];
+    }
+    
+    try {
+      const response = await api.get(`/departments/${deptId}/`);
+      const department: Department = {
+        id: deptId,
+        name: response.data.name || `Department ${deptId}`
+      };
+      
+      // Update cache
+      setDepartmentCache(prev => ({
+        ...prev,
+        [deptKey]: department
+      }));
+      
+      return department;
+    } catch (error) {
+      console.error(`Error fetching department details for ID ${deptId}:`, error);
+      return { 
+        id: deptId,
+        name: `Department ${deptId}`
+      };
+    }
+  };
+  
+  // Fetch business unit details
+  const fetchBusinessUnitDetails = async (buId: number): Promise<BusinessUnit> => {
+    const buKey = buId.toString();
+    
+    // Check cache first
+    if (businessUnitCache[buKey]) {
+      return businessUnitCache[buKey];
+    }
+    
+    try {
+      const response = await api.get(`/business-units/${buId}/`);
+      const businessUnit: BusinessUnit = {
+        id: buId,
+        name: response.data.name || `Business Unit ${buId}`
+      };
+      
+      // Update cache
+      setBusinessUnitCache(prev => ({
+        ...prev,
+        [buKey]: businessUnit
+      }));
+      
+      return businessUnit;
+    } catch (error) {
+      console.error(`Error fetching business unit details for ID ${buId}:`, error);
+      return { 
+        id: buId,
+        name: `Business Unit ${buId}`
+      };
+    }
+  };
+  
+  // Fetch designation details
+  const fetchDesignationDetails = async (designationId: number): Promise<Designation> => {
+    const designationKey = designationId.toString();
+    
+    // Check cache first
+    if (designationCache[designationKey]) {
+      return designationCache[designationKey];
+    }
+    
+    try {
+      const response = await api.get(`/designations/${designationId}/`);
+      const designation: Designation = {
+        id: designationId,
+        name: response.data.name || `Designation ${designationId}`
+      };
+      
+      // Update cache
+      setDesignationCache(prev => ({
+        ...prev,
+        [designationKey]: designation
+      }));
+      
+      return designation;
+    } catch (error) {
+      console.error(`Error fetching designation details for ID ${designationId}:`, error);
+      return { 
+        id: designationId,
+        name: `Designation ${designationId}`
+      };
+    }
+  };
+  
+  // Enrich approval data with names
+  const enrichApprovalData = async (form: ApprovalForm) => {
+    try {
+      const [user, department, businessUnit, designation] = await Promise.all([
+        fetchUserDetails(Number(form.user)),
+        fetchDepartmentDetails(Number(form.department)),
+        fetchBusinessUnitDetails(Number(form.business_unit)),
+        fetchDesignationDetails(Number(form.designation))
+      ]);
+      
+      return {
+        ...form,
+        user_name: user.name,
+        user_email: user.email,
+        department_name: department.name,
+        business_unit_name: businessUnit.name,
+        designation_name: designation.name,
+        formatted_date: formatDate(form.date),
+        formatted_total: new Intl.NumberFormat('en-IN', {
+          style: 'currency',
+          currency: 'INR',
+          maximumFractionDigits: 0
+        }).format(Number(form.total))
+      };
+    } catch (error) {
+      console.error('Error enriching approval data:', error);
+      return form;
+    }
+  };
 
   // Fetch approval details
   useEffect(() => {
     const fetchApprovalDetails = async () => {
       try {
         setLoading(true);
-        // In a real app, you would fetch from API
-        // const response = await api.get(`/approval-requests/${params.id}`);
-        // setForm(response.data);
         
-        // Using mock data for now
-        const foundForm = mockForms.find((f) => f.id === params.id);
-        setForm(foundForm || null);
+        // Fetch actual data from API
+        const response = await api.get(`/approval-requests/${params.id}/`);
+        const formData = response.data;
         
-        // Mock comments
+        console.log("API response:", formData);
+        setForm(formData);
+        
+        // Enrich the data with names
+        const enrichedData = await enrichApprovalData(formData);
+        setEnrichedForm(enrichedData);
+        
+        // Fetch comments (if available) or use mock data
+        // const commentsResponse = await api.get(`/approval-comments/${params.id}/`);
+        // setComments(commentsResponse.data);
         setComments(mockComments);
       } catch (error) {
         console.error("Error fetching approval details:", error);
+        
+        // Fallback to mock data
+        const foundForm = mockForms.find((f) => f.id === params.id);
+        if (foundForm) {
+          setForm(foundForm);
+          const enrichedData = await enrichApprovalData(foundForm);
+          setEnrichedForm(enrichedData);
+        }
+        
+        setComments(mockComments);
       } finally {
         setLoading(false);
       }
@@ -327,16 +550,6 @@ export default function ApprovalDetails() {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
-
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">
       <div className="max-w-full mx-auto">
@@ -371,7 +584,7 @@ export default function ApprovalDetails() {
             </div>
           ) : (
             <>
-              {/* Simple Header */}
+              {/* Header with key information */}
               <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm mb-6">
                 <div className="p-6">
                   <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
@@ -395,17 +608,20 @@ export default function ApprovalDetails() {
                       <div className="flex items-center">
                         <User className="w-4 h-4 mr-2 text-gray-400" />
                         <span className="text-gray-500 dark:text-gray-400 mr-1">Requester:</span>
-                        <span className="font-medium">{form.submitter}</span>
+                        <span className="font-medium">{enrichedForm?.user_name || form.user}</span>
+                      </div>
+                      <div className="flex items-center text-xs text-blue-600 dark:text-blue-400 ml-6">
+                        {enrichedForm?.user_email || ""}
                       </div>
                       <div className="flex items-center">
                         <Clock className="w-4 h-4 mr-2 text-gray-400" />
                         <span className="text-gray-500 dark:text-gray-400 mr-1">Submitted:</span>
-                        <span className="font-medium">{form.updatedAt}</span>
+                        <span className="font-medium">{enrichedForm?.formatted_date || form.date}</span>
                       </div>
                       <div className="flex items-center">
                         <Clipboard className="w-4 h-4 mr-2 text-gray-400" />
                         <span className="text-gray-500 dark:text-gray-400 mr-1">Type:</span>
-                        <span className="font-medium">{form.formData.approvalType}</span>
+                        <span className="font-medium">{form.approval_type}</span>
                       </div>
                     </div>
                   </div>
@@ -450,82 +666,137 @@ export default function ApprovalDetails() {
                     >
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="space-y-6">
+                          {/* Approval Information */}
                           <div>
-                            <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">
-                              Request Details
+                            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white flex items-center">
+                              <Info className="w-4 h-4 mr-2 text-blue-500" />
+                              Approval Information
                             </h3>
                             <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
                               <dl className="grid grid-cols-3 gap-x-3 gap-y-3 text-sm">
-                                <dt className="col-span-1 font-medium text-gray-500">Employee ID:</dt>
-                                <dd className="col-span-2">{form.formData.employeeCode}</dd>
-                                
-                                <dt className="col-span-1 font-medium text-gray-500">Employee Name:</dt>
-                                <dd className="col-span-2">{form.formData.employeeName}</dd>
-                                
-                                <dt className="col-span-1 font-medium text-gray-500">Department:</dt>
-                                <dd className="col-span-2">{form.department}</dd>
-                                
-                                <dt className="col-span-1 font-medium text-gray-500">Type:</dt>
-                                <dd className="col-span-2">{form.formData.approvalType}</dd>
+                                <dt className="col-span-1 font-medium text-gray-500">Budget ID:</dt>
+                                <dd className="col-span-2 font-semibold">{form.budget_id}</dd>
                                 
                                 <dt className="col-span-1 font-medium text-gray-500">Category:</dt>
-                                <dd className="col-span-2">{form.formData.approvalCategory}</dd>
+                                <dd className="col-span-2">
+                                  <Badge variant="outline" className="font-normal">
+                                    {form.approval_category}
+                                  </Badge>
+                                </dd>
                                 
-                                <dt className="col-span-1 font-medium text-gray-500">Amount:</dt>
-                                <dd className="col-span-2 font-semibold text-blue-600 dark:text-blue-400">
-                                  {form.formData.assetAmount}
+                                <dt className="col-span-1 font-medium text-gray-500">Type:</dt>
+                                <dd className="col-span-2">
+                                  <Badge variant="outline" className="font-normal">
+                                    {form.approval_type}
+                                  </Badge>
+                                </dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Status:</dt>
+                                <dd className="col-span-2">
+                                  <Badge
+                                    className={`${getStatusColor(form.status)} flex w-fit items-center px-2 py-0.5`}
+                                  >
+                                    {getStatusIcon(form.status)}
+                                    {form.status}
+                                  </Badge>
+                                </dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Approval Level:</dt>
+                                <dd className="col-span-2">
+                                  <div className="flex items-center">
+                                    <span className="font-medium">{form.current_level}</span>
+                                    <span className="mx-1">of</span>
+                                    <span>{form.max_level}</span>
+                                  </div>
                                 </dd>
                               </dl>
                             </div>
                           </div>
 
+                          {/* Request Reason */}
                           <div>
-                            <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">Request Reason</h3>
+                            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Request Reason</h3>
                             <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                              <p className="text-sm">{form.formData.reason}</p>
+                              <p className="text-sm">{form.reason}</p>
                             </div>
                           </div>
 
+                          {/* Benefit to Organization */}
                           <div>
-                            <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">Benefit to Organization</h3>
+                            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">Benefit to Organization</h3>
                             <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                              <p className="text-sm">{form.formData.benefitToOrg}</p>
+                              <p className="text-sm">{form.benefit_to_organisation}</p>
                             </div>
                           </div>
                         </div>
 
                         <div className="space-y-6">
+                          {/* Requester Details */}
                           <div>
-                            <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">Assets Requested</h3>
+                            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white flex items-center">
+                              <User className="w-4 h-4 mr-2 text-blue-500" />
+                              Requester Details
+                            </h3>
                             <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                              <table className="w-full">
-                                <thead>
-                                  <tr className="border-b border-gray-200 dark:border-gray-700">
-                                    <th className="text-left py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Item
-                                    </th>
-                                    <th className="text-right py-2 text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                      Quantity
-                                    </th>
-                                  </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                                  {form.formData.assets.map((asset, idx) => (
-                                    <tr key={idx}>
-                                      <td className="py-3">{asset.name}</td>
-                                      <td className="py-3 text-right font-medium">
-                                        {asset.quantity} unit(s)
-                                      </td>
-                                    </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                              <dl className="grid grid-cols-3 gap-x-3 gap-y-3 text-sm">
+                                <dt className="col-span-1 font-medium text-gray-500">Name:</dt>
+                                <dd className="col-span-2 font-semibold">{enrichedForm?.user_name || form.user}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Email:</dt>
+                                <dd className="col-span-2 text-blue-600 dark:text-blue-400">{enrichedForm?.user_email || "Not available"}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Business Unit:</dt>
+                                <dd className="col-span-2">{enrichedForm?.business_unit_name || form.business_unit}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Department:</dt>
+                                <dd className="col-span-2">{enrichedForm?.department_name || form.department}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Designation:</dt>
+                                <dd className="col-span-2">{enrichedForm?.designation_name || form.designation}</dd>
+                              </dl>
                             </div>
                           </div>
 
+                          {/* Financial Information */}
+                          <div>
+                            <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white flex items-center">
+                              <div className="w-4 h-4 mr-2 text-blue-500">₹</div>
+                              Financial Information
+                            </h3>
+                            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800/50 rounded-lg p-4">
+                              <div className="text-center mb-3">
+                                <div className="text-sm text-gray-500 dark:text-gray-400">Total Amount</div>
+                                <div className="text-3xl font-bold text-blue-600 dark:text-blue-400">
+                                  {enrichedForm?.formatted_total || form.total}
+                                </div>
+                              </div>
+                              
+                              <Separator className="my-3" />
+                              
+                              <dl className="grid grid-cols-2 gap-x-3 gap-y-3 text-sm">
+                                <dt className="col-span-1 font-medium text-gray-500">Budget ID:</dt>
+                                <dd className="col-span-1 text-right">{form.budget_id}</dd>
+                                
+                                <dt className="col-span-1 font-medium text-gray-500">Policy Agreement:</dt>
+                                <dd className="col-span-1 text-right">
+                                  {form.policy_agreement ? (
+                                    <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                      Accepted
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                                      Not Accepted
+                                    </Badge>
+                                  )}
+                                </dd>
+                              </dl>
+                            </div>
+                          </div>
+
+                          {/* Approval Action Section */}
                           {form.status === "Pending" && (
                             <div className="bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg p-4">
-                              <h3 className="text-lg font-medium mb-3 text-gray-900 dark:text-white">
+                              <h3 className="text-lg font-semibold mb-3 text-gray-900 dark:text-white">
                                 Approval Action
                               </h3>
                               <div className="space-y-3">
@@ -560,7 +831,7 @@ export default function ApprovalDetails() {
                     </div>
                   </TabsContent>
 
-                  {/* Comments Tab */}
+                  {/* Comments Tab - Remains largely unchanged */}
                   <TabsContent value="comments" className="p-0 mt-0" forceMount>
                     <div 
                       className="p-6"

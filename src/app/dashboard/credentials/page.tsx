@@ -31,7 +31,7 @@ export default function CredentialsPage() {
   const [designations, setDesignations] = useState<Designation[]>([]);
   
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [selectedUser, setSelectedUser] = useState<Credential | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userIdToDelete, setUserIdToDelete] = useState<number | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -75,6 +75,15 @@ export default function CredentialsPage() {
     }
   }, [filter.searchValue, filter.business_unit]);
 
+  // Re-fetch only when filters change
+  useEffect(() => {
+    const debounceTimer = setTimeout(() => {
+      fetchCredentials();
+    }, 300); // Add a small delay to prevent rapid re-fetches
+
+    return () => clearTimeout(debounceTimer);
+  }, [filter.searchValue, filter.business_unit]);
+
   // Fetch a single credential by ID
   const fetchCredentialById = useCallback(async (id: number) => {
     setIsLoading(true);
@@ -91,11 +100,6 @@ export default function CredentialsPage() {
       setIsLoading(false);
     }
   }, []);
-
-  // Re-fetch when filters change
-  useEffect(() => {
-    fetchCredentials();
-  }, [fetchCredentials]);
 
   const handleAddNew = useCallback(() => {
     setSelectedUser(null);
@@ -147,7 +151,8 @@ export default function CredentialsPage() {
         setIsLoading(true);
         await api.delete(`/userInfo/${userIdToDelete}/`);
         
-        setCredentials((prev) => 
+        // Update local state instead of re-fetching
+        setCredentials(prev => 
           prev.filter((user) => user.id !== userIdToDelete)
         );
 
@@ -189,17 +194,23 @@ export default function CredentialsPage() {
     try {
       setIsLoading(true);
       
-      if (selectedUser) {
-        // Update existing user logic would go here
-        // await api.put(`/userInfo/${selectedUser.id}/`, formData);
-        // await fetchCredentials();
-        // toast.success("Employee updated successfully");
+      if (selectedUser?.id) {
+        // Update existing user
+        const response = await api.put(`/userInfo/${selectedUser.id}/`, formData);
+        const updatedUser = response.data as Credential;
+        // Update the local state instead of re-fetching
+        setCredentials(prev => 
+          prev.map(user => 
+            user.id === selectedUser.id ? updatedUser : user
+          )
+        );
+        toast.success("Employee updated successfully");
       } else {
         // Create new user
-        await api.post('/register/', formData);
-        
-        // Add the new user to the list
-        await fetchCredentials();
+        const response = await api.post('/register/', formData);
+        const newUser = response.data as Credential;
+        // Add the new user to the list without re-fetching
+        setCredentials(prev => [...prev, newUser]);
         toast.success("Employee added successfully");
       }
       
@@ -210,7 +221,7 @@ export default function CredentialsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [selectedUser, fetchCredentials]);
+  }, [selectedUser]);
 
   return (
     <div className="container py-4 mx-auto max-w-[95%] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">

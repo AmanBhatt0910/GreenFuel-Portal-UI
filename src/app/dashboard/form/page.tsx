@@ -350,6 +350,8 @@ export default function AssetRequestForm() {
     setIsSubmitting(true);
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
+    const approverResponse = await api.get(`approver/`);
+    console.log(approverResponse.data);
     // console.log(formData);
 
     const submittingFormData: SubmittingFormData = {
@@ -367,8 +369,8 @@ export default function AssetRequestForm() {
       approval_category: formData.approvalCategory,
       approval_type: formData.approvalType,
       notify_to: formData.notifyTo,
-      current_level: 0,
-      max_level: 0,
+      current_level: 1,
+      max_level: approverResponse.data.length,
       rejected: false,
       rejection_reason: null,
       items: formData.assets.map((asset) => ({

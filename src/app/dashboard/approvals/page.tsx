@@ -33,38 +33,46 @@ import {
 } from "@/components/ui/select";
 import useAxios from "@/app/hooks/use-axios";
 
-interface Asset {
+interface UserInfo {
   name: string;
-  quantity: number;
-}
-
-interface FormDetails {
-  plant: number;
-  date: string;
-  employeeCode: string;
-  employeeName: string;
-  department: number;
-  designation: number;
-  assets: Asset[];
-  assetAmount: string;
-  reason: string;
-  policyAgreement: boolean;
-  initiateDept: number;
-  currentStatus: string;
-  benefitToOrg: string;
-  approvalCategory: string;
-  approvalType: string;
-  notifyTo: number;
+  email: string;
+  username?: string;
 }
 
 interface ApprovalForm {
   id: string;
-  submitter: string;
+  user: string;
+  user_name?: string;
+  user_email?: string;
+  business_unit: string;
   department: string;
+  department_name?: string;
+  designation: string;
+  date: string;
+  formatted_date?: string;
+  total: number;
+  reason: string;
+  policy_agreement: boolean;
+  initiate_dept: string;
   status: string;
-  level: number;
-  updatedAt: string;
-  formData: FormDetails;
+  benefit_to_organisation: string;
+  approval_category: string;
+  approval_type: string;
+  notify_to: string;
+  current_level: number;
+  max_level: number;
+  rejected: boolean;
+  rejection_reason: string | null;
+  budget_id: string;
+}
+
+// Cache objects to avoid redundant API calls
+interface UserCache {
+  [key: string]: UserInfo;
+}
+
+interface DepartmentCache {
+  [key: string]: string;
 }
 
 const ApprovalDashboard: React.FC = () => {
@@ -72,20 +80,154 @@ const ApprovalDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [userCache, setUserCache] = useState<UserCache>({});
+  const [departmentCache, setDepartmentCache] = useState<DepartmentCache>({});
   const api = useAxios();
   const router = useRouter();
+
+  // Improved date formatting function to handle more date formats
+  const formatDate = (dateString: string): string => {
+    if (!dateString) return '';
+    
+    try {
+      // Try to parse the date in multiple formats
+      let date: Date;
+      
+      // Check if it's an ISO string (2025-03-10)
+      if (/^\d{4}-\d{2}-\d{2}/.test(dateString)) {
+        date = new Date(dateString);
+      } 
+      // Check if it includes timestamp format (2025-03-17T06:03:44.416543Z)
+      else if (dateString.includes('T') && dateString.includes(':')) {
+        date = new Date(dateString);
+      }
+      // Try to parse other date formats
+      else {
+        date = new Date(dateString);
+      }
+      
+      // Check if date is valid
+      if (isNaN(date.getTime())) {
+        console.warn(`Invalid date format: ${dateString}`);
+        return dateString;
+      }
+      
+      // Format: March 21, 2025, 3:30 PM
+      return new Intl.DateTimeFormat('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: true
+      }).format(date);
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return dateString;
+    }
+  };
+
+  // Fetch user details by ID
+  const fetchUserDetails = async (userId: string): Promise<UserInfo> => {
+    // Check cache first
+    if (userCache[userId]) {
+      return userCache[userId];
+    }
+    
+    try {
+      const response = await api.get(`/userInfo/${userId}/`);
+      console.log("User response:", response.data);
+      const userData = response.data;
+      const userInfo: UserInfo = {
+        name: userData.name || userData.username || userId,
+        email: userData.email || 'No email available',
+        username: userData.username
+      };
+      
+      // Update cache
+      setUserCache(prev => ({
+        ...prev,
+        [userId]: userInfo
+      }));
+      
+      return userInfo;
+    } catch (error) {
+      console.error(`Error fetching user details for ID ${userId}:`, error);
+      return { 
+        name: userId, 
+        email: 'No email available',
+        username: 'No username available'
+      };
+    }
+  };
+
+  // Fetch department details by ID
+  const fetchDepartmentDetails = async (deptId: string) => {
+    // Check cache first
+    if (departmentCache[deptId]) {
+      return departmentCache[deptId];
+    }
+    
+    try {
+      const response = await api.get(`/departments/${deptId}/`);
+      const deptName = response.data.name || deptId;
+      
+      // Update cache
+      setDepartmentCache(prev => ({
+        ...prev,
+        [deptId]: deptName
+      }));
+      
+      return deptName;
+    } catch (error) {
+      console.error(`Error fetching department details for ID ${deptId}:`, error);
+      return deptId; // Return ID as fallback
+    }
+  };
+
+  // Enrich approval data with names
+  const enrichApprovalData = async (approvals: ApprovalForm[]) => {
+    const enrichedData = await Promise.all(
+      approvals.map(async (form) => {
+        const userInfo = await fetchUserDetails(form.user);
+        const departmentName = await fetchDepartmentDetails(form.department);
+        
+        return {
+          ...form,
+          user_name: userInfo.name,
+          user_email: userInfo.email,
+          department_name: departmentName,
+          formatted_date: formatDate(form.date)
+        };
+      })
+    );
+    
+    return enrichedData;
+  };
 
   // Fetch approval requests
   useEffect(() => {
     const fetchApprovals = async () => {
       try {
         setLoading(true);
-        // const response = await api.get(`/approval-requests/`);
-        // setForms(response.data || mockForms);
-        setForms(mockForms);
+        const response = await api.get(`/pending-approvals/`);
+        console.log("Raw response data:", response.data);
+        
+        const rawData = response.data || mockForms;
+        
+        // Log a date example for debugging
+        if (rawData.length > 0) {
+          console.log("Example date before formatting:", rawData[0].date);
+          console.log("Example date after formatting:", formatDate(rawData[0].date));
+        }
+        
+        const enrichedData = await enrichApprovalData(rawData);
+        setForms(enrichedData);
       } catch (error) {
         console.error("Error fetching approvals:", error);
-        setForms(mockForms);
+        // Use mock data as fallback
+        const enrichedMockData = await enrichApprovalData(mockForms);
+        setForms(enrichedMockData);
       } finally {
         setLoading(false);
       }
@@ -134,9 +276,9 @@ const ApprovalDashboard: React.FC = () => {
     const searchMatch =
       searchTerm === "" ||
       form.id.toLowerCase().includes(search) ||
-      form.submitter.toLowerCase().includes(search) ||
-      form.department.toLowerCase().includes(search) ||
-      form.formData.approvalCategory.toLowerCase().includes(search);
+      (form.user_name?.toLowerCase() || form.user.toLowerCase()).includes(search) ||
+      (form.department_name?.toLowerCase() || form.department.toLowerCase()).includes(search) ||
+      form.approval_category.toLowerCase().includes(search);
 
     return statusMatch && searchMatch;
   });
@@ -249,15 +391,13 @@ const ApprovalDashboard: React.FC = () => {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50 dark:bg-gray-800/50">
-                        <TableHead className="w-[120px]">Request ID</TableHead>
-                        <TableHead>Requester</TableHead>
-                        <TableHead>Department</TableHead>
-                        <TableHead>Category</TableHead>
-                        <TableHead className="w-[100px]">Date</TableHead>
+                        <TableHead className="w-[130px]">Request ID</TableHead>
+                        <TableHead className="w-[220px]">Requester</TableHead>
+                        <TableHead className="w-[180px]">Department</TableHead>
+                        <TableHead className="w-[150px]">Category</TableHead>
+                        <TableHead className="w-[180px]">Date</TableHead>
                         <TableHead className="w-[110px]">Status</TableHead>
-                        <TableHead className="w-[100px] text-right">
-                          Actions
-                        </TableHead>
+                        <TableHead className="w-[100px] text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -269,10 +409,15 @@ const ApprovalDashboard: React.FC = () => {
                           <TableCell className="font-medium text-gray-900 dark:text-white">
                             {form.id}
                           </TableCell>
-                          <TableCell>{form.submitter}</TableCell>
-                          <TableCell>{form.department}</TableCell>
-                          <TableCell>{form.formData.approvalCategory}</TableCell>
-                          <TableCell>{form.updatedAt}</TableCell>
+                          <TableCell>
+                            <div className="space-y-1">
+                              <div className="font-medium text-gray-900 dark:text-white">{form.user_name || form.user}</div>
+                              <div className="text-xs text-blue-600 dark:text-blue-400">{form.user_email || "No email available"}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>{form.department_name || form.department}</TableCell>
+                          <TableCell>{form.approval_category}</TableCell>
+                          <TableCell>{form.formatted_date || form.date}</TableCell>
                           <TableCell>
                             <Badge
                               className={`${getStatusColor(
@@ -310,11 +455,13 @@ const ApprovalDashboard: React.FC = () => {
                     >
                       <div className="flex justify-between items-start mb-2">
                         <div>
-                          <span className="font-medium text-gray-900 dark:text-white">
+                          <div className="font-medium text-gray-900 dark:text-white">
                             {form.id}
-                          </span>
-                          <div className="text-sm text-gray-500 mt-1">
-                            {form.submitter} · {form.department}
+                          </div>
+                          <div className="mt-1">
+                            <div className="text-sm font-medium">{form.user_name || form.user}</div>
+                            <div className="text-xs text-gray-500">{form.user_email || "No email available"}</div>
+                            <div className="text-xs text-gray-500 mt-1">{form.department_name || form.department}</div>
                           </div>
                         </div>
                         <Badge
@@ -327,7 +474,8 @@ const ApprovalDashboard: React.FC = () => {
                       
                       <div className="flex items-center justify-between text-sm">
                         <div className="text-gray-500">
-                          {form.formData.approvalCategory}
+                          <div>{form.approval_category}</div>
+                          <div className="text-xs text-gray-400 mt-1">{form.formatted_date || form.date}</div>
                         </div>
                         <div className="flex items-center text-blue-600">
                           <span className="mr-1">View details</span>
@@ -350,87 +498,69 @@ const ApprovalDashboard: React.FC = () => {
 const mockForms: ApprovalForm[] = [
   {
     id: "REQ-2025-006",
-    submitter: "Aman Bhatt",
+    user: "Aman Bhatt",
+    business_unit: "BU001",
     department: "HR",
+    designation: "Senior Manager",
+    date: "2025-03-10T14:30:00.000Z",
+    total: 1200,
+    reason: "Remote work requirement",
+    policy_agreement: true,
+    initiate_dept: "2",
     status: "Pending",
-    level: 2,
-    updatedAt: "2025-03-10",
-    formData: {
-      plant: 101,
-      date: "2025-03-10",
-      employeeCode: "EMP001",
-      employeeName: "Aman Bhatt",
-      department: 2,
-      designation: 5,
-      assets: [{ name: "Laptop", quantity: 1 }],
-      assetAmount: "1200 USD",
-      reason: "Remote work requirement",
-      policyAgreement: true,
-      initiateDept: 2,
-      currentStatus: "Pending",
-      benefitToOrg: "Increased productivity",
-      approvalCategory: "Hardware",
-      approvalType: "New Request",
-      notifyTo: 3,
-    },
+    benefit_to_organisation: "Increased productivity",
+    approval_category: "Hardware",
+    approval_type: "New Request",
+    notify_to: "3",
+    current_level: 2,
+    max_level: 3,
+    rejected: false,
+    rejection_reason: null,
+    budget_id: "BU001",
   },
   {
     id: "REQ-2025-007",
-    submitter: "Priya Singh",
+    user: "Priya Singh",
+    business_unit: "BU002",
     department: "Engineering",
+    designation: "Lead Engineer",
+    date: "2025-03-11",
+    total: 800,
+    reason: "Current equipment malfunctioning",
+    policy_agreement: true,
+    initiate_dept: "3",
     status: "Pending",
-    level: 1,
-    updatedAt: "2025-03-11",
-    formData: {
-      plant: 102,
-      date: "2025-03-11",
-      employeeCode: "EMP145",
-      employeeName: "Priya Singh",
-      department: 3,
-      designation: 4,
-      assets: [
-        { name: "Monitor", quantity: 2 },
-        { name: "Keyboard", quantity: 1 },
-      ],
-      assetAmount: "800 USD",
-      reason: "Current equipment malfunctioning",
-      policyAgreement: true,
-      initiateDept: 3,
-      currentStatus: "Pending",
-      benefitToOrg: "Improved productivity with proper equipment",
-      approvalCategory: "Hardware",
-      approvalType: "Replacement",
-      notifyTo: 5,
-    },
+    benefit_to_organisation: "Improved productivity with proper equipment",
+    approval_category: "Hardware",
+    approval_type: "Replacement",
+    notify_to: "5",
+    current_level: 1,
+    max_level: 3,
+    rejected: false,
+    rejection_reason: null,
+    budget_id: "BU002",
   },
   {
     id: "REQ-2025-008",
-    submitter: "Rahul Verma",
+    user: "Rahul Verma",
+    business_unit: "BU003",
     department: "Marketing",
+    designation: "Marketing Manager",
+    date: "2025-03-12",
+    total: 3500,
+    reason: "New content creation requirements",
+    policy_agreement: true,
+    initiate_dept: "4",
     status: "Pending",
-    level: 3,
-    updatedAt: "2025-03-12",
-    formData: {
-      plant: 101,
-      date: "2025-03-12",
-      employeeCode: "EMP089",
-      employeeName: "Rahul Verma",
-      department: 4,
-      designation: 3,
-      assets: [
-        { name: "Photography Equipment", quantity: 1 },
-        { name: "Editing Software License", quantity: 1 },
-      ],
-      assetAmount: "3500 USD",
-      reason: "New content creation requirements",
-      policyAgreement: true,
-      initiateDept: 4,
-      currentStatus: "Pending",
-      benefitToOrg: "Enhanced marketing materials and brand visibility",
-      approvalCategory: "Software & Equipment",
-      approvalType: "New Request",
-      notifyTo: 6,
-    },
+    benefit_to_organisation: "Enhanced marketing materials and brand visibility",
+    approval_category: "Software & Equipment",
+    approval_type: "New Request",
+    notify_to: "6",
+    current_level: 3,
+    max_level: 3,
+    rejected: false,
+    rejection_reason: null,
+    budget_id: "BU003",
   },
 ];
 
