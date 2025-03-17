@@ -181,7 +181,7 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
       )}
       
       {/* Add Department Form */}
-      {/* <Card className="border border-gray-200 mb-1">
+      <Card className="border border-gray-200 mb-1">
         <CardHeader className="pb-2 border-b border-gray-200">
           <CardTitle className="text-lg">Add Department</CardTitle>
         </CardHeader>
@@ -211,7 +211,7 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
             </Button>
           </div>
         </CardContent>
-      </Card> */}
+      </Card>
 
       {/* Add Designation Form (when department is selected) */}
       {selectedDepartmentId && currentDepartment && (
