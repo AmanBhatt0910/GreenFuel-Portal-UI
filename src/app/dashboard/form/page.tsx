@@ -111,13 +111,10 @@ export default function AssetRequestForm() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        console.log("Fetching user data from API...");
         const response = await api.get("/userInfo/");
         const userData = response.data;
         setUser(userData);
-        
-        console.log("Complete user data from API:", userData);
-        
+
         // Create a merged data object with values from both userInfo context and API response
         const mergedUserData = {
           // Basic info
@@ -137,9 +134,6 @@ export default function AssetRequestForm() {
             ? userData?.designation?.id || 0 
             : userData?.designation || 0
         };
-        
-        console.log("Merged user data for form with extracted IDs:", mergedUserData);
-        
         // Apply all the data at once to prevent multiple renders
         setFormData((prevData) => ({
           ...prevData,
@@ -149,15 +143,6 @@ export default function AssetRequestForm() {
           initiateDept: mergedUserData.department,
           designation: mergedUserData.designation
         }));
-
-        // Log the full extracted form data to make debugging easier
-        console.log("Setting form data with these extracted values:", {
-          name: mergedUserData.name,
-          employeeCode: mergedUserData.employeeCode,
-          plant: mergedUserData.businessUnit,
-          initiateDept: mergedUserData.department,
-          designation: mergedUserData.designation
-        });
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
