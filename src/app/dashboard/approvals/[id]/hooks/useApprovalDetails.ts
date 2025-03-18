@@ -434,11 +434,13 @@ export default function useApprovalDetails({
 
       // In a real app, you would call the API
       const res = await api.post(`/approval-requests/${id}/approve/`);
-      if (res.status === 200) {
-        toast.success("Request approved successfully!");
-      } else {
-        toast.error("Something went wrong");
-      }
+      window.location.href = "/dashboard/approvals";
+
+      // if (res.status === 200) {
+      //   toast.success("Request approved successfully!");
+      // } else {
+      //   toast.error("Something went wrong");
+      // }
 
       // Update local state
       if (form) {
