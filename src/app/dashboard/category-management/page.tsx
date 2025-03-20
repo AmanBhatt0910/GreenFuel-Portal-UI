@@ -1,6 +1,16 @@
+/**
+ * Category Management Page
+ * 
+ * This page allows administrators to:
+ * 1. Create, edit, and delete approval request categories
+ * 2. View and manage approvers assigned to each category
+ * 3. Filter and search through categories and approvers
+ */
+
 "use client";
 
 import React, { useState, useEffect } from "react";
+// UI Components
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -9,6 +19,7 @@ import { Dialog, DialogContent, DialogTitle, DialogFooter, DialogTrigger } from 
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CustomBreadcrumb } from "@/components/custom/PlantHierarchy";
+// Table Components
 import {
   Table,
   TableHeader,
@@ -17,6 +28,7 @@ import {
   TableBody,
   TableCell,
 } from "@/components/ui/table";
+// Dropdown Components
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,14 +36,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+// Icons
 import { Trash2, Edit, Plus, Search, X, ChevronDown, Check } from "lucide-react";
+// API Hook
 import useAxios from "@/app/hooks/use-axios";
 
+/**
+ * Interface for Category data structure
+ */
 interface Category {
   id: number;
   name: string;
 }
 
+/**
+ * Interface for Approver data structure
+ * Represents a user who has approval permissions for specific categories
+ */
 interface Approver {
   id: number;
   user: number;
@@ -54,8 +75,12 @@ interface Approver {
   };
 }
 
+/**
+ * CategoryManagement Component
+ * Main component for managing approval request categories and their approvers
+ */
 const CategoryManagement: React.FC = () => {
-  // Category State
+  // Category State Management
   const [categories, setCategories] = useState<Category[]>([]);
   const [newCategoryName, setNewCategoryName] = useState("");
   const [editCategory, setEditCategory] = useState<Category | null>(null);
@@ -71,7 +96,7 @@ const CategoryManagement: React.FC = () => {
     name: null
   });
 
-  // Approver State
+  // Approver State Management
   const [approvers, setApprovers] = useState<Approver[]>([]);
   const [approverFilters, setApproverFilters] = useState<{
     user: number | null;
@@ -89,13 +114,16 @@ const CategoryManagement: React.FC = () => {
 
   const api = useAxios();
 
-  // Fetch categories and approvers
+  /**
+   * Fetch initial data for categories and approvers
+   * Runs on component mount
+   */
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
         
-        // Fetch categories
+        // Fetch categories from API
         const categoriesRes = await api.get('/approval-request-category/');
         const transformedCategories = categoriesRes.data.map((cat: any) => ({
           id: cat.id,
@@ -103,7 +131,7 @@ const CategoryManagement: React.FC = () => {
         }));
         setCategories(transformedCategories);
         
-        // Fetch approvers
+        // Fetch approvers from API
         const approversRes = await api.get('/approver/');
         setApprovers(approversRes.data);
       } catch (error) {
@@ -118,6 +146,10 @@ const CategoryManagement: React.FC = () => {
     fetchData();
   }, []);
 
+  /**
+   * Handle adding a new category
+   * Validates input and makes API call to create category
+   */
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
       toast.error("Category name cannot be empty");
@@ -146,6 +178,10 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
+  /**
+   * Handle updating an existing category
+   * Validates input and makes API call to update category
+   */
   const handleUpdateCategory = async () => {
     if (!editCategory || !editCategory.name.trim()) {
       toast.error("Category name cannot be empty");
@@ -172,6 +208,10 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
+  /**
+   * Handle deleting a category
+   * Makes API call to delete category and updates local state
+   */
   const handleDeleteCategory = async (id: number) => {
     try {
       setIsLoading(true);
@@ -187,7 +227,11 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
-  // Apply a category filter
+  /**
+   * Apply a filter to the categories list
+   * @param filterName - Name of the filter to apply
+   * @param value - Value to set for the filter
+   */
   const applyCategoryFilter = (filterName: keyof typeof filters, value: string | null) => {
     setFilters(prev => ({
       ...prev,
@@ -195,7 +239,11 @@ const CategoryManagement: React.FC = () => {
     }));
   };
 
-  // Apply an approver filter
+  /**
+   * Apply a filter to the approvers list
+   * @param filterName - Name of the filter to apply
+   * @param value - Value to set for the filter
+   */
   const applyApproverFilter = (filterName: keyof typeof approverFilters, value: number | null) => {
     setApproverFilters(prev => ({
       ...prev,
@@ -203,14 +251,18 @@ const CategoryManagement: React.FC = () => {
     }));
   };
 
-  // Clear all category filters
+  /**
+   * Clear all category filters
+   */
   const clearCategoryFilters = () => {
     setFilters({
       name: null
     });
   };
 
-  // Clear all approver filters
+  /**
+   * Clear all approver filters
+   */
   const clearApproverFilters = () => {
     setApproverFilters({
       user: null,
@@ -221,13 +273,17 @@ const CategoryManagement: React.FC = () => {
     });
   };
 
-  // Get filtered categories
+  /**
+   * Filter categories based on search query and filters
+   */
   const filteredCategories = categories.filter(category => {
     if (filters.name !== null && category.name !== filters.name) return false;
     return category.name.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
-  // Get filtered approvers
+  /**
+   * Filter approvers based on selected filters
+   */
   const filteredApprovers = approvers.filter(approver => {
     if (approverFilters.user !== null && approver.user !== approverFilters.user) return false;
     if (approverFilters.business_unit !== null && approver.business_unit !== approverFilters.business_unit) return false;
@@ -237,12 +293,16 @@ const CategoryManagement: React.FC = () => {
     return true;
   });
 
-  // Get unique values for category filters
+  /**
+   * Get unique values for category filters
+   */
   const uniqueValues = {
     name: [...new Set(categories.map(cat => cat.name))]
   };
 
-  // Get unique values for approver filters
+  /**
+   * Get unique values for approver filters
+   */
   const uniqueApproverValues = {
     user: [...new Set(approvers.map(a => a.user))],
     business_unit: [...new Set(approvers.map(a => a.business_unit))],
@@ -253,7 +313,7 @@ const CategoryManagement: React.FC = () => {
 
   return (
     <div className="container mx-auto p-6">
-      {/* Breadcrumb */}
+      {/* Breadcrumb Navigation */}
       <div className="mb-6">
         <CustomBreadcrumb
           items={[
@@ -280,7 +340,7 @@ const CategoryManagement: React.FC = () => {
           </Alert>
         )}
 
-        {/* Add New Category Card */}
+        {/* Add New Category Form */}
         <Card className="shadow-sm">
           <CardHeader>
             <CardTitle>Add New Category</CardTitle>
@@ -306,7 +366,7 @@ const CategoryManagement: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Categories List Card */}
+        {/* Categories List */}
         <Card className="shadow-sm">
           <CardHeader>
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
@@ -314,6 +374,7 @@ const CategoryManagement: React.FC = () => {
                 <CardTitle>Categories</CardTitle>
                 <CardDescription>Manage your existing categories</CardDescription>
               </div>
+              {/* Search Input */}
               <div className="w-full md:w-auto mt-4 md:mt-0">
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -333,6 +394,7 @@ const CategoryManagement: React.FC = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {/* Category Name Column with Filter */}
                     <TableHead>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
@@ -369,6 +431,7 @@ const CategoryManagement: React.FC = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
+                  {/* Empty State */}
                   {filteredCategories.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={2} className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -378,6 +441,7 @@ const CategoryManagement: React.FC = () => {
                       </TableCell>
                     </TableRow>
                   ) : (
+                    // Categories List
                     filteredCategories.map((category) => (
                       <TableRow 
                         key={category.id} 
@@ -398,7 +462,9 @@ const CategoryManagement: React.FC = () => {
                           </div>
                         </TableCell>
                         <TableCell className="text-right">
+                          {/* Action Buttons */}
                           <div className="flex justify-end space-x-2">
+                            {/* Edit Dialog */}
                             <Dialog open={isDialogOpen && editCategory?.id === category.id} onOpenChange={setIsDialogOpen}>
                               <DialogTrigger asChild>
                                 <Button
@@ -438,6 +504,7 @@ const CategoryManagement: React.FC = () => {
                                 </DialogFooter>
                               </DialogContent>
                             </Dialog>
+                            {/* Delete Dialog */}
                             <Dialog open={isDeleteDialogOpen && categoryToDelete === category.id} onOpenChange={setIsDeleteDialogOpen}>
                               <DialogTrigger asChild>
                                 <Button
@@ -484,7 +551,7 @@ const CategoryManagement: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Approvers List Card */}
+        {/* Approvers List */}
         <Card className="shadow-sm">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -492,9 +559,11 @@ const CategoryManagement: React.FC = () => {
                 <CardTitle>Approvers by Category</CardTitle>
                 <CardDescription>Users with form access permissions by category</CardDescription>
               </div>
+              {/* Active Filters Display */}
               {Object.values(approverFilters).some(f => f !== null) && (
                 <div className="flex items-center space-x-2">
                   <div className="flex flex-wrap gap-2">
+                    {/* User Filter Badge */}
                     {approverFilters.user !== null && (
                       <Badge variant="secondary" className="flex items-center gap-1">
                         <span>User: {approvers.find(a => a.user === approverFilters.user)?.user_details?.name || `ID: ${approverFilters.user}`}</span>
@@ -506,6 +575,7 @@ const CategoryManagement: React.FC = () => {
                         </button>
                       </Badge>
                     )}
+                    {/* Business Unit Filter Badge */}
                     {approverFilters.business_unit !== null && (
                       <Badge variant="secondary" className="flex items-center gap-1">
                         <span>Business Unit: {approvers.find(a => a.business_unit === approverFilters.business_unit)?.business_unit_details?.name || `ID: ${approverFilters.business_unit}`}</span>
@@ -517,6 +587,7 @@ const CategoryManagement: React.FC = () => {
                         </button>
                       </Badge>
                     )}
+                    {/* Department Filter Badge */}
                     {approverFilters.department !== null && (
                       <Badge variant="secondary" className="flex items-center gap-1">
                         <span>Department: {approvers.find(a => a.department === approverFilters.department)?.department_details?.name || `ID: ${approverFilters.department}`}</span>
@@ -528,6 +599,7 @@ const CategoryManagement: React.FC = () => {
                         </button>
                       </Badge>
                     )}
+                    {/* Level Filter Badge */}
                     {approverFilters.level !== null && (
                       <Badge variant="secondary" className="flex items-center gap-1">
                         <span>Level: {approverFilters.level}</span>
@@ -539,6 +611,7 @@ const CategoryManagement: React.FC = () => {
                         </button>
                       </Badge>
                     )}
+                    {/* Category Filter Badge */}
                     {approverFilters.category !== null && (
                       <Badge variant="secondary" className="flex items-center gap-1">
                         <span>Category: {categories.find(c => c.id === approverFilters.category)?.name || `ID: ${approverFilters.category}`}</span>
@@ -551,6 +624,7 @@ const CategoryManagement: React.FC = () => {
                       </Badge>
                     )}
                   </div>
+                  {/* Clear All Filters Button */}
                   <Button 
                     variant="outline" 
                     size="sm" 
@@ -564,6 +638,7 @@ const CategoryManagement: React.FC = () => {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Empty State */}
             {filteredApprovers.length === 0 ? (
               <div className="text-center p-8 text-gray-500 border border-dashed border-gray-300 dark:border-gray-700 rounded-md">
                 {approvers.length === 0 
@@ -582,10 +657,12 @@ const CategoryManagement: React.FC = () => {
                 )}
               </div>
             ) : (
+              {/* Approvers Table */}
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      {/* User Column with Filter */}
                       <TableHead>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -628,6 +705,7 @@ const CategoryManagement: React.FC = () => {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableHead>
+                      {/* Business Unit Column with Filter */}
                       <TableHead>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -663,6 +741,7 @@ const CategoryManagement: React.FC = () => {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableHead>
+                      {/* Department Column with Filter */}
                       <TableHead>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -698,6 +777,7 @@ const CategoryManagement: React.FC = () => {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableHead>
+                      {/* Level Column with Filter */}
                       <TableHead>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -730,6 +810,7 @@ const CategoryManagement: React.FC = () => {
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableHead>
+                      {/* Category Column with Filter */}
                       <TableHead>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -768,8 +849,10 @@ const CategoryManagement: React.FC = () => {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {/* Approvers List */}
                     {filteredApprovers.map((approver) => (
                       <TableRow key={approver.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                        {/* User Cell */}
                         <TableCell>
                           <div className="flex items-center">
                             <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
@@ -789,17 +872,21 @@ const CategoryManagement: React.FC = () => {
                             </div>
                           </div>
                         </TableCell>
+                        {/* Business Unit Cell */}
                         <TableCell className="text-sm text-gray-500 dark:text-gray-400">
                           {approver.business_unit_details?.name || `ID: ${approver.business_unit}`}
                         </TableCell>
+                        {/* Department Cell */}
                         <TableCell className="text-sm text-gray-500 dark:text-gray-400">
                           {approver.department_details?.name || `ID: ${approver.department}`}
                         </TableCell>
+                        {/* Level Cell */}
                         <TableCell className="text-sm text-gray-500 dark:text-gray-400">
                           <Badge variant="secondary">
                             Level {approver.level}
                           </Badge>
                         </TableCell>
+                        {/* Category Cell */}
                         <TableCell className="text-sm text-gray-500 dark:text-gray-400">
                           {approver.category_details?.name || 'No Category'}
                         </TableCell>
