@@ -143,6 +143,7 @@ const ApprovalAccessPage = () => {
         
         // Fetch existing approvers
         const approversResponse = await api.get('/approver/');
+        console.log('Approvers data:', approversResponse.data);
         
         // Enrich approvers with user, business unit, and department details
         const enrichedApprovers = Array.isArray(approversResponse.data) 

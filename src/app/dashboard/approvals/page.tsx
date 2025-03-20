@@ -16,7 +16,7 @@ import NoResults from "./components/NoResults";
 import LoadingState from "./components/LoadingState";
 import useAxios from "@/app/hooks/use-axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BarChart2, ListFilter, BarChart } from "lucide-react";
+import { BarChart2, BarChart } from "lucide-react";
 
 /**
  * ApprovalDashboard Component

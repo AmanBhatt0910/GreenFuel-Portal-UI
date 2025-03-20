@@ -241,7 +241,7 @@ const BudgetRequestsList = () => {
   }
 
   return (
-    <div className="container mx-auto py-6 max-w-5xl">
+    <div className="container mx-auto py-6 max-w-6xl">
       <CustomBreadcrumb
         items={[
           { label: "Dashboard", href: "/dashboard" },
