@@ -657,7 +657,6 @@ const CategoryManagement: React.FC = () => {
                 )}
               </div>
             ) : (
-              {/* Approvers Table */}
               <div className="rounded-md border">
                 <Table>
                   <TableHeader>
