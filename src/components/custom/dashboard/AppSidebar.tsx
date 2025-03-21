@@ -26,6 +26,7 @@ import {
   Key,
   Building,
   CheckCircle,
+  List,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -95,6 +96,11 @@ const BusinessUnits = [
     title: "Business Units",
     url: "/dashboard/business-units",
     icon: Building,
+  },
+  {
+    title: "Category",
+    url: "/dashboard/category-management",
+    icon: List,
   },
   {
     title: "Approval Access",
