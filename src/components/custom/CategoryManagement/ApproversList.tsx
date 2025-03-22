@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { X, ChevronDown, Check } from "lucide-react";
+import { X, ChevronDown, Check, Edit, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,9 +15,16 @@ import { Category, Approver, ApproverFilters } from "./types";
 interface ApproversListProps {
   approvers: Approver[];
   categories: Category[];
+  onEditApprover?: (id: number) => void;
+  onDeleteApprover?: (id: number) => void;
 }
 
-const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) => {
+const ApproversList: React.FC<ApproversListProps> = ({ 
+  approvers, 
+  categories,
+  onEditApprover,
+  onDeleteApprover 
+}) => {
   const [approverFilters, setApproverFilters] = useState<ApproverFilters>({
     user: null,
     business_unit: null,
@@ -90,15 +97,29 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
     ],
   };
 
+  // Handle edit approver action
+  const handleEditApprover = (id: number) => {
+    if (onEditApprover) {
+      onEditApprover(id);
+    }
+  };
+
+  // Handle delete approver action
+  const handleDeleteApprover = (id: number) => {
+    if (onDeleteApprover) {
+      onDeleteApprover(id);
+    }
+  };
+
   return (
-    <div>
+    <div className="space-y-4">
       {/* Active Filters Display */}
       {Object.values(approverFilters).some((f) => f !== null) && (
-        <div className="flex items-center space-x-2 mb-4">
+        <div className="flex items-center gap-2 mb-4 flex-wrap">
           <div className="flex flex-wrap gap-2">
             {/* User Filter Badge */}
             {approverFilters.user !== null && (
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 px-2 py-1">
                 <span>
                   User:{" "}
                   {approvers.find((a) => a.user === approverFilters.user)?.user_details?.name ||
@@ -114,7 +135,7 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
             )}
             {/* Business Unit Filter Badge */}
             {approverFilters.business_unit !== null && (
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 px-2 py-1">
                 <span>
                   Business Unit:{" "}
                   {approvers.find(
@@ -131,7 +152,7 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
             )}
             {/* Department Filter Badge */}
             {approverFilters.department !== null && (
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 px-2 py-1">
                 <span>
                   Department:{" "}
                   {approvers.find(
@@ -148,7 +169,7 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
             )}
             {/* Level Filter Badge */}
             {approverFilters.level !== null && (
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 px-2 py-1">
                 <span>Level: {approverFilters.level}</span>
                 <button
                   className="ml-1 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 p-0.5"
@@ -160,7 +181,7 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
             )}
             {/* Category Filter Badge */}
             {approverFilters.category !== null && (
-              <Badge variant="secondary" className="flex items-center gap-1">
+              <Badge variant="secondary" className="flex items-center gap-1 px-2 py-1">
                 <span>
                   Category:{" "}
                   {categories.find((c) => c.id === approverFilters.category)?.name || 
@@ -195,16 +216,16 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
           )}
         </div>
       ) : (
-        <div className="rounded-md border">
+        <div className="rounded-md border shadow-sm">
           <Table>
-            <TableHeader>
+            <TableHeader className="bg-muted/50 sticky top-0 z-10">
               <TableRow>
                 {/* User Column with Filter */}
                 <TableHead>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <div className="flex items-center cursor-pointer">
-                        <span>User</span>
+                        <span className="font-medium">User</span>
                         <ChevronDown
                           size={14}
                           className={`ml-1 ${
@@ -260,7 +281,7 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <div className="flex items-center cursor-pointer">
-                        <span>Business Unit</span>
+                        <span className="font-medium">Business Unit</span>
                         <ChevronDown
                           size={14}
                           className={`ml-1 ${
@@ -309,7 +330,7 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <div className="flex items-center cursor-pointer">
-                        <span>Department</span>
+                        <span className="font-medium">Department</span>
                         <ChevronDown
                           size={14}
                           className={`ml-1 ${
@@ -358,7 +379,7 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <div className="flex items-center cursor-pointer">
-                        <span>Level</span>
+                        <span className="font-medium">Level</span>
                         <ChevronDown
                           size={14}
                           className={`ml-1 ${
@@ -402,7 +423,7 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <div className="flex items-center cursor-pointer">
-                        <span>Category</span>
+                        <span className="font-medium">Category</span>
                         <ChevronDown
                           size={14}
                           className={`ml-1 ${
@@ -446,50 +467,76 @@ const ApproversList: React.FC<ApproversListProps> = ({ approvers, categories }) 
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableHead>
+                {/* Actions Column */}
+                <TableHead>
+                  <span className="font-medium">Actions</span>
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {/* Approvers List */}
               {filteredApprovers.map((approver) => (
-                <TableRow
-                  key={approver.id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-800"
-                >
+                <TableRow key={approver.id} className="hover:bg-muted/20">
                   {/* User Cell */}
                   <TableCell>
-                    <div className="flex items-center">
+                    <div className="flex items-center gap-2">
                       <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-                        <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                        <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
                           {approver.user_details?.name?.charAt(0).toUpperCase() || "?"}
                         </span>
                       </div>
-                      <div className="ml-3">
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                      <div className="flex flex-col">
+                        <span className="font-medium">
                           {approver.user_details?.name || `User ID: ${approver.user}`}
-                        </div>
+                        </span>
                         {approver.user_details?.email && (
-                          <div className="text-xs text-gray-500 dark:text-gray-400">
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
                             {approver.user_details.email}
-                          </div>
+                          </span>
                         )}
                       </div>
                     </div>
                   </TableCell>
                   {/* Business Unit Cell */}
-                  <TableCell className="text-sm text-gray-500 dark:text-gray-400">
+                  <TableCell>
                     {approver.business_unit_details?.name || `ID: ${approver.business_unit}`}
                   </TableCell>
                   {/* Department Cell */}
-                  <TableCell className="text-sm text-gray-500 dark:text-gray-400">
+                  <TableCell>
                     {approver.department_details?.name || `ID: ${approver.department}`}
                   </TableCell>
                   {/* Level Cell */}
-                  <TableCell className="text-sm text-gray-500 dark:text-gray-400">
-                    <Badge variant="secondary">Level {approver.level}</Badge>
+                  <TableCell>
+                    <Badge variant="outline" className="text-xs font-medium">
+                      Level {approver.level}
+                    </Badge>
                   </TableCell>
                   {/* Category Cell */}
-                  <TableCell className="text-sm text-gray-500 dark:text-gray-400">
+                  <TableCell>
                     {approver.category_details?.name || "No Category"}
+                  </TableCell>
+                  {/* Actions Cell */}
+                  <TableCell>
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-500 dark:hover:text-blue-400 dark:hover:bg-blue-950/30"
+                        onClick={() => approver.id !== undefined && handleEditApprover(approver.id)}
+                      >
+                        <span className="sr-only">Edit</span>
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-500 dark:hover:text-red-400 dark:hover:bg-red-950/30"
+                        onClick={() => approver.id !== undefined && handleDeleteApprover(approver.id)}
+                      >
+                        <span className="sr-only">Delete</span>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}

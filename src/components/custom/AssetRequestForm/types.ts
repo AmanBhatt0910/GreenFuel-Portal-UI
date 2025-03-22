@@ -25,6 +25,8 @@ export interface FormData {
   approvalCategory: string;
   approvalType: string;
   notifyTo: number;
+  category: number;
+  concerned_department: number;
 }
 
 export interface SubmittingFormData {
@@ -35,14 +37,18 @@ export interface SubmittingFormData {
   reason: string;
   policy_agreement: boolean;
   initiate_dept: string;
-  current_status: string;
+  status: string;                  // Changed from current_status to status
   items: SubmittingAssetItem[];    // Changed from 'items' to match your data
   benefit_to_organisation: string; // Using UK spelling as in your data
   approval_category: string;
   approval_type: string;
   notify_to: number | null;        // Changed from string to number to match your data
-  current_level?: number;          // Made optional as it's not in your sample data
-  max_level?: number;              // Made optional as it's not in your sample data
+  form_category: number;           // Changed from category to form_category
+  concerned_department: number;    // Added field for concerned department
+  current_category_level: number;  // Added field for current category level
+  current_form_level: number;      // Added new field
+  form_max_level: number;          // Changed from max_level
+  category_max_level?: number;     // Made optional as we're commenting it out
   rejected?: boolean;              // Made optional as it's not in your sample data
   rejection_reason?: string | null; // Made optional as it's not in your sample data
   user?: number;                    // Made optional as it's not in your sample data

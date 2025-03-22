@@ -434,7 +434,8 @@ export default function useApprovalDetails({
 
       // In a real app, you would call the API
       const res = await api.post(`/approval-requests/${id}/approve/`);
-      window.location.href = "/dashboard/approvals";
+      console.log("Response from approve:", res);
+      // window.location.href = "/dashboard/approvals";
 
       // if (res.status === 200) {
       //   toast.success("Request approved successfully!");

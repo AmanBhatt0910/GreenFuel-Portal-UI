@@ -50,6 +50,7 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
   const [designations, setDesignations] = useState<Designation[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [loadingDesignations, setLoadingDesignations] = useState<boolean>(false);
+  const [hasPrefilledData, setHasPrefilledData] = useState<boolean>(false);
 
   // Log the form data whenever it changes to track prefilled values
   useEffect(() => {
@@ -116,6 +117,79 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
 
     fetchBusinessUnits();
   }, []); // Only run once on component mount
+
+  // Prefill form data directly from userInfo when business units are loaded
+  useEffect(() => {
+    if (!userInfo || hasPrefilledData || businessUnits.length === 0) return;
+    
+    console.log("User info available in EmployeeInformationStep:", userInfo);
+    
+    // Create a consolidated update with userInfo data
+    const userUpdates: {[key: string]: any} = {};
+    
+    // Use type assertion to access properties
+    const userData = userInfo as any;
+    
+    // Check and add business unit/plant if available
+    if (userData.business_unit && !formData.plant) {
+      userUpdates.plant = userData.business_unit;
+    }
+    
+    // Check and add department if available
+    if (userData.department && !formData.initiateDept) {
+      userUpdates.initiateDept = userData.department;
+    }
+    
+    // Check and add designation if available
+    if (userData.designation && !formData.designation) {
+      userUpdates.designation = userData.designation;
+    }
+    
+    // Apply all field updates
+    if (Object.keys(userUpdates).length > 0) {
+      console.log("Prefilling form data with user info:", userUpdates);
+      
+      // Fill in employee name and code first
+      if (userData.name && !formData.employeeName) {
+        handleChange({
+          target: {
+            name: "employeeName",
+            value: userData.name,
+          },
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
+      
+      if (userData.employee_code && !formData.employeeCode) {
+        handleChange({
+          target: {
+            name: "employeeCode",
+            value: userData.employee_code,
+          },
+        } as React.ChangeEvent<HTMLInputElement>);
+      }
+      
+      // Apply dropdown values one by one with slight delay to prevent race conditions
+      if (userUpdates.plant) {
+        handleSelectChange("plant", userUpdates.plant.toString());
+        
+        // We need to wait until departments are loaded before setting department value
+        setTimeout(() => {
+          if (userUpdates.initiateDept) {
+            handleSelectChange("initiateDept", userUpdates.initiateDept.toString());
+            
+            // We need to wait until designations are loaded before setting designation value
+            setTimeout(() => {
+              if (userUpdates.designation) {
+                handleSelectChange("designation", userUpdates.designation.toString());
+              }
+            }, 300);
+          }
+        }, 300);
+      }
+      
+      setHasPrefilledData(true);
+    }
+  }, [userInfo, businessUnits, hasPrefilledData, formData.plant, formData.initiateDept, formData.designation, formData.employeeName, formData.employeeCode]);
 
   // Fetch departments whenever selected business unit changes (for manual selection)
   useEffect(() => {
@@ -301,6 +375,7 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             value={formData.employeeName || ""}
             onChange={handleChange}
             required
+            disabled
             className="bg-white border-gray-200 focus:border-blue-500"
           />
         </motion.div>
@@ -314,6 +389,7 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
             value={formData.employeeCode || ""}
             onChange={handleChange}
             required
+            disabled
             className="bg-white border-gray-200 focus:border-blue-500"
           />
         </motion.div>
@@ -321,7 +397,7 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
         <motion.div variants={itemVariants} className="space-y-2">
           <Label htmlFor="plant" className="text-gray-700">Business Unit / Plant</Label>
           <Select
-            disabled={loading}
+            disabled
             value={formData.plant ? formData.plant.toString() : "0"}
             onValueChange={(value) => handleSelectChange("plant", value)}
           >
@@ -342,7 +418,7 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
         <motion.div variants={itemVariants} className="space-y-2">
           <Label htmlFor="initiateDept" className="text-gray-700">Initiate Department</Label>
           <Select
-            disabled={loading || !formData.plant || formData.plant.toString() === "0" || departments.length === 0}
+            disabled
             value={formData.initiateDept ? formData.initiateDept.toString() : "0"}
             onValueChange={(value) => handleSelectChange("initiateDept", value)}
           >
@@ -369,7 +445,7 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
         <motion.div variants={itemVariants} className="space-y-2">
           <Label htmlFor="designation" className="text-gray-700">Designation</Label>
           <Select
-            disabled={loadingDesignations || !formData.initiateDept || formData.initiateDept.toString() === "0"}
+            disabled
             value={formData.designation ? formData.designation.toString() : "0"}
             onValueChange={(value) => handleSelectChange("designation", value)}
           >

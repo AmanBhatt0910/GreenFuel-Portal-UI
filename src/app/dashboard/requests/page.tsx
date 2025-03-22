@@ -73,6 +73,7 @@ const BudgetRequestsList = () => {
       try {
         setLoading(true);
         const response = await api.get(`/approval-requests/`);
+        console.log("Response from fetchRequestsData:", response.data);
         setRequests(response.data);
         setFilteredRequests(response.data);
 

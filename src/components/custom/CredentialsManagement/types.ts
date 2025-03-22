@@ -19,6 +19,7 @@ export interface Credential {
   is_active: boolean;
   is_staff: boolean;
   is_superuser: boolean;
+  is_budget_requester?: boolean;
 }
 
 export interface BusinessUnit {
@@ -63,6 +64,7 @@ export interface CredentialFormData {
   is_active: boolean;
   is_staff: boolean;
   is_superuser: boolean;
+  is_budget_requester: boolean;
 }
 
 export interface CredentialFormProps {

@@ -92,6 +92,8 @@ const getInitialFormData = (): FormData => ({
   approvalCategory: "",
   approvalType: "",
   notifyTo: 0,
+  category: 0, // Default category value
+  concerned_department: 0, // Default concerned department value
 });
 
 export default function AssetRequestForm() {
@@ -171,10 +173,20 @@ export default function AssetRequestForm() {
     >
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    
+    // Convert numeric field values to numbers
+    if (["plant", "department", "designation", "notifyTo", "category", "concerned_department", "initiateDept"].includes(name)) {
+      const numValue = value === "" ? 0 : parseInt(value, 10);
+      setFormData((prev) => ({
+        ...prev,
+        [name]: numValue,
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    }
   };
 
   // Handle checkbox changes
@@ -339,6 +351,16 @@ export default function AssetRequestForm() {
     console.log(approverResponse.data);
     // console.log(formData);
 
+    // Set levels based on category selection
+    let currentCategoryLevel = 1; 
+    let currentFormLevel = 0; 
+    
+    // If no category is selected, change the levels
+    if (!formData.category || formData.category === 0) {
+      currentCategoryLevel = 0;
+      currentFormLevel = 1;
+    }
+
     const submittingFormData: SubmittingFormData = {
       user: userInfo?.id || 0,
       business_unit: formData.plant,
@@ -349,13 +371,17 @@ export default function AssetRequestForm() {
       policy_agreement: formData.policyAgreement,
       // initiate_dept: formData.initiateDept,
       initiate_dept: "",
-      current_status: "pending",
+      status: "pending", 
       benefit_to_organisation: formData.benefitToOrg,
       approval_category: formData.approvalCategory,
       approval_type: formData.approvalType,
       notify_to: formData.notifyTo,
-      current_level: 1,
-      max_level: approverResponse.data.length,
+      form_category: formData.category,
+      concerned_department: formData.concerned_department,
+      current_category_level: currentCategoryLevel,
+      current_form_level: currentFormLevel,
+      form_max_level: approverResponse.data.length,
+      // category_max_level: 1, 
       rejected: false,
       rejection_reason: null,
       items: formData.assets.map((asset) => ({
@@ -402,13 +428,8 @@ export default function AssetRequestForm() {
   const isStepValid = () => {
     switch (currentStep) {
       case 0:
-        return (
-          formData.plant !== 0 &&
-          formData.employeeCode !== "" &&
-          formData.employeeName !== "" &&
-          formData.initiateDept !== 0 &&
-          formData.designation !== 0
-        );
+        console.log("Validating step 0 (auto-allowing since fields are disabled)");
+        return true;
       case 1:
         return formData.assets.length > 0;
       case 2:
@@ -424,12 +445,8 @@ export default function AssetRequestForm() {
   const isStepComplete = (step: number) => {
     switch (step) {
       case 0:
-        return (
-          formData.plant !== 0 &&
-          formData.employeeCode !== "" &&
-          formData.employeeName !== "" &&
-          formData.department !== 0
-        );
+        // Since all fields in step 0 are disabled and auto-filled, always consider it complete
+        return true;
       case 1:
         return formData.assets.length > 0;
       case 2:
@@ -441,12 +458,6 @@ export default function AssetRequestForm() {
     }
   };
 
-  // Get request ID
-  const getRequestId = () => {
-    const prefix = formData.plant ? formData.plant : "AR";
-    return `${prefix}-${Math.floor(10000 + Math.random() * 90000)}`;
-  };
-
   // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -456,8 +467,6 @@ export default function AssetRequestForm() {
     }).format(amount);
   };
 
-  // Generate PDF with all details
-  // Generate PDF with all details
   // Generate PDF with professional formatting and corporate style
   const generatePDF = async () => {
     // First, fetch the business unit and department names

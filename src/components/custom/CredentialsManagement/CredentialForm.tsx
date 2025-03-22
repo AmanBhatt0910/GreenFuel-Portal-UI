@@ -291,6 +291,7 @@ function CredentialFormContent({
     is_active: true,
     is_staff: false,
     is_superuser: false,
+    is_budget_requester: false,
   });
 
   const [activeTab, setActiveTab] = useState<"basic" | "contact">("basic");
@@ -363,6 +364,7 @@ function CredentialFormContent({
           selectedUser.is_active !== undefined ? selectedUser.is_active : true,
         is_staff: selectedUser.is_staff || false,
         is_superuser: selectedUser.is_superuser || false,
+        is_budget_requester: selectedUser.is_budget_requester || false,
       });
     } else {
       // Reset form when adding a new user
@@ -386,6 +388,7 @@ function CredentialFormContent({
         is_active: true,
         is_staff: false,
         is_superuser: false,
+        is_budget_requester: false,
       });
     }
   }, [selectedUser, isOpen]);
@@ -602,36 +605,24 @@ function CredentialFormContent({
           </div>
         </div>
 
-        <div className="col-span-1">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="is_staff"
-              checked={formData.is_staff}
-              onCheckedChange={(checked) =>
-                handleSwitchChange("is_staff", checked)
-              }
-              disabled={isLoading || formLoading}
-            />
-            <Label htmlFor="is_staff">Staff Account</Label>
+        {selectedUser && (
+          <div className="col-span-1">
+            <div className="flex items-center space-x-2">
+              <Switch
+                id="is_budget_requester"
+                checked={formData.is_budget_requester}
+                onCheckedChange={(checked) =>
+                  handleSwitchChange("is_budget_requester", checked)
+                }
+                disabled={isLoading || formLoading}
+              />
+              <Label htmlFor="is_budget_requester">Budget Requester</Label>
+            </div>
           </div>
-        </div>
-
-        <div className="col-span-1">
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="is_superuser"
-              checked={formData.is_superuser}
-              onCheckedChange={(checked) =>
-                handleSwitchChange("is_superuser", checked)
-              }
-              disabled={isLoading || formLoading}
-            />
-            <Label htmlFor="is_superuser">Admin Account</Label>
-          </div>
-        </div>
+        )}
       </div>
     ),
-    [formData, handleInputChange, handleSwitchChange, isLoading, formLoading]
+    [formData, handleInputChange, handleSwitchChange, isLoading, formLoading, selectedUser]
   );
 
   const contactTabContent = useMemo(

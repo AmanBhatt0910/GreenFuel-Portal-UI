@@ -3,13 +3,22 @@ import useAxios from "@/app/hooks/use-axios";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Category, Approver, User, BusinessUnit, Department } from "./types";
-import AddCategoryForm from "./AddCategoryForm";
+import CategoryForm from "./CategoryForm";
 import CategoriesList from "./CategoriesList";
 import ApproversList from "./ApproversList";
+import ApproverForm from "./ApproverForm";
 
-const CategoryManagement: React.FC = () => {
+interface CategoryManagementProps {
+  activeTab?: 'categories' | 'approvers';
+}
+
+const CategoryManagement: React.FC<CategoryManagementProps> = ({ 
+  activeTab = 'categories' 
+}) => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [approvers, setApprovers] = useState<Approver[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
+  const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const api = useAxios();
 
@@ -19,8 +28,6 @@ const CategoryManagement: React.FC = () => {
       
       // Fetch categories from API
       const categoriesRes = await api.get("/approval-request-category/");
-      const categoriesRes2 = await api.get("/approval-request-category/2");
-      console.log("Category API response:", categoriesRes2.data);
       
       if (categoriesRes.data.length > 0) {
         console.log("Sample created_at format:", categoriesRes.data[0].created_at);
@@ -48,13 +55,17 @@ const CategoryManagement: React.FC = () => {
         name: user.name || user.username || `User ${user.id}`,
         email: user.email,
       }));
+      
+      setUsers(formattedUsers);
 
       // Fetch business units
       const businessUnitsResponse = await api.get("/business-units/");
-      const businessUnits: BusinessUnit[] = businessUnitsResponse.data;
+      const businessUnitsData: BusinessUnit[] = businessUnitsResponse.data;
+      
+      setBusinessUnits(businessUnitsData);
 
       // Fetch all departments for all business units
-      const allDepartmentsPromises = businessUnits.map(
+      const allDepartmentsPromises = businessUnitsData.map(
         async (bu: BusinessUnit) => {
           try {
             const deptResponse = await api.get(
@@ -86,7 +97,7 @@ const CategoryManagement: React.FC = () => {
         ? approversRes.data.map((approver: any) => ({
             ...approver,
             user_details: formattedUsers.find((u) => u.id === approver.user),
-            business_unit_details: businessUnits.find(
+            business_unit_details: businessUnitsData.find(
               (bu: BusinessUnit) => bu.id === approver.business_unit
             ),
             department_details: allDepartments.find(
@@ -153,45 +164,80 @@ const CategoryManagement: React.FC = () => {
     
     setCategories((prev) => prev.filter((cat) => cat.id !== categoryId));
   };
+  
+  const handleApproverAdded = (newApprover: Approver) => {
+    setApprovers((prev) => [...prev, newApprover]);
+  };
 
-  return (
-    <div className="space-y-6">
-      <AddCategoryForm onCategoryAdded={handleCategoryAdded} />
-      
-      <div className="mt-8">
-        <h2 className="text-xl font-semibold mb-4">Categories</h2>
-        {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        ) : (
-          <CategoriesList
-            categories={categories}
-            onCategoryUpdated={handleCategoryUpdated}
-            onCategoryDeleted={handleCategoryDeleted}
-          />
-        )}
-      </div>
-      
-      {/* Approvers Section */}
-      <Card className="shadow-sm mt-8">
-        <CardHeader>
-          <CardTitle>Approvers by Category</CardTitle>
-          <CardDescription>
-            Users with form access permissions by category
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+  // Render categories section
+  const renderCategoriesSection = () => {
+    return (
+      <div className="space-y-6">
+        <CategoryForm onCategoryAdded={handleCategoryAdded} />
+        
+        <div className="mt-6">
+          <h3 className="text-xl font-semibold mb-4">Categories List</h3>
           {isLoading ? (
             <div className="flex justify-center py-8">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
           ) : (
-            <ApproversList approvers={approvers} categories={categories} />
+            <CategoriesList
+              categories={categories}
+              onCategoryUpdated={handleCategoryUpdated}
+              onCategoryDeleted={handleCategoryDeleted}
+            />
           )}
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Render approvers section
+  const renderApproversSection = () => {
+    return (
+      <div className="space-y-6">
+        {/* Add Approver Form */}
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+          <ApproverForm 
+            users={users}
+            businessUnits={businessUnits}
+            categories={categories}
+            onApproverAdded={handleApproverAdded}
+          />
+        )}
+        
+        {/* Approvers List */}
+        <Card className="shadow-sm mt-6">
+          <CardHeader>
+            <CardTitle>Approvers by Category</CardTitle>
+            <CardDescription>
+              Users with form access permissions by category
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              </div>
+            ) : (
+              <ApproversList approvers={approvers} categories={categories} />
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
+  return (
+    <>
+      {activeTab === 'categories' && renderCategoriesSection()}
+      {activeTab === 'approvers' && renderApproversSection()}
+    </>
   );
 };
 
