@@ -31,12 +31,11 @@ export function DeleteDialog({
             </div>
             <AlertDialogTitle className="text-xl">Confirm Deletion</AlertDialogTitle>
           </div>
-          <AlertDialogDescription className="text-center pt-2">
-            Are you sure you want to delete this employee?
-            <p className="mt-2 text-sm text-muted-foreground">
+            <AlertDialogDescription className="text-center pt-2">
+              Are you sure you want to delete this employee?
               This action cannot be undone. This will permanently delete the
               account and remove all associated data from our servers.
-            </p>
+
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter className="flex gap-3 sm:justify-center">

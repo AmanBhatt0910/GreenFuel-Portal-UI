@@ -6,14 +6,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Credential, CredentialDetailsProps } from "./types";
 import {
-  Clock,
   Mail,
   Phone,
-  User,
   UserCheck,
   Users,
-  CalendarClock,
-  Building,
   MapPin,
   Calendar,
 } from "lucide-react";

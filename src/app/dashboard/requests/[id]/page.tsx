@@ -496,6 +496,10 @@ const RequestDetailsPage = () => {
 
   // Get status badge properties
   const getStatusBadge = (status: string): StatusBadge => {
+    if (!status) {
+      return { color: 'text-gray-500', icon: <Info className="h-4 w-4" />, bgColor: 'bg-gray-100' };
+    }
+    
     switch (status.toLowerCase()) {
       case 'pending':
         return { color: 'text-amber-500', icon: <Clock className="h-4 w-4" />, bgColor: 'bg-amber-100' };

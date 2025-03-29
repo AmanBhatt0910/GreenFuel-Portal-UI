@@ -58,13 +58,13 @@ const ApprovalDashboard: React.FC = () => {
   };
   const api = useAxios();
 
-  useEffect(() => {
-    const fetchApprovalLogs = async () => {
-      const response = await api.get('approval-logs/');
-      console.log(response);
-    };
-    fetchApprovalLogs();
-  }, []);
+  // useEffect(() => {
+  //   const fetchApprovalLogs = async () => {
+  //     const response = await api.get('approval-logs/');
+  //     console.log(response);
+  //   };
+  //   fetchApprovalLogs();
+  // }, []);
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">

@@ -149,9 +149,8 @@ export default function CredentialsPage() {
     if (userIdToDelete) {
       try {
         setIsLoading(true);
-        await api.delete(`/userInfo/${userIdToDelete}/`);
+        await api.put(`/userInfo/${userIdToDelete}/` , {is_deleted:true});
         
-        // Update local state instead of re-fetching
         setCredentials(prev => 
           prev.filter((user) => user.id !== userIdToDelete)
         );

@@ -210,6 +210,7 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
       setLoading(true);
       setError(null);
       const response = await api.get(`/pending-approvals/`);
+      console.log(response.data)
       const rawData = response.data || mockForms;
       
       const enrichedData = await enrichApprovalData(rawData);

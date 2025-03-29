@@ -134,12 +134,12 @@ export function CredentialTable({
               <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading...</TableCell>
             </TableRow>
           ) : filteredCredentials.length > 0 ? (
-            filteredCredentials.map((user, index) => (
+            filteredCredentials.map((user) => (
               <motion.tr
-                key={user.id}
+                key={user.id || user.email}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.2, delay: index * 0.05 }}
+                transition={{ duration: 0.2 }}
                 className="hover:bg-muted/50 border-b"
               >
                 <TableCell className="font-mono text-xs text-muted-foreground">{user.employee_code || '-'}</TableCell>
@@ -174,7 +174,7 @@ export function CredentialTable({
                             <Eye className="h-4 w-4" />
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent><p>View Details</p></TooltipContent>
+                        <TooltipContent><span>View Details</span></TooltipContent>
                       </Tooltip>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>

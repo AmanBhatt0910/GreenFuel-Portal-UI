@@ -397,7 +397,7 @@ export default function useApprovalDetails({
 
       // Fetch comments (if available) or use mock data
       // const commentsResponse = await api.get(`/approval-comments/${id}/`);
-      // setComments(commentsResponse.data);
+      // setComments(commentsResponse.data); 
       setComments(mockComments);
     } catch (err) {
       console.error("Error fetching approval details:", err);

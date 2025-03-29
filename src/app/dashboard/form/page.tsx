@@ -445,7 +445,6 @@ export default function AssetRequestForm() {
   const isStepComplete = (step: number) => {
     switch (step) {
       case 0:
-        // Since all fields in step 0 are disabled and auto-filled, always consider it complete
         return true;
       case 1:
         return formData.assets.length > 0;
@@ -469,7 +468,6 @@ export default function AssetRequestForm() {
 
   // Generate PDF with professional formatting and corporate style
   const generatePDF = async () => {
-    // First, fetch the business unit and department names
     let businessUnitName = "N/A";
     let departmentName = "N/A";
     let designationName = "N/A";
