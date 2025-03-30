@@ -1,219 +1,63 @@
 "use client";
 import React, { useContext, useEffect, useState, Suspense } from "react";
 import {
-  Activity,
-  CheckCircle,
-  XCircle,
-  Clock,
-  AlertCircle,
-  Bell,
-  Search,
-  Filter,
-  Download,
+  User,
+  MapPin,
+  Briefcase,
   Calendar,
-  Settings,
-  Plus,
+  Phone,
+  Mail,
+  IdCard,
+  Building,
+  Search,
+  Bell,
 } from "lucide-react";
-import TrackingTable from "@/components/custom/dashboard/TrackingTable";
-import {
-  StatCard,
-  FormStat,
-  RecentForm,
-} from "@/components/custom/dashboard/DashboardComponents";
 import useAxios from "../hooks/use-axios";
-import { GFContext } from "@/context/AuthContext";
+import { GFContext, UserInfoType } from "@/context/AuthContext";
 import Loading from './loading';
 
-const formStats: FormStat = {
-  total: 34,
-  approved: 21,
-  rejected: 5,
-  pending: 8,
-  weekChange: 12.5,
-};
-
-const recentForms: RecentForm[] = [
-  {
-    id: "REQ-2023-001",
-    submitter: "Rajesh Kumar",
-    department: "IT Department",
-    status: "Approved",
-    level: 3,
-    updatedAt: "2023-08-15",
-  },
-  {
-    id: "REQ-2023-002",
-    submitter: "Priya Sharma",
-    department: "Finance",
-    status: "Pending",
-    level: 2,
-    updatedAt: "2023-08-14",
-  },
-  {
-    id: "REQ-2023-003",
-    submitter: "Amit Patel",
-    department: "HR",
-    status: "Rejected",
-    level: 1,
-    updatedAt: "2023-08-12",
-  },
-  {
-    id: "REQ-2023-004",
-    submitter: "Neha Gupta",
-    department: "Marketing",
-    status: "Approved",
-    level: 4,
-    updatedAt: "2023-08-10",
-  },
-  {
-    id: "REQ-2023-005",
-    submitter: "Vikram Singh",
-    department: "Operations",
-    status: "Pending",
-    level: 1,
-    updatedAt: "2023-08-09",
-  },
-];
+// User interface based on provided data
 
 const DashboardPage: React.FC = () => {
-  const [filter, setFilter] = useState<string>("all");
-  const [searchTerm, setSearchTerm] = useState<string>("");
-  const [currentDate, setCurrentDate] = useState<string>("");
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
-  const { setUserInfo } = useContext(GFContext);
-
+  const { userInfo, setUserInfo } = useContext(GFContext);
   const api = useAxios();
 
-  const getUserDashboardData = async () => {
+  const getUserDashboardData = async (): Promise<void> => {
     try {
       const response = await api.get("/userInfo/?self=true");
       typeof window !== "undefined" &&
         localStorage.setItem("userInfo", JSON.stringify(response.data));
-      setUserInfo(response.data);
+      setUserInfo(response.data as UserInfoType);
     } catch (error) {
       console.error("Error fetching user data:", error);
     }
   };
 
-  const getStatusColor = (status: string): string => {
-    switch (status.toLowerCase()) {
-      case "approved":
-        return "text-green-500 dark:text-green-400";
-      case "rejected":
-        return "text-red-500 dark:text-red-400";
-      case "pending":
-        return "text-amber-500 dark:text-amber-400";
-      default:
-        return "text-gray-500 dark:text-gray-400";
-    }
-  };
-
-  const getStatusIcon = (status: string): React.ReactNode => {
-    switch (status.toLowerCase()) {
-      case "approved":
-        return (
-          <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
-        );
-      case "rejected":
-        return <XCircle className="h-4 w-4 text-red-500 dark:text-red-400" />;
-      case "pending":
-        return <Clock className="h-4 w-4 text-amber-500 dark:text-amber-400" />;
-      default:
-        return (
-          <AlertCircle className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-        );
-    }
-  };
-
-  const getProgressColorClass = (status: string): string => {
-    switch (status.toLowerCase()) {
-      case "approved":
-        return "bg-green-500";
-      case "rejected":
-        return "bg-red-500";
-      case "pending":
-        return "bg-amber-500";
-      default:
-        return "bg-gray-500";
-    }
-  };
-
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchData = async (): Promise<void> => {
       setIsLoaded(false);
       try {
         await getUserDashboardData();
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
-        setTimeout(() => setIsLoaded(true), 1000); // Increased timeout for better UX
+        setTimeout(() => setIsLoaded(true), 1000);
       }
     };
 
     fetchData();
   }, []);
 
-  const statCardData = [
-    {
-      title: "Total Forms",
-      value: 156,
-      change: 8.5,
-      subtitle: "Across all departments",
-      icon: <Activity className="h-10 w-10 text-blue-500 dark:text-blue-400" />,
-    },
-    {
-      title: "Approved",
-      value: 98,
-      change: 5.2,
-      subtitle: "Last 30 days",
-      icon: <CheckCircle className="h-10 w-10 text-green-500 dark:text-green-400" />,
-    },
-    {
-      title: "Rejected",
-      value: 23,
-      change: -2.1,
-      subtitle: "Requires attention",
-      icon: <XCircle className="h-10 w-10 text-red-500 dark:text-red-400" />,
-    },
-    {
-      title: "Pending",
-      value: 35,
-      change: 3.8,
-      subtitle: "Awaiting approval",
-      icon: <Clock className="h-10 w-10 text-amber-500 dark:text-amber-400" />,
-    },
-  ];
-
-  const quickActions = [
-    { title: "New Asset Request", icon: <Plus className="h-5 w-5" /> },
-    { title: "My Requests", icon: <Calendar className="h-5 w-5" /> },
-    { title: "Generate Report", icon: <Download className="h-5 w-5" /> },
-    { title: "System Settings", icon: <Settings className="h-5 w-5" /> },
-  ];
-
-  const recentActivities = [
-    {
-      type: "asset_added",
-      title: "New Asset Added",
-      description: "IT Department added 5 new laptops",
-      time: "2 hours ago",
-      icon: <Plus className="h-4 w-4 text-green-500" />,
-    },
-    {
-      type: "maintenance",
-      title: "Maintenance Completed",
-      description: "Server maintenance completed successfully",
-      time: "4 hours ago",
-      icon: <CheckCircle className="h-4 w-4 text-blue-500" />,
-    },
-    {
-      type: "alert",
-      title: "Low Stock Alert",
-      description: "Printer cartridges running low",
-      time: "6 hours ago",
-      icon: <AlertCircle className="h-4 w-4 text-red-500" />,
-    },
-  ];
+  const formatDate = (dateString: string | null | undefined): string => {
+    if (!dateString) return "Not available";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
 
   if (!isLoaded) {
     return <Loading />;
@@ -223,8 +67,10 @@ const DashboardPage: React.FC = () => {
     <div className="p-6 space-y-6 min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-400">Welcome back, Admin</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">My Profile</h1>
+          <p className="text-gray-600 dark:text-gray-400">
+            Welcome back, {userInfo?.name || "User"}
+          </p>
         </div>
         <div className="flex items-center space-x-4">
           <div className="relative">
@@ -241,83 +87,212 @@ const DashboardPage: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCardData.map((stat) => (
-          <StatCard
-            key={stat.title}
-            title={stat.title}
-            value={stat.value}
-            subtitle={stat.subtitle}
-            change={stat.change}
-            icon={stat.icon}
-            isLoaded={isLoaded}
-          />
-        ))}
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="col-span-3">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Asset Overview</h2>
-              <div className="flex items-center space-x-2">
-                <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Filter className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                </button>
-                <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
-                  <Download className="h-5 w-5 text-gray-600 dark:text-gray-400" />
-                </button>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* User Profile Card */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 lg:col-span-1">
+          <div className="flex flex-col items-center justify-center mb-6">
+            <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
+              <User className="h-12 w-12 text-blue-600 dark:text-blue-300" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              {userInfo?.name || "User Name"}
+            </h2>
+            <p className="text-gray-600 dark:text-gray-400">
+              Employee Code: {userInfo?.employee_code || "Not available"}
+            </p>
+            <div className="mt-2 px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full">
+              <p className="text-xs text-green-800 dark:text-green-300">
+                {userInfo?.status ? "Active" : "Inactive"}
+              </p>
+            </div>
+          </div>
+          
+          <div className="space-y-4 mt-6">
+            <div className="flex items-center">
+              <Mail className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
+                <p className="text-gray-900 dark:text-white">{userInfo?.email || "Not available"}</p>
               </div>
             </div>
-            <TrackingTable
-              formStats={formStats}
-              recentForms={recentForms}
-              isLoaded={isLoaded}
-              searchTerm={searchTerm}
-              setSearchTerm={setSearchTerm}
-              filter={filter}
-              setFilter={setFilter}
-              getStatusIcon={getStatusIcon}
-              getStatusColor={getStatusColor}
-              getProgressColorClass={getProgressColorClass}
-            />
+            
+            <div className="flex items-center">
+              <Phone className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Contact</p>
+                <p className="text-gray-900 dark:text-white">{userInfo?.contact || "Not available"}</p>
+              </div>
+            </div>
+            
+            <div className="flex items-center">
+              <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+              <div>
+                <p className="text-sm text-gray-500 dark:text-gray-400">Date of Birth</p>
+                <p className="text-gray-900 dark:text-white">{formatDate(userInfo?.dob)}</p>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h2>
-            <div className="grid grid-cols-2 gap-4">
-              {quickActions.map((action) => (
-                <button
-                  key={action.title}
-                  className="flex items-center space-x-2 p-3 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                  {action.icon}
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{action.title}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Recent Activities</h2>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div key={activity.title} className="flex items-start space-x-3">
-                  <div className="p-2 rounded-full bg-gray-100 dark:bg-gray-700">
-                    {activity.icon}
+        {/* User Details */}
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 lg:col-span-2">
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Account Details</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">Personal Information</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <User className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Username</p>
+                      <p className="text-gray-900 dark:text-white">{userInfo?.username || "Not available"}</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-white">{activity.title}</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{activity.description}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">{activity.time}</p>
+                  
+                  <div className="flex items-center">
+                    <IdCard className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Employee ID</p>
+                      <p className="text-gray-900 dark:text-white">{userInfo?.employee_code || "Not available"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Joined Date</p>
+                      <p className="text-gray-900 dark:text-white">{formatDate(userInfo?.date_joined)}</p>
+                    </div>
+                  </div>
+                  
+                  {(userInfo?.first_name || userInfo?.last_name) && (
+                    <div className="flex items-center">
+                      <User className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                      <div>
+                        <p className="text-sm text-gray-500 dark:text-gray-400">Full Name</p>
+                        <p className="text-gray-900 dark:text-white">
+                          {`${userInfo?.first_name || ""} ${userInfo?.last_name || ""}`.trim() || "Not available"}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">Work Information</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <Building className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Business Unit</p>
+                      <p className="text-gray-900 dark:text-white">ID: {userInfo?.business_unit || "Not assigned"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <Briefcase className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Department</p>
+                      <p className="text-gray-900 dark:text-white">ID: {userInfo?.department || "Not assigned"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <IdCard className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Designation</p>
+                      <p className="text-gray-900 dark:text-white">ID: {userInfo?.designation || "Not assigned"}</p>
+                    </div>
                   </div>
                 </div>
-              ))}
+              </div>
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">Address Information</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <MapPin className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Full Address</p>
+                      <p className="text-gray-900 dark:text-white">{userInfo?.address || "Not available"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <MapPin className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">City</p>
+                      <p className="text-gray-900 dark:text-white">{userInfo?.city || "Not available"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <MapPin className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">State</p>
+                      <p className="text-gray-900 dark:text-white">{userInfo?.state || "Not available"}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <MapPin className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Country</p>
+                      <p className="text-gray-900 dark:text-white">{userInfo?.country || "Not available"}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">User Status & Permissions</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 mr-3">
+                      <div className={`w-4 h-4 rounded-full ${userInfo?.status ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                    </div>
+                    <p className="text-gray-900 dark:text-white">Account Status</p>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 mr-3">
+                      <div className={`w-4 h-4 rounded-full ${userInfo?.is_budget_requester ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                    </div>
+                    <p className="text-gray-900 dark:text-white">Budget Requester</p>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 mr-3">
+                      <div className={`w-4 h-4 rounded-full ${userInfo?.is_staff ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                    </div>
+                    <p className="text-gray-900 dark:text-white">Staff Member</p>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <div className="flex-shrink-0 w-5 h-5 mr-3">
+                      <div className={`w-4 h-4 rounded-full ${!userInfo?.is_deleted ? 'bg-green-500' : 'bg-red-500'}`}></div>
+                    </div>
+                    <p className="text-gray-900 dark:text-white">Account Active</p>
+                  </div>
+                  
+                  {userInfo?.is_superuser !== undefined && (
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0 w-5 h-5 mr-3">
+                        <div className={`w-4 h-4 rounded-full ${userInfo?.is_superuser ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
+                      </div>
+                      <p className="text-gray-900 dark:text-white">Super User</p>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
-        </div> */}
+        </div>
       </div>
     </div>
   );

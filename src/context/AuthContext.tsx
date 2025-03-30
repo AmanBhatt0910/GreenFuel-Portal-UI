@@ -4,22 +4,32 @@ import { useRouter } from "next/navigation";
 
 interface UserInfoType {
   id: number;
-  last_login: string;
-  is_superuser: boolean;
+  last_login: string | null;
+  is_superuser?: boolean;
   username: string;
-  first_name: string;
-  last_name: string;
+  first_name?: string;
+  last_name?: string;
   is_staff: boolean;
-  is_active: boolean;
+  is_active?: boolean;
   date_joined: string;
   email: string;
+  name: string;
   dob: string | null;
-  department: string | null;
+  department: number | string | null;
   employee_code: string | null;
-  designation: string | null;
-  groups: any[];
-  name : string,
-  user_permissions: any[];
+  designation: number | string | null;
+  groups?: any[];
+  user_permissions?: any[];
+
+  contact?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  status?: boolean;
+  is_budget_requester?: boolean;
+  is_deleted?: boolean;
+  business_unit?: number | string;
 }
 
 interface AccessTokenType {
