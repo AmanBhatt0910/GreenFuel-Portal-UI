@@ -380,7 +380,7 @@ export default function AssetRequestForm() {
       concerned_department: formData.concerned_department,
       current_category_level: currentCategoryLevel,
       current_form_level: currentFormLevel,
-      form_max_level: approverResponse.data.length,
+      // form_max_level: approverResponse.data.length,
       // category_max_level: 1, 
       rejected: false,
       rejection_reason: null,

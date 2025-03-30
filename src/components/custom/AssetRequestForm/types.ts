@@ -47,7 +47,7 @@ export interface SubmittingFormData {
   concerned_department: number;    // Added field for concerned department
   current_category_level: number;  // Added field for current category level
   current_form_level: number;      // Added new field
-  form_max_level: number;          // Changed from max_level
+  //form_max_level: number;          // Changed from max_level
   category_max_level?: number;     // Made optional as we're commenting it out
   rejected?: boolean;              // Made optional as it's not in your sample data
   rejection_reason?: string | null; // Made optional as it's not in your sample data
