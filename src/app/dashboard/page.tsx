@@ -13,24 +13,121 @@ import {
   Bell,
 } from "lucide-react";
 import useAxios from "../hooks/use-axios";
-import { GFContext, UserInfoType } from "@/context/AuthContext";
+import { GFContext } from "@/context/AuthContext";
 import Loading from './loading';
 
 // User interface based on provided data
+interface UserInfoType {
+  id: number;
+  last_login: string | null;
+  is_superuser?: boolean;
+  username: string;
+  first_name?: string;
+  last_name?: string;
+  is_staff: boolean;
+  is_active?: boolean;
+  date_joined: string;
+  email: string;
+  name: string;
+  dob: string | null;
+  department: number | string | null;
+  employee_code: string | null;
+  designation: number | string | null;
+  groups?: any[];
+  user_permissions?: any[];
+  // Additional fields from your current data
+  contact?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  status?: boolean;
+  is_budget_requester?: boolean;
+  is_deleted?: boolean;
+  business_unit?: number | string;
+}
+
+interface BusinessUnitType {
+  id: number;
+  name: string;
+  code: string;
+  description?: string;
+}
+
+interface DepartmentType {
+  id: number;
+  name: string;
+  code: string;
+  business_unit: number;
+  description?: string;
+}
+
+interface DesignationType {
+  id: number;
+  name: string;
+  code?: string;
+  description?: string;
+}
 
 const DashboardPage: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const { userInfo, setUserInfo } = useContext(GFContext);
+  const [businessUnit, setBusinessUnit] = useState<BusinessUnitType | null>(null);
+  const [department, setDepartment] = useState<DepartmentType | null>(null);
+  const [designation, setDesignation] = useState<DesignationType | null>(null);
   const api = useAxios();
 
   const getUserDashboardData = async (): Promise<void> => {
     try {
       const response = await api.get("/userInfo/?self=true");
+      const userData = response.data as UserInfoType;
+      
       typeof window !== "undefined" &&
-        localStorage.setItem("userInfo", JSON.stringify(response.data));
-      setUserInfo(response.data as UserInfoType);
+        localStorage.setItem("userInfo", JSON.stringify(userData));
+      
+      setUserInfo(userData);
+      
+      // Fetch related data if user data has the required IDs
+      if (userData.business_unit) {
+        fetchBusinessUnit(userData.business_unit);
+      }
+      
+      if (userData.department) {
+        fetchDepartment(userData.department);
+      }
+      
+      if (userData.designation) {
+        fetchDesignation(userData.designation);
+      }
     } catch (error) {
       console.error("Error fetching user data:", error);
+    }
+  };
+  
+  const fetchBusinessUnit = async (id: number | string): Promise<void> => {
+    try {
+      const response = await api.get(`business-units/${id}/`);
+      setBusinessUnit(response.data);
+    } catch (error) {
+      console.error("Error fetching business unit:", error);
+    }
+  };
+  
+  const fetchDepartment = async (id: number | string): Promise<void> => {
+    try {
+      const response = await api.get(`/departments/${id}/`);
+      setDepartment(response.data);
+    } catch (error) {
+      console.error("Error fetching department:", error);
+    }
+  };
+  
+  const fetchDesignation = async (id: number | string): Promise<void> => {
+    try {
+      const response = await api.get(`/designations/${id}/`);
+      setDesignation(response.data);
+    } catch (error) {
+      console.error("Error fetching designation:", error);
     }
   };
 
@@ -89,10 +186,10 @@ const DashboardPage: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* User Profile Card */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 lg:col-span-1">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 lg:col-span-1 border-t-4 border-indigo-500">
           <div className="flex flex-col items-center justify-center mb-6">
-            <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mb-4">
-              <User className="h-12 w-12 text-blue-600 dark:text-blue-300" />
+            <div className="w-24 h-24 bg-indigo-100 dark:bg-indigo-900 rounded-full flex items-center justify-center mb-4">
+              <User className="h-12 w-12 text-indigo-600 dark:text-indigo-300" />
             </div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {userInfo?.name || "User Name"}
@@ -109,7 +206,7 @@ const DashboardPage: React.FC = () => {
           
           <div className="space-y-4 mt-6">
             <div className="flex items-center">
-              <Mail className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+              <Mail className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Email</p>
                 <p className="text-gray-900 dark:text-white">{userInfo?.email || "Not available"}</p>
@@ -117,7 +214,7 @@ const DashboardPage: React.FC = () => {
             </div>
             
             <div className="flex items-center">
-              <Phone className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+              <Phone className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Contact</p>
                 <p className="text-gray-900 dark:text-white">{userInfo?.contact || "Not available"}</p>
@@ -125,7 +222,7 @@ const DashboardPage: React.FC = () => {
             </div>
             
             <div className="flex items-center">
-              <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+              <Calendar className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Date of Birth</p>
                 <p className="text-gray-900 dark:text-white">{formatDate(userInfo?.dob)}</p>
@@ -135,16 +232,16 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* User Details */}
-        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 lg:col-span-2">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 lg:col-span-2 border-t-4 border-indigo-500">
           <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">Account Details</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-6">
               <div>
-                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">Personal Information</h3>
-                <div className="space-y-4">
+                <h3 className="text-md font-medium text-indigo-600 dark:text-indigo-400 mb-2">Personal Information</h3>
+                <div className="space-y-4 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
                   <div className="flex items-center">
-                    <User className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <User className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Username</p>
                       <p className="text-gray-900 dark:text-white">{userInfo?.username || "Not available"}</p>
@@ -152,7 +249,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center">
-                    <IdCard className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <IdCard className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Employee ID</p>
                       <p className="text-gray-900 dark:text-white">{userInfo?.employee_code || "Not available"}</p>
@@ -160,7 +257,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center">
-                    <Calendar className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <Calendar className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Joined Date</p>
                       <p className="text-gray-900 dark:text-white">{formatDate(userInfo?.date_joined)}</p>
@@ -169,7 +266,7 @@ const DashboardPage: React.FC = () => {
                   
                   {(userInfo?.first_name || userInfo?.last_name) && (
                     <div className="flex items-center">
-                      <User className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                      <User className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                       <div>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Full Name</p>
                         <p className="text-gray-900 dark:text-white">
@@ -182,29 +279,50 @@ const DashboardPage: React.FC = () => {
               </div>
               
               <div>
-                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">Work Information</h3>
-                <div className="space-y-4">
+                <h3 className="text-md font-medium text-indigo-600 dark:text-indigo-400 mb-2">Work Information</h3>
+                <div className="space-y-4 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
                   <div className="flex items-center">
-                    <Building className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <Building className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Business Unit</p>
-                      <p className="text-gray-900 dark:text-white">ID: {userInfo?.business_unit || "Not assigned"}</p>
+                      <p className="text-gray-900 dark:text-white">
+                        {businessUnit?.name || `ID: ${userInfo?.business_unit || "Not assigned"}`}
+                      </p>
+                      {businessUnit?.code && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Code: {businessUnit.code}
+                        </p>
+                      )}
                     </div>
                   </div>
                   
                   <div className="flex items-center">
-                    <Briefcase className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <Briefcase className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Department</p>
-                      <p className="text-gray-900 dark:text-white">ID: {userInfo?.department || "Not assigned"}</p>
+                      <p className="text-gray-900 dark:text-white">
+                        {department?.name || `ID: ${userInfo?.department || "Not assigned"}`}
+                      </p>
+                      {department?.code && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Code: {department.code}
+                        </p>
+                      )}
                     </div>
                   </div>
                   
                   <div className="flex items-center">
-                    <IdCard className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <IdCard className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Designation</p>
-                      <p className="text-gray-900 dark:text-white">ID: {userInfo?.designation || "Not assigned"}</p>
+                      <p className="text-gray-900 dark:text-white">
+                        {designation?.name || `ID: ${userInfo?.designation || "Not assigned"}`}
+                      </p>
+                      {designation?.code && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Code: {designation.code}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -213,10 +331,10 @@ const DashboardPage: React.FC = () => {
             
             <div className="space-y-6">
               <div>
-                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">Address Information</h3>
-                <div className="space-y-4">
+                <h3 className="text-md font-medium text-indigo-600 dark:text-indigo-400 mb-2">Address Information</h3>
+                <div className="space-y-4 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
                   <div className="flex items-center">
-                    <MapPin className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <MapPin className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Full Address</p>
                       <p className="text-gray-900 dark:text-white">{userInfo?.address || "Not available"}</p>
@@ -224,7 +342,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center">
-                    <MapPin className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <MapPin className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">City</p>
                       <p className="text-gray-900 dark:text-white">{userInfo?.city || "Not available"}</p>
@@ -232,7 +350,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center">
-                    <MapPin className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <MapPin className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">State</p>
                       <p className="text-gray-900 dark:text-white">{userInfo?.state || "Not available"}</p>
@@ -240,7 +358,7 @@ const DashboardPage: React.FC = () => {
                   </div>
                   
                   <div className="flex items-center">
-                    <MapPin className="h-5 w-5 text-gray-500 dark:text-gray-400 mr-3" />
+                    <MapPin className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
                     <div>
                       <p className="text-sm text-gray-500 dark:text-gray-400">Country</p>
                       <p className="text-gray-900 dark:text-white">{userInfo?.country || "Not available"}</p>
@@ -250,8 +368,8 @@ const DashboardPage: React.FC = () => {
               </div>
               
               <div>
-                <h3 className="text-md font-medium text-gray-700 dark:text-gray-300 mb-2">User Status & Permissions</h3>
-                <div className="space-y-4">
+                <h3 className="text-md font-medium text-indigo-600 dark:text-indigo-400 mb-2">User Status & Permissions</h3>
+                <div className="space-y-4 bg-indigo-50 dark:bg-indigo-900/20 p-4 rounded-lg">
                   <div className="flex items-center">
                     <div className="flex-shrink-0 w-5 h-5 mr-3">
                       <div className={`w-4 h-4 rounded-full ${userInfo?.status ? 'bg-green-500' : 'bg-gray-300 dark:bg-gray-600'}`}></div>
