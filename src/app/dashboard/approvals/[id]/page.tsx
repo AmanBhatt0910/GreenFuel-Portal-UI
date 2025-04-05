@@ -13,93 +13,60 @@ import ApprovalActions from './components/ApprovalActions';
 import ChatSection from './components/ChatSection';
 import LoadingState from './components/LoadingState';
 
-/**
- * ApprovalDetailsPage Component
- * 
- * This component displays detailed information about a specific approval request.
- * It serves as the main view for reviewing and taking action on approval requests.
- * 
- * Key features:
- * - Displays comprehensive information about the approval request
- * - Provides approve/reject functionality for pending requests
- * - Shows requester information with details about who submitted the request
- * - Includes a chat system for communication with the requester
- * - Tabbed interface to separate details from communication
- * 
- * URL structure: /dashboard/approvals/[id] - where [id] is the approval request ID
- */
 function ApprovalDetailsPage() {
-  // Extract the approval ID from the URL parameters
   const params = useParams();
   const id = params?.id as string || '';
-  
   const router = useRouter();
-  // Track the currently active tab (details or chat)
   const [activeTab, setActiveTab] = useState<string>("details");
-  
-  // Use custom hook to fetch and manage approval details
-  // This hook handles data fetching, state management, and actions
+
   const {
-    form,                  // Original form data from API
-    enrichedForm,          // Enhanced form data with additional information
-    loading,               // Loading state indicator
-    error,                 // Error state if any
-    comments,              // Comment history for this approval
-    newComment,            // Current comment being drafted
-    setNewComment,         // Function to update the draft comment
-    rejectionReason,       // Reason for rejection if rejecting
-    setRejectionReason,    // Function to update rejection reason
-    rejectionDialogOpen,   // State of rejection dialog
-    setRejectionDialogOpen,// Function to toggle rejection dialog
-    handleApprove,         // Function to approve this request
-    handleReject,          // Function to reject this request
-    handleAddComment,      // Function to add a new comment
-    chatRoom,              // Chat room data if exists
-    chatMessages,          // Messages in the chat
-    isChatLoading,         // Loading state for chat
-    handleStartChat,       // Function to initiate a new chat
-    handleSendMessage,     // Function to send a chat message
+    form,
+    enrichedForm,
+    loading,
+    error,
+    comments,
+    newComment,
+    setNewComment,
+    rejectionReason,
+    setRejectionReason,
+    rejectionDialogOpen,
+    setRejectionDialogOpen,
+    handleApprove,
+    handleReject,
+    handleAddComment,
+    chatRoom,
+    chatMessages,
+    isChatLoading,
+    handleStartChat,
+    handleSendMessage,
   } = useApprovalDetails({ id });
 
-  /**
-   * Handle tab change between details and chat
-   * Clears any draft comment when switching tabs
-   * 
-   * @param value - The tab value to switch to
-   */
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    setNewComment(""); // Clear comment input when switching tabs
+    setNewComment("");
   };
 
-  /**
-   * Navigate back to the approvals dashboard
-   */
   const handleBack = () => {
     router.push("/dashboard/approvals");
   };
 
-  // Show loading state while data is being fetched
-  if (loading) {
-    return <LoadingState />;
-  }
+  if (loading) return <LoadingState />;
 
-  // Show error state if data fetching failed
   if (error) {
     return (
       <div className="container max-w-7xl py-6">
         <div className="flex items-center mb-6">
-          <Button variant="ghost" onClick={handleBack} className="mr-4">
+          <Button variant="ghost" onClick={handleBack} className="mr-4 text-indigo-500 hover:bg-indigo-50">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back
           </Button>
-          <h1 className="text-2xl font-bold">Error</h1>
+          <h1 className="text-2xl font-bold text-destructive">Error</h1>
         </div>
         <div className="bg-destructive/10 border border-destructive text-destructive p-4 rounded-md">
           <p>Failed to load approval details: {error.message}</p>
           <Button 
             variant="outline" 
-            className="mt-4"
+            className="mt-4 text-indigo-500 border-indigo-500 hover:bg-indigo-50"
             onClick={() => window.location.reload()}
           >
             Try Again
@@ -111,26 +78,22 @@ function ApprovalDetailsPage() {
 
   return (
     <div className="container max-w-7xl py-6 pb-32">
-      {/* Page Title (for screen readers and accessibility) */}
       <h1 className="sr-only">Approval Request Details - {form?.id}</h1>
-      
-      {/* Back Button - allows navigation back to the dashboard */}
+
+      {/* Back Button */}
       <div className="mb-6">
-        <Button variant="ghost" onClick={handleBack} className="rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+        <Button variant="ghost" onClick={handleBack} className="rounded-full text-indigo-500 hover:bg-indigo-50">
           <ArrowLeft className="h-4 w-4 mr-2" />
           Back to Approvals
         </Button>
       </div>
 
-      {/* Header - displays key information about the approval request */}
-      <ApprovalHeader 
-        enrichedForm={enrichedForm} 
-        loading={loading} 
-      />
+      {/* Header */}
+      <ApprovalHeader enrichedForm={enrichedForm} loading={loading} />
 
-      {/* Main Content - Two-column layout on desktop */}
+      {/* Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left column (wider) - Contains approval details and chat */}
+        {/* Main Content */}
         <div className="md:col-span-2">
           <Tabs 
             defaultValue="details" 
@@ -138,29 +101,32 @@ function ApprovalDetailsPage() {
             onValueChange={handleTabChange}
             className="mb-6"
           >
-            {/* Tab navigation */}
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="details" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            {/* Tab Navigation */}
+            <TabsList className="grid w-full grid-cols-2 bg-muted rounded-md">
+              <TabsTrigger
+                value="details"
+                className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-indigo-500 hover:bg-indigo-100"
+              >
                 <FileText className="h-4 w-4 mr-2" />
                 Details
               </TabsTrigger>
-              <TabsTrigger value="comments" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+              <TabsTrigger
+                value="comments"
+                className="data-[state=active]:bg-green-500 data-[state=active]:text-white text-green-500 hover:bg-green-100"
+              >
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Chat
               </TabsTrigger>
             </TabsList>
-            
-            {/* Details Tab - Shows financial and request details */}
+
+            {/* Details Tab */}
             <TabsContent value="details" className="space-y-6 mt-6">
-              <ApprovalDetails 
-                enrichedForm={enrichedForm} 
-                loading={loading} 
-              />
+              <ApprovalDetails enrichedForm={enrichedForm} loading={loading} />
             </TabsContent>
-            
-            {/* Chat Tab - Shows communication history and live chat */}
+
+            {/* Chat Tab */}
             <TabsContent value="comments" className="space-y-6 mt-6">
-              <ChatSection 
+              <ChatSection
                 chatRoom={chatRoom}
                 chatMessages={chatMessages}
                 newComment={newComment}
@@ -174,18 +140,15 @@ function ApprovalDetailsPage() {
             </TabsContent>
           </Tabs>
         </div>
-        
-        {/* Right column (narrower) - Contains requester information */}
+
+        {/* Requester Info */}
         <div className="md:col-span-1">
-          <RequesterInfo 
-            enrichedForm={enrichedForm} 
-            loading={loading} 
-          />
+          <RequesterInfo enrichedForm={enrichedForm} loading={loading} />
         </div>
       </div>
 
-      {/* Approval Actions - Sticky footer with approve/reject buttons */}
-      <ApprovalActions 
+      {/* Sticky Footer Actions */}
+      <ApprovalActions
         form={form}
         rejectionReason={rejectionReason}
         setRejectionReason={setRejectionReason}

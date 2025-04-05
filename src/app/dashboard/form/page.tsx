@@ -62,7 +62,7 @@ const formSteps = [
   },
   {
     id: 3,
-    title: "Asset Details",
+    title: "Expenditure Details",
     description: "Provide justification",
     icon: "clipboard",
   },

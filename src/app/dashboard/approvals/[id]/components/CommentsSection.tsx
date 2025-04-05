@@ -36,7 +36,7 @@ export default function CommentsSection({
         </CardHeader>
         <CardContent>
           <div className="animate-pulse space-y-4">
-            <div className="h-20 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="h-20 w-full bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
             <div className="space-y-2">
               <div className="h-4 w-full bg-gray-200 dark:bg-gray-700 rounded"></div>
               <div className="h-4 w-3/4 bg-gray-200 dark:bg-gray-700 rounded"></div>
@@ -52,33 +52,34 @@ export default function CommentsSection({
       <CardHeader>
         <CardTitle className="text-xl">Chat History</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-6">
         {/* Chat Input */}
-        <div className="mb-6">
-          <div className="flex gap-4">
+        <div>
+          <div className="flex gap-3">
             <Textarea
               value={newComment}
               onChange={(e) => setNewComment(e.target.value)}
               placeholder="Type your message..."
-              className="min-h-[80px] flex-1"
+              className="min-h-[80px] flex-1 resize-none"
               onKeyDown={handleKeyDown}
             />
-            <Button 
+            <Button
               className="self-end"
               onClick={handleAddComment}
               disabled={!newComment.trim()}
+              variant="default"
             >
               <Send className="h-4 w-4" />
               <span className="sr-only">Send</span>
             </Button>
           </div>
           <p className="text-xs text-muted-foreground mt-2">
-            Press Ctrl+Enter to send
+            Press Ctrl + Enter to send
           </p>
         </div>
 
         {/* Chat Messages */}
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
           {comments.length === 0 ? (
             <p className="text-center text-muted-foreground py-6">
               No messages yet. Start the conversation!
@@ -86,23 +87,23 @@ export default function CommentsSection({
           ) : (
             comments.map((comment) => (
               <div key={comment.id} className="flex gap-3">
-                <Avatar className="h-8 w-8">
+                <Avatar className="h-9 w-9">
                   <AvatarFallback className="text-xs">
                     {comment.userInitials}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-baseline gap-2 mb-1">
+                <div className="flex-1 space-y-1">
+                  <div className="flex items-center gap-2">
                     <span className="font-medium text-sm">{comment.user}</span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {comment.userRole}
                     </span>
-                    <span className="text-xs text-muted-foreground ml-auto">
+                    <span className="text-xs text-muted-foreground ml-auto whitespace-nowrap">
                       {new Date(comment.timestamp).toLocaleString()}
                     </span>
                   </div>
-                  <div className="bg-gray-100 dark:bg-gray-800 rounded-lg p-3">
-                    <p className="text-sm">{comment.text}</p>
+                  <div className="bg-muted dark:bg-gray-800 rounded-lg p-3">
+                    <p className="text-sm text-muted-foreground">{comment.text}</p>
                   </div>
                 </div>
               </div>
@@ -112,4 +113,4 @@ export default function CommentsSection({
       </CardContent>
     </Card>
   );
-} 
+}

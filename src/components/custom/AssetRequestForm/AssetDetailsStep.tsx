@@ -13,12 +13,17 @@ const approvalCategories = [
   { value: "Capex", label: "Capex" },
   { value: "Opex", label: "Opex" },
   { value: "Service", label: "Service" },
+  { value: "AMC Renewal", label: "AMC Renewal" },
+  { value: "Cost Saving Initiative", label: "Cost Saving Initiative" },
+  { value: "Non WOM Service", label: "Non WOM Service" },
+  { value: "Non BOM Material", label: "Non BOM Material" },
+  { value: "Other", label: "Other" },
 ];
 
 const approvalTypes = [
-  { value: "Type A", label: "Type A" },
-  { value: "Type B", label: "Type B" },
-  { value: "Type C", label: "Type C" },
+  { value: "Capex", label: "Capex" },
+  { value: "Opex", label: "Opex" },
+  { value: "Service", label: "Service" },
 ];
 
 export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({

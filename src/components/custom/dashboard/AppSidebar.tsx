@@ -64,11 +64,6 @@ const ApprovalItems = [
     icon: CreditCard,
   },
   {
-    title: "Tickets",
-    url: "/dashboard/tickets",
-    icon: ClipboardList,
-  },
-  {
     title: "My Requests",
     url: "/dashboard/requests",
     icon: FileCheck,
