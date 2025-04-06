@@ -128,14 +128,6 @@ export const PlantHierarchyManager: React.FC = () => {
     loadDepartments();
   }, [activeBusinessUnitId]);
 
-  // Save to API whenever data changes
-  useEffect(() => {
-    if (businessUnits.length > 0) {
-      // We could implement auto-save here if needed
-      // For now, we'll rely on specific save actions in child components
-    }
-  }, [businessUnits]);
-
   // Handle adding a new business unit
   const handleAddBusinessUnit = async (name: string) => {
     try {
