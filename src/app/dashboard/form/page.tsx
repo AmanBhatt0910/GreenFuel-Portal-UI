@@ -417,30 +417,21 @@ export default function AssetRequestForm() {
         formDataToSubmit.append("items", JSON.stringify(item));
       });
       
-      // Append form attachments
       if (formAttachments && formAttachments.length > 0) {
         formAttachments.forEach((file, index) => {
           formDataToSubmit.append(`form_attachments`, file);
-          console.log(`Appending form attachment ${index}:`, file.name);
         });
       }
       
-      // Append asset attachments
       if (assetAttachments && assetAttachments.length > 0) {
         assetAttachments.forEach((file, index) => {
           formDataToSubmit.append(`asset_attachment`, file);
-          console.log(`Appending asset attachment ${index}:`, file.name);
         });
-      }
-
-      console.log("FormData entries:");
-      for (const pair of formDataToSubmit.entries()) {
-        console.log(pair[0], pair[1]);
       }
 
       const response = await api.post("approval-requests/", formDataToSubmit, {
         headers: {
-          // Let the browser set the content type for multipart/form-data
+          "Content-Type": "multipart/form-data",
         },
       });
 
@@ -472,11 +463,9 @@ export default function AssetRequestForm() {
     setIsSubmitted(false);
   };
 
-  // Validation checks for each step
   const isStepValid = () => {
     switch (currentStep) {
       case 0:
-        console.log("Validating step 0 (auto-allowing since fields are disabled)");
         return true;
       case 1:
         return formData.assets.length > 0;

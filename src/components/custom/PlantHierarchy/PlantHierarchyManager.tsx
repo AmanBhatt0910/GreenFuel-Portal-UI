@@ -19,6 +19,8 @@ import {
   createDepartment,
   createDesignation 
 } from './api';
+import { toast } from "@/lib/toast-util";
+
 
 export const PlantHierarchyManager: React.FC = () => {
   // Get API client
@@ -83,7 +85,7 @@ export const PlantHierarchyManager: React.FC = () => {
       
       try {
         console.log(`Fetching departments for business unit ${activeBusinessUnitId}...`);
-        // Fetch departments for the active business unit
+        
         const response = await api.get(`/departments/?business_unit=${activeBusinessUnitId}`);
         const departments = response.data;
         console.log("Departments data:", departments);
@@ -93,16 +95,13 @@ export const PlantHierarchyManager: React.FC = () => {
           try {
             // Fetch designations for this department
             const designationsResponse = await api.get(`/designations/?department=${dept.id}`);
-            console.log(`Designations for department ${dept.id} (${dept.name}):`, designationsResponse.data);
             
-            // Return department with its designations
             return { 
               ...dept, 
               designations: designationsResponse.data || []
             };
           } catch (err) {
             console.error(`Failed to load designations for department ${dept.id}:`, err);
-            // Return department without designations in case of error
             return {
               ...dept,
               designations: []
@@ -142,48 +141,17 @@ export const PlantHierarchyManager: React.FC = () => {
     try {
       setError(null);
       const newBusinessUnit = await createBusinessUnit(api, { name });
+      if (!newBusinessUnit) {
+        toast.error("Failed to create business unit. Please try again.");
+        return null;
+      }
+      toast.success("Business unit created successfully.");
+
       setBusinessUnits([...businessUnits, { ...newBusinessUnit, departments: [] }]);
       return newBusinessUnit;
     } catch (err) {
       console.error("Failed to add business unit", err);
       setError("Failed to add business unit. Please try again.");
-      return null;
-    }
-  };
-
-  // Handle adding a new department
-  const handleAddDepartment = async (name: string, businessUnitId: number) => {
-    try {
-      setError(null);
-      const newDepartment = await createDepartment(api, { 
-        name, 
-        business_unit: businessUnitId 
-      });
-      
-      // Update local state
-      setBusinessUnits(
-        businessUnits.map(bu => 
-          bu.id === businessUnitId
-            ? { 
-                ...bu, 
-                departments: [...(bu.departments || []), { ...newDepartment, designations: [] }] 
-              }
-            : bu
-        )
-      );
-      
-      // Auto-expand the new department
-      if (newDepartment.id) {
-        setExpandedDepartments({
-          ...expandedDepartments,
-          [newDepartment.id]: true
-        });
-      }
-      
-      return newDepartment;
-    } catch (err) {
-      console.error("Failed to add department", err);
-      setError("Failed to add department. Please try again.");
       return null;
     }
   };
