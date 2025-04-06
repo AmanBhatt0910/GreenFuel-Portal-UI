@@ -123,6 +123,10 @@ export interface AssetTableProps {
 export interface AssetDetailsProps extends FormStepProps {
   navigateToStep: (step: number) => void;
   user: any[];
+  formAttachments: File[];
+  setFormAttachments: React.Dispatch<React.SetStateAction<File[]>>;
+  assetAttachments: File[];
+  setAssetAttachments: React.Dispatch<React.SetStateAction<File[]>>;
 }
 
 export interface FormNavigationProps {

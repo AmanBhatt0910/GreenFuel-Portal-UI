@@ -23,7 +23,7 @@ import autoTable from "jspdf-autotable";
 
 // Import our custom components
 import {
-  FormData,
+  FormData as FormDataType,
   AssetItem,
   EmployeeInformationStep,
   AssetSelectionStep,
@@ -75,7 +75,7 @@ const formSteps = [
 ];
 
 // Initial form data
-const getInitialFormData = (): FormData => ({
+const getInitialFormData = (): FormDataType => ({
   plant: 0,
   date: format(new Date(), "yyyy-MM-dd"),
   employeeCode: "",
@@ -102,12 +102,14 @@ export default function AssetRequestForm() {
   // State for multi-step form
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(0);
-  const [formData, setFormData] = useState<FormData>(getInitialFormData());
+  const [formData, setFormData] = useState<FormDataType>(getInitialFormData());
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { userInfo } = useContext(GFContext);
   const [user, setUser] = useState<any>(null);
   const [budgetId, setBudgetId] = useState<any>(null);
+  const [formAttachments, setFormAttachments] = useState<File[]>([]);
+  const [assetAttachments, setAssetAttachments] = useState<File[]>([]);
 
   const api = useAxios();
 
@@ -346,73 +348,91 @@ export default function AssetRequestForm() {
 
   // Submit the form
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    const approverResponse = await api.get(`approver/`);
-    console.log(approverResponse.data);
-    // console.log(formData);
+    try {
+      setIsSubmitting(true);
+      const formDataToSubmit = new FormData();
+      
+      let currentCategoryLevel = 1; 
+      let currentFormLevel = 0; 
+      
+      if (!formData.category || formData.category === 0) {
+        currentCategoryLevel = 0;
+        currentFormLevel = 1;
+      }
 
-    // Set levels based on category selection
-    let currentCategoryLevel = 1; 
-    let currentFormLevel = 0; 
-    
-    // If no category is selected, change the levels
-    if (!formData.category || formData.category === 0) {
-      currentCategoryLevel = 0;
-      currentFormLevel = 1;
-    }
+      formDataToSubmit.append("user", String(userInfo?.id || 0));
+      formDataToSubmit.append("business_unit", String(formData.plant));
+      formDataToSubmit.append("department", String(formData.initiateDept));
+      formDataToSubmit.append("designation", String(formData.designation));
+      formDataToSubmit.append("total", String(formData.assetAmount));
+      formDataToSubmit.append("reason", formData.reason);
+      formDataToSubmit.append("documentsSummary", formData.documentsSummary || "");
+      formDataToSubmit.append("paybackmonth", formData.paybackmonth || "");
+      formDataToSubmit.append("policy_agreement", String(formData.policyAgreement));
+      formDataToSubmit.append("initiate_dept", formData.initiateDept ? String(formData.initiateDept) : "");
+      formDataToSubmit.append("status", "pending");
+      formDataToSubmit.append("benefit_to_organisation", formData.benefitToOrg);
+      formDataToSubmit.append("approval_category", formData.approvalCategory);
+      formDataToSubmit.append("approval_type", formData.approvalType);
+      formDataToSubmit.append("notify_to", String(formData.notifyTo));
+      formDataToSubmit.append("form_category", String(formData.category));
+      formDataToSubmit.append("concerned_department", String(formData.concerned_department));
+      formDataToSubmit.append("current_category_level", String(currentCategoryLevel));
+      formDataToSubmit.append("current_form_level", String(currentFormLevel));
+      formDataToSubmit.append("rejected", "false");
+      formDataToSubmit.append("rejection_reason", "null");
+      
+      
+      formData.assets.forEach((asset, index) => {
+        formDataToSubmit.append(`items`, asset.title);
+        formDataToSubmit.append(`items`, asset.description || "");
+        formDataToSubmit.append(`items`, String(asset.quantity));
+        formDataToSubmit.append(`items`, String(asset.pricePerUnit));
+        formDataToSubmit.append(`items`, asset.sapItemCode || "");
+      });
+      
+      
+      if (formAttachments && formAttachments.length > 0) {
+        formAttachments.forEach((file, index) => {
+          formDataToSubmit.append(`form_attachments`, file);
+          console.log(`Appending form attachment ${index}:`, file.name);
+        });
+      }
+      
+      if (assetAttachments && assetAttachments.length > 0) {
+        assetAttachments.forEach((file, index) => {
+          formDataToSubmit.append(`asset_attachments`, file);
+          console.log(`Appending asset attachment ${index}:`, file.name);
+        });
+      }
 
-    const submittingFormData: SubmittingFormData = {
-      user: userInfo?.id || 0,
-      business_unit: formData.plant,
-      department: formData.initiateDept,
-      designation: formData.designation,
-      total: Number(formData.assetAmount),
-      reason: formData.reason,
-      documentsSummary : formData.documentsSummary,
-      paybackmonth : formData.paybackmonth,
-      policy_agreement: formData.policyAgreement,
-      // initiate_dept: formData.initiateDept,
-      initiate_dept: "",
-      status: "pending", 
-      benefit_to_organisation: formData.benefitToOrg,
-      approval_category: formData.approvalCategory,
-      approval_type: formData.approvalType,
-      notify_to: formData.notifyTo,
-      form_category: formData.category,
-      concerned_department: formData.concerned_department,
-      current_category_level: currentCategoryLevel,
-      current_form_level: currentFormLevel,
-      // form_max_level: approverResponse.data.length,
-      // category_max_level: 1, 
-      rejected: false,
-      rejection_reason: null,
-      items: formData.assets.map((asset) => ({
-        name: asset.title,
-        description: asset.description,
-        quantity: asset.quantity,
-        per_unit_price: Number(asset.pricePerUnit),
-        sap_code: asset.sapItemCode,
-      })),
-    };
+      console.log("FormData entries:");
+      for (const pair of formDataToSubmit.entries()) {
+        console.log(pair[0], pair[1]);
+      }
 
-    console.log("submittingFormData", submittingFormData);
+      const response = await api.post("approval-requests/", formDataToSubmit, {
+        headers: {
+          // "Content-Type": "multipart/form-data",
+        },
+      });
+      
+      console.log("response", response);
 
-    const response = await api.post("approval-requests/", submittingFormData);
-    console.log("response", response);
-
-    // console.log("response" , response.data.budget_id)
-    if (response.status === 201) {
-      setBudgetId(response.data.budget_id);
+      if (response.status === 201) {
+        setBudgetId(response.data.budget_id);
+        setIsSubmitting(false);
+        setIsSubmitted(true);
+        return;
+      }
 
       setIsSubmitting(false);
-      setIsSubmitted(true);
-      return;
+      setIsSubmitted(false);
+    } catch (error) {
+      console.error("Error submitting form:", error);
+      setIsSubmitting(false);
+      setIsSubmitted(false);
     }
-
-    setIsSubmitting(false);
-    setIsSubmitted(false);
   };
 
   // Reset the form
@@ -1155,6 +1175,10 @@ export default function AssetRequestForm() {
               direction={direction}
               navigateToStep={navigateToStep}
               user={user}
+              formAttachments={formAttachments}
+              setFormAttachments={setFormAttachments}
+              assetAttachments={assetAttachments}
+              setAssetAttachments={setAssetAttachments}
             />
           </motion.div>
         );

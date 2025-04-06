@@ -33,6 +33,10 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   navigateToStep,
   handleCheckboxChange,
   user,
+  formAttachments,
+  setFormAttachments,
+  assetAttachments,
+  setAssetAttachments,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -48,8 +52,6 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const departmentDropdownRef = useRef<HTMLDivElement>(null);
-  const [formAttachments, setFormAttachments] = useState<File[]>([]);
-const [assetAttachments, setAssetAttachments] = useState<File[]>([]);
   const api = useAxios();
 
   // Find the selected user's name for display
