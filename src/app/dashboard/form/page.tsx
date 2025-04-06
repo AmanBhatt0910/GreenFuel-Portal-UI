@@ -94,6 +94,8 @@ const getInitialFormData = (): FormData => ({
   notifyTo: 0,
   category: 0, // Default category value
   concerned_department: 0, // Default concerned department value
+  paybackmonth : "",
+  documentsSummary : "",
 });
 
 export default function AssetRequestForm() {
@@ -368,6 +370,8 @@ export default function AssetRequestForm() {
       designation: formData.designation,
       total: Number(formData.assetAmount),
       reason: formData.reason,
+      documentsSummary : formData.documentsSummary,
+      paybackmonth : formData.paybackmonth,
       policy_agreement: formData.policyAgreement,
       // initiate_dept: formData.initiateDept,
       initiate_dept: "",
@@ -413,7 +417,6 @@ export default function AssetRequestForm() {
 
   // Reset the form
   const resetForm = () => {
-    // Pre-fill user information when resetting the form
     const initialData = getInitialFormData();
     if (userInfo) {
       initialData.employeeName = userInfo.name || "";
@@ -466,7 +469,6 @@ export default function AssetRequestForm() {
     }).format(amount);
   };
 
-  // Generate PDF with professional formatting and corporate style
   const generatePDF = async () => {
     let businessUnitName = "N/A";
     let departmentName = "N/A";

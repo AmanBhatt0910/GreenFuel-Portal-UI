@@ -27,6 +27,8 @@ export interface FormData {
   notifyTo: number;
   category: number;
   concerned_department: number;
+  paybackmonth : string;
+  documentsSummary : string;
 }
 
 export interface SubmittingFormData {
@@ -49,7 +51,9 @@ export interface SubmittingFormData {
   current_form_level: number;      // Added new field
   //form_max_level: number;          // Changed from max_level
   category_max_level?: number;     // Made optional as we're commenting it out
-  rejected?: boolean;              // Made optional as it's not in your sample data
+  rejected?: boolean;     
+  documentsSummary :  string;         // Made optional as it's not in your sample data
+  paybackmonth?: string;             
   rejection_reason?: string | null; // Made optional as it's not in your sample data
   user?: number;                    // Made optional as it's not in your sample data
 }

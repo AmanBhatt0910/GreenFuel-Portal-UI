@@ -22,7 +22,7 @@ export const PlantsTab: React.FC<PlantsTabProps> = ({
 }) => {
   const handleBusinessUnitClick = (id: string | number) => {
     setActiveBusinessUnitId(id);
-    setActiveTab('departments'); // Navigate to departments tab
+    setActiveTab('departments'); 
   };
 
   return (
