@@ -360,40 +360,64 @@ export default function AssetRequestForm() {
         currentFormLevel = 1;
       }
 
-      console.log(formData.assets)
+      const submittingFormData: SubmittingFormData = {
+        user: userInfo?.id || 0,
+        business_unit: formData.plant,
+        department: formData.initiateDept,
+        designation: formData.designation,
+        total: Number(formData.assetAmount),
+        reason: formData.reason,
+        documentsSummary: formData.documentsSummary || "",
+        paybackmonth: formData.paybackmonth || "",
+        policy_agreement: formData.policyAgreement,
+        initiate_dept: formData.initiateDept ? String(formData.initiateDept) : "",
+        status: "pending", 
+        benefit_to_organisation: formData.benefitToOrg,
+        approval_category: formData.approvalCategory,
+        approval_type: formData.approvalType,
+        notify_to: formData.notifyTo,
+        form_category: formData.category,
+        concerned_department: formData.concerned_department,
+        current_category_level: currentCategoryLevel,
+        current_form_level: currentFormLevel,
+        rejected: false,
+        rejection_reason: null,
+        items: formData.assets.map((asset) => ({
+          name: asset.title,
+          description: asset.description,
+          quantity: asset.quantity,
+          per_unit_price: Number(asset.pricePerUnit),
+          sap_code: asset.sapItemCode,
+        })),
+      };
 
-      formDataToSubmit.append("user", String(userInfo?.id || 0));
-      formDataToSubmit.append("business_unit", String(formData.plant));
-      formDataToSubmit.append("department", String(formData.initiateDept));
-      formDataToSubmit.append("designation", String(formData.designation));
-      formDataToSubmit.append("total", String(formData.assetAmount));
-      formDataToSubmit.append("reason", formData.reason);
-      formDataToSubmit.append("documentsSummary", formData.documentsSummary || "");
-      formDataToSubmit.append("paybackmonth", formData.paybackmonth || "");
-      formDataToSubmit.append("policy_agreement", String(formData.policyAgreement));
-      formDataToSubmit.append("initiate_dept", formData.initiateDept ? String(formData.initiateDept) : "");
+      formDataToSubmit.append("user", String(submittingFormData.user || 0));
+      formDataToSubmit.append("business_unit", String(submittingFormData.business_unit));
+      formDataToSubmit.append("department", String(submittingFormData.department));
+      formDataToSubmit.append("designation", String(submittingFormData.designation));
+      formDataToSubmit.append("total", String(submittingFormData.total));
+      formDataToSubmit.append("reason", submittingFormData.reason);
+      formDataToSubmit.append("documentsSummary", submittingFormData.documentsSummary || "");
+      formDataToSubmit.append("paybackmonth", submittingFormData.paybackmonth || "");
+      formDataToSubmit.append("policy_agreement", String(submittingFormData.policy_agreement));
+      formDataToSubmit.append("initiate_dept", submittingFormData.initiate_dept ? String(submittingFormData.initiate_dept) : "");
       formDataToSubmit.append("status", "pending");
-      formDataToSubmit.append("benefit_to_organisation", formData.benefitToOrg);
-      formDataToSubmit.append("approval_category", formData.approvalCategory);
-      formDataToSubmit.append("approval_type", formData.approvalType);
-      formDataToSubmit.append("notify_to", String(formData.notifyTo));
-      formDataToSubmit.append("form_category", String(formData.category));
-      formDataToSubmit.append("concerned_department", String(formData.concerned_department));
-      formDataToSubmit.append("current_category_level", String(currentCategoryLevel));
-      formDataToSubmit.append("current_form_level", String(currentFormLevel));
-      formDataToSubmit.append("rejected", "false");
-      formDataToSubmit.append("rejection_reason", "null");
-      
-      
-      formData.assets.forEach((asset, index) => {
-        formDataToSubmit.append(`items`, JSON.stringify( asset));
-        // formDataToSubmit.append(`items`,JSON.stringify( asset.description || ""));
-        // formDataToSubmit.append(`items`, JSON.stringify( String(asset.quantity)));
-        // formDataToSubmit.append(`items`, JSON.stringify( String(asset.pricePerUnit)));
-        // formDataToSubmit.append(`items`, JSON.stringify( asset.sapItemCode || ""));
+      formDataToSubmit.append("benefit_to_organisation", submittingFormData.benefit_to_organisation);
+      formDataToSubmit.append("approval_category", submittingFormData.approval_category);
+      formDataToSubmit.append("approval_type", submittingFormData.approval_type);
+      formDataToSubmit.append("notify_to", String(submittingFormData.notify_to));
+      formDataToSubmit.append("form_category", String(submittingFormData.form_category));
+      formDataToSubmit.append("concerned_department", String(submittingFormData.concerned_department));
+      formDataToSubmit.append("current_category_level", String(submittingFormData.current_category_level));
+      formDataToSubmit.append("current_form_level", String(submittingFormData.current_form_level));
+      formDataToSubmit.append("rejected", String(submittingFormData.rejected));
+      formDataToSubmit.append("rejection_reason", String(submittingFormData.rejection_reason));
+
+      submittingFormData.items.forEach((item: any) => {
+        formDataToSubmit.append("items", JSON.stringify(item));
       });
       
-      
+      // Append form attachments
       if (formAttachments && formAttachments.length > 0) {
         formAttachments.forEach((file, index) => {
           formDataToSubmit.append(`form_attachments`, file);
@@ -401,9 +425,10 @@ export default function AssetRequestForm() {
         });
       }
       
+      // Append asset attachments
       if (assetAttachments && assetAttachments.length > 0) {
         assetAttachments.forEach((file, index) => {
-          formDataToSubmit.append(`asset_attachments`, file);
+          formDataToSubmit.append(`asset_attachment`, file);
           console.log(`Appending asset attachment ${index}:`, file.name);
         });
       }
@@ -415,11 +440,9 @@ export default function AssetRequestForm() {
 
       const response = await api.post("approval-requests/", formDataToSubmit, {
         headers: {
-          // "Content-Type": "multipart/form-data",
+          // Let the browser set the content type for multipart/form-data
         },
       });
-      
-      console.log("response", response);
 
       if (response.status === 201) {
         setBudgetId(response.data.budget_id);
