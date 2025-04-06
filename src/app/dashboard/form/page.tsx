@@ -360,6 +360,8 @@ export default function AssetRequestForm() {
         currentFormLevel = 1;
       }
 
+      console.log(formData.assets)
+
       formDataToSubmit.append("user", String(userInfo?.id || 0));
       formDataToSubmit.append("business_unit", String(formData.plant));
       formDataToSubmit.append("department", String(formData.initiateDept));
@@ -384,11 +386,11 @@ export default function AssetRequestForm() {
       
       
       formData.assets.forEach((asset, index) => {
-        formDataToSubmit.append(`items`, asset.title);
-        formDataToSubmit.append(`items`, asset.description || "");
-        formDataToSubmit.append(`items`, String(asset.quantity));
-        formDataToSubmit.append(`items`, String(asset.pricePerUnit));
-        formDataToSubmit.append(`items`, asset.sapItemCode || "");
+        formDataToSubmit.append(`items`, JSON.stringify( asset));
+        // formDataToSubmit.append(`items`,JSON.stringify( asset.description || ""));
+        // formDataToSubmit.append(`items`, JSON.stringify( String(asset.quantity)));
+        // formDataToSubmit.append(`items`, JSON.stringify( String(asset.pricePerUnit)));
+        // formDataToSubmit.append(`items`, JSON.stringify( asset.sapItemCode || ""));
       });
       
       
