@@ -60,6 +60,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { motion, AnimatePresence } from "framer-motion";
 import useAxios from "@/app/hooks/use-axios";
+import axios from "axios";
 
 // Define TypeScript interfaces for the data structure
 interface BudgetRequest {
@@ -100,6 +101,14 @@ interface Document {
   type: string;
   size: string;
   url: string;
+}
+
+interface ApiDocument {
+  id: number;
+  url: string;
+  type: string;
+  uploaded_at: string;
+  file: string;
 }
 
 interface Comment {
@@ -340,6 +349,44 @@ const RequestDetailsPage = () => {
     }
   };
 
+
+  useEffect(() => {
+    if (!request?.id) return; // ✅ early return if request is null or id is undefined
+  
+    const fetchDocuments = async () => {
+      if (!request) return;
+    
+      try {
+        setLoading(true); // optional: if you want to show loading state
+    
+        // API call using your existing `api` instance
+        const response = await api.get(`/approval-attachments?form_id=${request.id}`);
+    
+        // Map the response data
+        const mappedDocuments = response.data.map((doc: ApiDocument) => ({
+          id: doc.id,
+          name: doc.url.split("/").pop() || "Document",
+          type: doc.type || "Unknown",
+          size: formatDate(doc.uploaded_at),
+          url: doc.url,
+        }));
+    
+        setDocuments(mappedDocuments);
+      } catch (error) {
+        console.error("Error fetching documents:", error);
+        setError("Failed to fetch documents"); // optional: if you have error state
+      } finally {
+        setLoading(false); // optional: if you have loading state
+      }
+    };
+    
+  
+    fetchDocuments();
+  }, [request?.id]);
+  
+
+  
+  
   // Handle rejection submission
   const handleReject = async () => {
     if (!formValid || !request) return;
@@ -781,57 +828,65 @@ const RequestDetailsPage = () => {
             </TabsContent>
 
             <TabsContent value="documents">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Supporting Documents</CardTitle>
-                  <CardDescription>
-                    Files and documents related to this budget request
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {documents.length > 0 ? (
-                    <div className="space-y-4">
-                      {documents.map((doc) => (
-                        <div
-                          key={doc.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200"
-                        >
-                          <div className="flex items-center">
-                            <div className="bg-blue-100 p-2 rounded-md mr-3">
-                              <FileText className="h-5 w-5 text-blue-600" />
-                            </div>
-                            <div>
-                              <p className="font-medium">{doc.name}</p>
-                              <p className="text-sm text-gray-500">
-                                {doc.type} • {doc.size}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button variant="outline" size="sm">
-                              <Eye className="h-4 w-4 mr-1" /> View
-                            </Button>
-                            <Button variant="outline" size="sm">
-                              <DownloadCloud className="h-4 w-4 mr-1" /> Download
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8">
-                      <FileText className="h-10 w-10 text-gray-300 mx-auto mb-2" />
-                      <p className="text-gray-500">No documents attached</p>
-                    </div>
-                  )}
-                </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    <PlusCircle className="h-4 w-4 mr-2" /> Add Document
+      <Card>
+        <CardHeader>
+          <CardTitle>Supporting Documents</CardTitle>
+            <CardDescription>
+              Files and documents related to this budget request
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+          {documents.length > 0 ? (
+            documents.map((doc) => (
+              <div key={doc.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-md border border-gray-200">
+                <div className="flex items-center">
+                  <div className="bg-blue-100 p-2 rounded-md mr-3">
+                    <FileText className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">{doc.name}</p>
+                    <p className="text-sm text-gray-500">
+                      {doc.type} • {doc.size}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex space-x-2">
+                  <Button variant="outline" size="sm" onClick={() => window.open(doc.url, "_blank")}>
+                    <Eye className="h-4 w-4 mr-1" /> View
                   </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const link = document.createElement("a");
+                      link.href = doc.url;
+                      link.download = doc.name;
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                  >
+                    <DownloadCloud className="h-4 w-4 mr-1" /> Download
+                  </Button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <FileText className="h-10 w-10 text-gray-300 mx-auto mb-2" />
+              <p className="text-gray-500">No documents attached</p>
+            </div>
+          )}
+
+          </CardContent>
+          <CardFooter>
+            <Button variant="outline" className="w-full">
+              <PlusCircle className="h-4 w-4 mr-2" /> Add Document
+            </Button>
+          </CardFooter>
+        </Card>
+      </TabsContent>
+
 
             <TabsContent value="comments">
               <Card>
