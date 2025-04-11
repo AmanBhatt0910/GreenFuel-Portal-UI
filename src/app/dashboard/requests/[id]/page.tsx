@@ -866,13 +866,21 @@ const RequestDetailsPage = () => {
                             <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => {
-                                const link = document.createElement("a");
-                                link.href = fullUrl;
-                                link.download = doc.name;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
+                              onClick={async () => {
+                                try {
+                                  const response = await fetch(fullUrl);
+                                  const blob = await response.blob();
+                                  const url = window.URL.createObjectURL(blob);
+                                  const link = document.createElement("a");
+                                  link.href = url;
+                                  link.download = doc.name;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  window.URL.revokeObjectURL(url);
+                                } catch (error) {
+                                  console.error("Download failed:", error);
+                                }
                               }}
                             >
                               <DownloadCloud className="h-4 w-4 mr-1" /> Download
@@ -895,6 +903,7 @@ const RequestDetailsPage = () => {
                 </CardFooter>
               </Card>
             </TabsContent>
+
 
 
 
