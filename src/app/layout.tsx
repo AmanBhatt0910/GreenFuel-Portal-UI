@@ -5,6 +5,8 @@ import Provider from "./Provider";
 import ProgressBar from "@/components/custom/ProgressBar/ProgressBar";
 import { Suspense } from "react";
 
+import dynamic from "next/dynamic";
+
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
@@ -30,6 +32,7 @@ export default function RootLayout({
       <body className={`${inter.variable} ${firaCode.variable} antialiased`}>
         <Suspense fallback={null}>
           <ProgressBar />
+          {/* <NProgressHandler /> */}
         </Suspense>
         <Provider>{children}</Provider>
       </body>
