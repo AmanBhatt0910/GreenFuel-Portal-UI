@@ -559,19 +559,32 @@ export default function useApprovalDetails({
   };
 
   // Handle add comment
-  const handleAddComment = () => {
+  const handleAddComment = (requestId , id , commentText , name) => {
     if (!newComment.trim()) return;
 
-    const comment: Comment = {
-      id: `comment-${Date.now()}`,
-      user: "You",
-      userRole: "Approver",
-      text: newComment,
-      timestamp: new Date().toISOString(),
-      userInitials: "YO",
-    };
+    try {
+            const commentData = {
+              form: requestId,
+              sender: id,
+              message: commentText,
+            };
+    
+            const response = await api.post(`/chats/`, commentData);
+    
+            const newCommentObj: Comment = {
+              id: response.data.id || Date.now(),
+              author: name || "You",
+              text: commentText,
+              timestamp: response.data.timestamp || new Date().toISOString(),
+              read: response.data.read || "",
+            };
+    
+            setComments((prevComments) => [...prevComments, newCommentObj]);
+          } catch (err:any) {
+            console.error("Error adding comment:", err);
+            setError("Failed to add comment");
+          }
 
-    setComments([...comments, comment]);
     setNewComment("");
   };
 
