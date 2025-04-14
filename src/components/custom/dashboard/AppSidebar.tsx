@@ -124,7 +124,7 @@ const AppSidebar = () => {
               `/designations/${userInfo.designation}/`
             );
             setDesignation(response.data.level);
-            fetchedRef.current = userInfo.designation;
+            fetchedRef.current = String(userInfo.designation);
           } catch (error) {
             console.error("Error fetching designation:", error);
           }

@@ -124,8 +124,7 @@ const BudgetRequestsList = () => {
       console.error("Error fetching related data:", error);
     }
   };
-
-  // Update filtered requests when search term or status filter changes
+  
   useEffect(() => {
     let filtered = [...requests];
 
