@@ -7,9 +7,13 @@ import { InfoIcon, DollarSign, BarChart2 } from 'lucide-react';
 interface ApprovalDetailsProps {
   enrichedForm: any;
   loading: boolean;
+  assestDetail : any;
 }
 
-export default function ApprovalDetails({ enrichedForm, loading }: ApprovalDetailsProps) {
+export default function ApprovalDetails({ enrichedForm, loading , assestDetail}: ApprovalDetailsProps) {
+
+  console.log(assestDetail);
+
   if (loading || !enrichedForm) {
     return (
       <Card className="mb-6">

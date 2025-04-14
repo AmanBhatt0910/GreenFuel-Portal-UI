@@ -41,6 +41,7 @@ interface UseApprovalDetailsReturn {
   isChatLoading: boolean;
   handleStartChat: () => Promise<void>;
   handleSendMessage: () => Promise<void>;
+  assestDetails : any;
 }
 
 // Mock data
@@ -179,6 +180,7 @@ export default function useApprovalDetails({
 }: UseApprovalDetailsProps): UseApprovalDetailsReturn {
   const [form, setForm] = useState<ApprovalForm | null>(null);
   const [loading, setLoading] = useState(true);
+  const [assestDetails, setassestDetails] = useState();
   const [error, setError] = useState<Error | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -579,6 +581,16 @@ export default function useApprovalDetails({
     }
   }, [id]);
 
+  const assestDetail = async(formId : number)=>{
+    try {
+      const response = await api.get(`approval-items?form_id=${formId}`);
+      console.log(response);
+      setassestDetails(response.data);
+    } catch (error:any) {
+      console.log(error?.message)
+    }
+  }
+
   // Handle starting chat
   const handleStartChat = async () => {
     if (!form) return;
@@ -683,5 +695,6 @@ export default function useApprovalDetails({
     isChatLoading,
     handleStartChat,
     handleSendMessage,
+    assestDetails
   };
 }

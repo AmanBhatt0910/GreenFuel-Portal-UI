@@ -16,6 +16,7 @@ interface UseApprovalsReturn {
   setSearchTerm: (term: string) => void;
   filteredForms: EnrichedApprovalForm[];
   refreshApprovals: () => Promise<void>;
+  assestDetail: (formId: number) => Promise<void>;
 }
 
 // Mock data for fallback/development
@@ -159,6 +160,18 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     }
   };
 
+  const assestDetail =async(formId : number) =>{
+    try {
+      
+      const response = await api.get(`/approval-items?form_id=${formId}/`);
+      console.log(response)
+    
+    } catch (error) {
+      console.log(error)
+    }
+
+  }
+
   // Fetch department details by ID
   const fetchDepartmentDetails = async (deptId: string | number) => {
     const deptIdStr = String(deptId);
@@ -258,6 +271,7 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     searchTerm,
     setSearchTerm,
     filteredForms,
-    refreshApprovals: fetchApprovals
+    refreshApprovals: fetchApprovals,
+    assestDetail
   };
 } 

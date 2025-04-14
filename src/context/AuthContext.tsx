@@ -104,6 +104,15 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         body: JSON.stringify({ email, password }),
       });
 
+      if(response.status === 400){
+        const errorData = await response.json();
+        console.log("Login error:", errorData);
+        return {
+          success: false,
+          message: errorData.detail || "Invalid credentials",
+        };
+      }
+
       if (response.status === 200) {
         const tokenData = await response.json();
         setAuthToken(tokenData);

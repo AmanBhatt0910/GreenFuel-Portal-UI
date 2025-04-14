@@ -39,6 +39,7 @@ function ApprovalDetailsPage() {
     isChatLoading,
     handleStartChat,
     handleSendMessage,
+    assestDetails
   } = useApprovalDetails({ id });
 
   const handleTabChange = (value: string) => {
@@ -121,7 +122,7 @@ function ApprovalDetailsPage() {
 
             {/* Details Tab */}
             <TabsContent value="details" className="space-y-6 mt-6">
-              <ApprovalDetails enrichedForm={enrichedForm} loading={loading} />
+              <ApprovalDetails enrichedForm={enrichedForm} loading={loading} assestDetail = {assestDetails}/>
             </TabsContent>
 
             {/* Chat Tab */}

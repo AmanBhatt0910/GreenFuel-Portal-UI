@@ -14,13 +14,11 @@ import { CredentialTable } from "@/components/custom/CredentialsManagement/Crede
 import CredentialForm from "@/components/custom/CredentialsManagement/CredentialForm"; 
 import { DeleteDialog } from "@/components/custom/CredentialsManagement/DeleteDialog";
 import { CredentialDetails } from "@/components/custom/CredentialsManagement/CredentialDetails";
-import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CustomBreadcrumb } from '@/components/custom/ui/Breadcrumb.custom';
 import { Button } from "@/components/ui/button";
 import { Plus, AlertTriangle, Info } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
-import { BusinessUnitFilter } from "@/components/custom/CredentialsManagement/CredentialFilter";
 
 export default function CredentialsPage() {
   // State
@@ -208,9 +206,11 @@ export default function CredentialsPage() {
         // Create new user
         const response = await api.post('/register/', formData);
         const newUser = response.data as Credential;
+        console.log(newUser)
         // Add the new user to the list without re-fetching
         setCredentials(prev => [...prev, newUser]);
         toast.success("Employee added successfully");
+        window.location.reload()
       }
       
       setIsFormOpen(false);

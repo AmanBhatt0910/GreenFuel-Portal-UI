@@ -134,9 +134,9 @@ export function CredentialTable({
               <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">Loading...</TableCell>
             </TableRow>
           ) : filteredCredentials.length > 0 ? (
-            filteredCredentials.map((user) => (
+            filteredCredentials.map((user , index) => (
               <motion.tr
-                key={user.id || user.email}
+                key={user.id || user.email || index+1}
                 initial={{ opacity: 0, y: 5 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2 }}
