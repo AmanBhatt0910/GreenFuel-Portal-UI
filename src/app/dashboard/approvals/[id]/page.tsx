@@ -34,11 +34,7 @@ function ApprovalDetailsPage() {
     handleApprove,
     handleReject,
     handleAddComment,
-    chatRoom,
-    chatMessages,
     isChatLoading,
-    handleStartChat,
-    handleSendMessage,
     assestDetails
   } = useApprovalDetails({ id });
 
@@ -128,15 +124,11 @@ function ApprovalDetailsPage() {
             {/* Chat Tab */}
             <TabsContent value="comments" className="space-y-6 mt-6">
               <ChatSection
-                chatRoom={chatRoom}
-                chatMessages={chatMessages}
                 newComment={newComment}
                 setNewComment={setNewComment}
-                handleStartChat={handleStartChat}
-                handleSendMessage={handleSendMessage}
+                handleAddComment={handleAddComment}
                 isChatLoading={isChatLoading}
                 comments={comments}
-                handleAddComment={handleAddComment}
               />
             </TabsContent>
           </Tabs>

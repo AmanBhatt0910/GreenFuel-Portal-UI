@@ -61,10 +61,13 @@ export interface EnrichedApprovalForm extends ApprovalForm {
 // Comment
 export interface Comment {
   id: number;
-  author: string;
+  user: string;
+  userRole?: string;
+  userInitials?: string;
   text: string;
   timestamp: string;
-  read : string;
+  read?: string;
+  author?: string; // For backward compatibility
 }
 
 // Chat Room

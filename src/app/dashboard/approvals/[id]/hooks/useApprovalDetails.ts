@@ -35,117 +35,10 @@ interface UseApprovalDetailsReturn {
   setRejectionDialogOpen: (open: boolean) => void;
   handleApprove: () => Promise<void>;
   handleReject: () => Promise<void>;
-  handleAddComment: () => void;
-  chatRoom: ChatRoom | null;
-  chatMessages: ChatMessage[];
+  handleAddComment: () => Promise<void>;
   isChatLoading: boolean;
-  handleStartChat: () => Promise<void>;
-  handleSendMessage: () => Promise<void>;
-  assestDetails : any;
+  assestDetails: any;
 }
-
-// Mock data
-const mockForms: ApprovalForm[] = [
-  {
-    id: "REQ-2025-006",
-    user: "Aman Bhatt",
-    business_unit: "BU001",
-    department: "HR",
-    designation: "Senior Manager",
-    date: "2025-03-10",
-    total: 1200,
-    reason: "Remote work requirement",
-    policy_agreement: true,
-    initiate_dept: "2",
-    status: "Pending",
-    benefit_to_organisation: "Increased productivity",
-    approval_category: "Hardware",
-    approval_type: "New Request",
-    notify_to: "3",
-    current_level: 2,
-    max_level: 3,
-    rejected: false,
-    rejection_reason: null,
-    budget_id: "BU001",
-  },
-  {
-    id: "REQ-2025-007",
-    user: "Priya Singh",
-    business_unit: "BU002",
-    department: "Engineering",
-    designation: "Lead Engineer",
-    date: "2025-03-11",
-    total: 800,
-    reason: "Current equipment malfunctioning",
-    policy_agreement: true,
-    initiate_dept: "3",
-    status: "Pending",
-    benefit_to_organisation: "Improved productivity with proper equipment",
-    approval_category: "Hardware",
-    approval_type: "Replacement",
-    notify_to: "5",
-    current_level: 1,
-    max_level: 3,
-    rejected: false,
-    rejection_reason: null,
-    budget_id: "BU002",
-  },
-];
-
-const mockComments: Comment[] = [
-  {
-    id: "comment-1",
-    user: "Neha Sharma",
-    userRole: "Finance Manager",
-    text: "I've reviewed this request and the budget allocation seems appropriate.",
-    timestamp: "2025-03-12T10:30:00Z",
-    userInitials: "NS",
-  },
-  {
-    id: "comment-2",
-    user: "Rahul Varma",
-    userRole: "Requester",
-    text: "Thank you for your prompt review. I've attached additional information about the equipment specifications as requested.",
-    timestamp: "2025-03-12T14:15:00Z",
-    userInitials: "RV",
-  },
-];
-
-const mockChatRoom: ChatRoom = {
-  id: "chat-room-1",
-  user1: 2, // requester
-  user2: 1, // approver (current user)
-};
-
-const mockChatMessages: ChatMessage[] = [
-  {
-    id: "msg-1",
-    chatroom: "chat-room-1",
-    sender: 2, // requester
-    message:
-      "Hi, I wanted to ask about the status of my request. When can I expect approval?",
-    timestamp: "2025-03-12T10:45:00Z",
-    read: true,
-  },
-  {
-    id: "msg-2",
-    chatroom: "chat-room-1",
-    sender: 1, // approver (current user)
-    message:
-      "Hello! I'm reviewing your request now. Could you provide more details about why you need this equipment?",
-    timestamp: "2025-03-12T11:00:00Z",
-    read: true,
-  },
-  {
-    id: "msg-3",
-    chatroom: "chat-room-1",
-    sender: 2, // requester
-    message:
-      "Sure, I need this for the new project we're starting next month. Our current equipment doesn't support the software requirements for the project.",
-    timestamp: "2025-03-12T11:15:00Z",
-    read: false,
-  },
-];
 
 /**
  * useApprovalDetails Hook
@@ -187,6 +80,8 @@ export default function useApprovalDetails({
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
+  const [isChatLoading, setIsChatLoading] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<number>(1); // Mock current user ID (approver)
 
   // Add enriched data state
   const [enrichedForm, setEnrichedForm] = useState<any>(null);
@@ -194,18 +89,8 @@ export default function useApprovalDetails({
   // Cache states
   const [userCache, setUserCache] = useState<UserCache>({});
   const [departmentCache, setDepartmentCache] = useState<DepartmentCache>({});
-  const [businessUnitCache, setBusinessUnitCache] = useState<BusinessUnitCache>(
-    {}
-  );
-  const [designationCache, setDesignationCache] = useState<DesignationCache>(
-    {}
-  );
-
-  // Chat states
-  const [chatRoom, setChatRoom] = useState<ChatRoom | null>(null);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
-  const [isChatLoading, setIsChatLoading] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<number>(1); // Mock current user ID (approver)
+  const [businessUnitCache, setBusinessUnitCache] = useState<BusinessUnitCache>({});
+  const [designationCache, setDesignationCache] = useState<DesignationCache>({});
 
   const api = useAxios();
 
@@ -400,12 +285,9 @@ export default function useApprovalDetails({
       // Fetch asset details using the form ID from the response data
       if (formData && formData.id) {
         await fetchAssetDetails(formData.id);
+        await fetchComments(formData.id);
       }
 
-      // Fetch comments (if available) or use mock data
-      // const commentsResponse = await api.get(`/approval-comments/${id}/`);
-      // setComments(commentsResponse.data); 
-      setComments(mockComments);
     } catch (err) {
       console.error("Error fetching approval details:", err);
       setError(
@@ -413,16 +295,6 @@ export default function useApprovalDetails({
           ? err
           : new Error("Failed to fetch approval details")
       );
-
-      // Fallback to mock data
-      const foundForm = mockForms.find((f) => f.id === id);
-      if (foundForm) {
-        setForm(foundForm);
-        const enrichedData = await enrichApprovalData(foundForm);
-        setEnrichedForm(enrichedData);
-      }
-
-      setComments(mockComments);
     } finally {
       setLoading(false);
     }
@@ -432,10 +304,41 @@ export default function useApprovalDetails({
   const fetchAssetDetails = async(formId: number) => {
     try {
       const response = await api.get(`/approval-items/?form_id=${formId}`);
-      console.log("Asset details response:", response);
+    
       setassestDetails(response.data);
     } catch (error:any) {
       console.error("Error fetching asset details:", error?.message);
+    }
+  };
+
+  // Fetch comments for the form
+  const fetchComments = async (formId: number | string) => {
+    try {
+      setIsChatLoading(true);
+      const response = await api.get(`/chats?form_id=${formId}`);
+      
+      if (response.data && Array.isArray(response.data)) {
+        // Map API response to Comment interface
+        const mappedComments: Comment[] = response.data.map((chat: any) => ({
+          id: chat.id,
+          user: chat.sender?.name || chat.sender?.username || "User",
+          userRole: "User",
+          userInitials: chat.sender?.name 
+            ? chat.sender.name.charAt(0) 
+            : chat.sender?.username 
+              ? chat.sender.username.charAt(0) 
+              : "U",
+          text: chat.message,
+          timestamp: chat.timestamp,
+          read: chat.read ? "true" : ""
+        }));
+        
+        setComments(mappedComments);
+      }
+    } catch (error) {
+      console.error("Error fetching comments:", error);
+    } finally {
+      setIsChatLoading(false);
     }
   };
 
@@ -448,11 +351,10 @@ export default function useApprovalDetails({
   // Handle approve action
   const handleApprove = async () => {
     try {
-      console.log(`Approving request: ${id}`);
 
       // In a real app, you would call the API
       const res = await api.post(`/approval-requests/${id}/approve/`);
-      console.log("Response from approve:", res);
+      
       // window.location.href = "/dashboard/approvals";
 
       // if (res.status === 200) {
@@ -480,12 +382,13 @@ export default function useApprovalDetails({
 
       // Add a system comment
       const systemComment: Comment = {
-        id: `comment-${Date.now()}`,
+        id: Date.now(), // Use timestamp as numeric ID
         user: "You",
         userRole: "Approver",
+        userInitials: "YO",
         text: "Request approved.",
         timestamp: new Date().toISOString(),
-        userInitials: "YO",
+        read: ""
       };
 
       setComments([...comments, systemComment]);
@@ -508,7 +411,6 @@ export default function useApprovalDetails({
     }
 
     try {
-      console.log(`Rejecting request: ${id} - Reason: ${rejectionReason}`);
 
       // In a real app, you would call the API
       const res = await api.post(`/approval-requests/${id}/reject/`, {
@@ -541,12 +443,13 @@ export default function useApprovalDetails({
 
       // Add a system comment
       const systemComment: Comment = {
-        id: `comment-${Date.now()}`,
+        id: Date.now(), // Use timestamp as numeric ID
         user: "You",
         userRole: "Approver",
+        userInitials: "YO",
         text: `Request rejected. Reason: ${rejectionReason}`,
         timestamp: new Date().toISOString(),
-        userInitials: "YO",
+        read: ""
       };
 
       setComments([...comments, systemComment]);
@@ -559,140 +462,40 @@ export default function useApprovalDetails({
   };
 
   // Handle add comment
-  const handleAddComment = (requestId , id , commentText , name) => {
-    if (!newComment.trim()) return;
+  const handleAddComment = async () => {
+    if (!newComment.trim() || !form) return;
 
     try {
-            const commentData = {
-              form: requestId,
-              sender: id,
-              message: commentText,
-            };
-    
-            const response = await api.post(`/chats/`, commentData);
-    
-            const newCommentObj: Comment = {
-              id: response.data.id || Date.now(),
-              author: name || "You",
-              text: commentText,
-              timestamp: response.data.timestamp || new Date().toISOString(),
-              read: response.data.read || "",
-            };
-    
-            setComments((prevComments) => [...prevComments, newCommentObj]);
-          } catch (err:any) {
-            console.error("Error adding comment:", err);
-            setError("Failed to add comment");
-          }
-
-    setNewComment("");
-  };
-
-  // Fetch chat data
-  const fetchChatData = useCallback(async () => {
-    if (!id) return;
-
-    setIsChatLoading(true);
-    try {
-      // Use mock data instead - simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // For testing no chat state, uncomment this
-      // setChatRoom(null);
-
-      // For testing with chat data, uncomment this
-      setChatRoom(mockChatRoom);
-      setChatMessages(mockChatMessages);
-    } catch (err) {
-      console.error("Error fetching chat data:", err);
-    } finally {
-      setIsChatLoading(false);
-    }
-  }, [id]);
-
-  // Handle starting chat
-  const handleStartChat = async () => {
-    if (!form) return;
-
-    try {
-      // Use mock data instead - simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
-
-      // Create a new chat room
-      const newChatRoom: ChatRoom = {
-        id: `chat-room-${Date.now()}`,
-        user1: Number(form.user),
-        user2: currentUserId,
-      };
-
-      // Create a welcome message
-      const welcomeMessage: ChatMessage = {
-        id: `msg-${Date.now()}`,
-        chatroom: newChatRoom.id,
-        sender: currentUserId,
-        message: `Chat started by ${
-          enrichedForm?.user_name
-            ? "approver with " + enrichedForm.user_name
-            : "approver"
-        }. You can now discuss this request.`,
-        timestamp: new Date().toISOString(),
-        read: false,
-      };
-
-      setChatRoom(newChatRoom);
-      setChatMessages([welcomeMessage]);
-    } catch (err) {
-      console.error("Error starting chat:", err);
-      alert("Failed to start chat. Please try again.");
-    }
-  };
-
-  // Handle sending messages
-  const handleSendMessage = async () => {
-    if (!newComment.trim() || !chatRoom) return;
-
-    try {
-      // Create a new message object
-      const message = {
-        chatroom: chatRoom.id,
-        sender: currentUserId,
+      const commentData = {
+        form: form.id,
+        sender: currentUserId, // Current user ID (approver)
         message: newComment,
-        read: false,
       };
 
-      // Create a temp message for optimistic update
-      const tempMessage: ChatMessage = {
-        ...message,
-        id: `msg-${Date.now()}`,
-        timestamp: new Date().toISOString(),
+      // Make API call to post comment
+      const response = await api.post(`/chats/`, commentData);
+      
+      // Create a comment object from the API response
+      const newCommentObj: Comment = {
+        id: response.data.id,
+        user: response.data.sender?.name || response.data.sender?.username || "You",
+        userRole: "Approver",
+        userInitials: response.data.sender?.name ? response.data.sender.name.charAt(0) : "U",
+        text: response.data.message,
+        timestamp: response.data.timestamp,
+        read: response.data.read ? "true" : ""
       };
 
-      // Update UI immediately (optimistic update)
-      setChatMessages([...chatMessages, tempMessage]);
+      // Add to comments list
+      setComments((prevComments) => [...prevComments, newCommentObj]);
+      
+      // Clear comment input
       setNewComment("");
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 500));
     } catch (err) {
-      console.error("Error sending message:", err);
-      alert("Failed to send message. Please try again.");
-
-      // Restore comment in text area if it failed
-      setNewComment((prev) => prev || newComment);
-
-      // Remove optimistic message
-      setChatMessages((prev) =>
-        prev.filter((msg) => !msg.id.startsWith("msg-"))
-      );
+      console.error("Error adding comment:", err);
+      toast.error("Failed to add comment");
     }
   };
-
-  // Update the useEffect to fetch chat data when tab changes
-  useEffect(() => {
-    if (activeTab === "comments") {
-      fetchChatData();
-    }
-  }, [activeTab, fetchChatData]);
 
   return {
     form,
@@ -709,11 +512,7 @@ export default function useApprovalDetails({
     handleApprove,
     handleReject,
     handleAddComment,
-    chatRoom,
-    chatMessages,
     isChatLoading,
-    handleStartChat,
-    handleSendMessage,
     assestDetails
   };
 }
