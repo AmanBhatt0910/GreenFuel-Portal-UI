@@ -397,6 +397,11 @@ export default function useApprovalDetails({
       const enrichedData = await enrichApprovalData(formData);
       setEnrichedForm(enrichedData);
 
+      // Fetch asset details using the form ID from the response data
+      if (formData && formData.id) {
+        await fetchAssetDetails(formData.id);
+      }
+
       // Fetch comments (if available) or use mock data
       // const commentsResponse = await api.get(`/approval-comments/${id}/`);
       // setComments(commentsResponse.data); 
@@ -422,6 +427,17 @@ export default function useApprovalDetails({
       setLoading(false);
     }
   }, [id]);
+
+  // Renamed and updated fetch asset details function
+  const fetchAssetDetails = async(formId: number) => {
+    try {
+      const response = await api.get(`/approval-items/?form_id=${formId}`);
+      console.log("Asset details response:", response);
+      setassestDetails(response.data);
+    } catch (error:any) {
+      console.error("Error fetching asset details:", error?.message);
+    }
+  };
 
   useEffect(() => {
     if (id) {
@@ -580,16 +596,6 @@ export default function useApprovalDetails({
       setIsChatLoading(false);
     }
   }, [id]);
-
-  const assestDetail = async(formId : number)=>{
-    try {
-      const response = await api.get(`approval-items?form_id=${formId}`);
-      console.log(response);
-      setassestDetails(response.data);
-    } catch (error:any) {
-      console.log(error?.message)
-    }
-  }
 
   // Handle starting chat
   const handleStartChat = async () => {

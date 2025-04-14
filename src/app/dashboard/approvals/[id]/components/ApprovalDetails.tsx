@@ -2,7 +2,8 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { numberToWords } from '@/app/dashboard/approvals/components/utils';
-import { InfoIcon, DollarSign, BarChart2 } from 'lucide-react';
+import { InfoIcon, DollarSign, BarChart2, Package } from 'lucide-react';
+import AssetDetailsTable from '@/app/dashboard/approvals/components/AssetDetailsTable';
 
 interface ApprovalDetailsProps {
   enrichedForm: any;
@@ -10,7 +11,7 @@ interface ApprovalDetailsProps {
   assestDetail : any;
 }
 
-export default function ApprovalDetails({ enrichedForm, loading , assestDetail}: ApprovalDetailsProps) {
+export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: ApprovalDetailsProps) {
 
   console.log(assestDetail);
 
@@ -85,6 +86,23 @@ export default function ApprovalDetails({ enrichedForm, loading , assestDetail}:
               </div>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Assets Details */}
+      <Card className="mb-6 overflow-hidden">
+        <div className="bg-gradient-to-r from-purple-500 to-pink-600 h-1.5" />
+        <CardHeader className="bg-purple-50 dark:bg-purple-900/10 border-b">
+          <CardTitle className="text-xl flex items-center text-purple-800 dark:text-purple-400">
+            <Package className="h-5 w-5 mr-2" />
+            Asset Details
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <AssetDetailsTable 
+            assets={Array.isArray(assestDetail) ? assestDetail : assestDetail ? [assestDetail] : []} 
+            isLoading={loading} 
+          />
         </CardContent>
       </Card>
 
