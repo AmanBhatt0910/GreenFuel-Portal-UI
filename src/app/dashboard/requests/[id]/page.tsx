@@ -130,16 +130,17 @@ const CommentInput: React.FC<CommentInputProps> = React.memo(
           placeholder="Add your comment..."
           value={inputValue}
           onChange={handleChange}
-          className="resize-none border-gray-300 focus:border-sky-500 focus:ring-sky-500 rounded-lg"
-          rows={3}
+          className="resize-none border-indigo-200 focus:border-indigo-500 focus:ring-indigo-500 rounded-lg min-h-[100px] shadow-sm bg-indigo-50/30"
         />
-        <Button
-          onClick={handleSubmit}
-          disabled={!inputValue.trim()}
-          className="ml-auto bg-sky-600 hover:bg-sky-700 text-white flex items-center transition-all duration-300 rounded-lg shadow-md hover:shadow-lg"
-        >
-          <Send className="h-4 w-4 mr-2" /> Add Comment
-        </Button>
+        <div className="flex justify-end">
+          <Button
+            onClick={handleSubmit}
+            disabled={!inputValue.trim()}
+            className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white flex items-center transition-all duration-300 rounded-lg shadow-md hover:shadow-lg"
+          >
+            <Send className="h-4 w-4 mr-2" /> Add Comment
+          </Button>
+        </div>
       </div>
     );
   }
@@ -154,21 +155,21 @@ interface CommentItemProps {
 const CommentItem: React.FC<CommentItemProps> = React.memo(
   ({ comment, formatDate }) => {
     return (
-      <div className="p-4 bg-sky-50 rounded-lg border border-sky-100 hover:shadow-md transition-shadow duration-300">
+      <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100 hover:shadow-md transition-shadow duration-300">
         <div className="flex items-center mb-3">
-          <Avatar className="h-9 w-9 mr-3 border-2 border-sky-200">
-            <AvatarFallback className="bg-gradient-to-br from-sky-400 to-sky-600 text-white">
+          <Avatar className="h-10 w-10 mr-3 border-2 border-blue-200 shadow-sm">
+            <AvatarFallback className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white font-medium">
               {comment.author.charAt(0)}
             </AvatarFallback>
           </Avatar>
           <div>
-            <p className="font-medium text-sky-900">{comment.author}</p>
-            <p className="text-xs text-sky-600">
+            <p className="font-medium text-indigo-900">{comment.author}</p>
+            <p className="text-xs text-indigo-600">
               {formatDate(comment.timestamp)}
             </p>
           </div>
         </div>
-        <p className="whitespace-pre-line text-gray-700">{comment.text}</p>
+        <p className="whitespace-pre-line text-gray-700 bg-white p-3 rounded-md border border-blue-100 shadow-sm">{comment.text}</p>
       </div>
     );
   }
@@ -184,11 +185,11 @@ const CommentsList: React.FC<CommentsListProps> = React.memo(
   ({ comments, formatDate }) => {
     if (comments.length === 0) {
       return (
-        <div className="text-center py-12">
-          <MessageSquare className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500 font-medium">No comments yet</p>
-          <p className="text-gray-400 text-sm mt-1">
-            Be the first to leave a comment
+        <div className="text-center py-12 bg-gradient-to-b from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
+          <MessageSquare className="h-14 w-14 text-blue-300 mx-auto mb-3 opacity-60" />
+          <p className="text-indigo-700 font-medium">No comments yet</p>
+          <p className="text-indigo-500 text-sm mt-1 max-w-md mx-auto">
+            Be the first to leave a comment on this request
           </p>
         </div>
       );
@@ -217,11 +218,11 @@ const DocumentsList: React.FC<DocumentsListProps> = React.memo(
   ({ documents }) => {
     if (documents.length === 0) {
       return (
-        <div className="text-center py-12">
-          <FileText className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+        <div className="text-center py-12 bg-gradient-to-b from-gray-50 to-white rounded-xl border border-gray-200">
+          <FileText className="h-14 w-14 text-gray-300 mx-auto mb-3 opacity-50" />
           <p className="text-gray-500 font-medium">No documents attached</p>
-          <p className="text-gray-400 text-sm mt-1">
-            Upload supporting documents for this request
+          <p className="text-gray-400 text-sm mt-1 max-w-md mx-auto">
+            Upload supporting documents for this request to provide additional information
           </p>
         </div>
       );
@@ -246,7 +247,7 @@ const DocumentsList: React.FC<DocumentsListProps> = React.memo(
           return (
             <div
               key={doc.id}
-              className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
+              className="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-200 hover:border-indigo-200 hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1"
             >
               <div className="flex items-center">
                 <div className="bg-gradient-to-br from-indigo-100 to-blue-100 p-3 rounded-lg mr-4 shadow-sm">
@@ -263,7 +264,7 @@ const DocumentsList: React.FC<DocumentsListProps> = React.memo(
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-indigo-200 hover:bg-indigo-50 text-indigo-700 rounded-lg"
+                  className="border-indigo-200 hover:bg-indigo-50 text-indigo-700 rounded-lg shadow-sm"
                   onClick={() => window.open(fullUrl, "_blank")}
                 >
                   <Eye className="h-4 w-4 mr-1" /> View
@@ -271,7 +272,7 @@ const DocumentsList: React.FC<DocumentsListProps> = React.memo(
                 <Button
                   variant="outline"
                   size="sm"
-                  className="border-indigo-200 hover:bg-indigo-50 text-indigo-700 rounded-lg"
+                  className="border-indigo-200 hover:bg-indigo-50 text-indigo-700 rounded-lg shadow-sm"
                   onClick={async () => {
                     try {
                       const response = await fetch(fullUrl);
@@ -725,30 +726,30 @@ const RequestDetailsPage: React.FC = () => {
       </AnimatePresence>
 
       {/* Header */}
-      <div className="bg-gradient-to-r from-sky-50 to-indigo-50 rounded-xl shadow-md p-6 mb-6 border-l-4 border-sky-500 hover:shadow-lg transition-all duration-300">
+      <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-sky-50 rounded-xl shadow-md p-6 mb-6 border-l-4 border-indigo-500 hover:shadow-lg transition-all duration-300">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2 flex items-center">
-              <Bookmark className="mr-2 h-6 w-6 text-sky-600" />
+              <Bookmark className="mr-2 h-6 w-6 text-indigo-600" />
               Budget Request {request.budget_id}
             </h1>
             <div className="flex items-center flex-wrap gap-3">
               <Badge
                 className={`px-3 py-1.5 text-sm font-medium ${
                   getStatusBadge(request.current_status).bgColor
-                } ${getStatusBadge(request.current_status).color} rounded-md`}
+                } ${getStatusBadge(request.current_status).color} rounded-md shadow-sm`}
               >
                 <span className="flex items-center">
                   {getStatusBadge(request.current_status).icon}
                   <span className="ml-1.5">{request.current_status}</span>
                 </span>
               </Badge>
-              <span className="text-sm text-gray-600 flex items-center bg-gray-100 px-3 py-1.5 rounded-md">
-                <CalendarDays className="h-4 w-4 mr-1.5 text-sky-600" />
+              <span className="text-sm text-gray-600 flex items-center bg-white px-3 py-1.5 rounded-md shadow-sm border border-gray-200">
+                <CalendarDays className="h-4 w-4 mr-1.5 text-indigo-600" />
                 {formatDate(request.date)}
               </span>
-              <span className="text-sm text-gray-600 flex items-center bg-gray-100 px-3 py-1.5 rounded-md">
-                <DollarSign className="h-4 w-4 mr-1.5 text-sky-600" />
+              <span className="text-sm text-gray-600 flex items-center bg-white px-3 py-1.5 rounded-md shadow-sm border border-gray-200">
+                <DollarSign className="h-4 w-4 mr-1.5 text-indigo-600" />
                 {request.total}
               </span>
             </div>
@@ -813,7 +814,6 @@ const RequestDetailsPage: React.FC = () => {
                           <p className="text-sm font-medium text-sky-700">
                             Budget ID
                           </p>
-                          <p className="text-base text-gray-
                           <p className="text-base text-gray-900 mt-1">
                             {request.budget_id}
                           </p>
@@ -880,16 +880,16 @@ const RequestDetailsPage: React.FC = () => {
                             )}
                           </p>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">
+                        <div className="bg-white p-3 rounded-md border border-amber-100">
+                          <p className="text-sm font-medium text-amber-700">
                             Department
                           </p>
                           <p className="text-base text-gray-900">
                             {getEntityName(departmentMap, request.department)}
                           </p>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">
+                        <div className="bg-white p-3 rounded-md border border-amber-100">
+                          <p className="text-sm font-medium text-amber-700">
                             Initiating Department
                           </p>
                           <p className="text-base text-gray-900">
@@ -901,8 +901,8 @@ const RequestDetailsPage: React.FC = () => {
                               : "Same as Department"}
                           </p>
                         </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-500">
+                        <div className="bg-white p-3 rounded-md border border-amber-100">
+                          <p className="text-sm font-medium text-amber-700">
                             Notify To
                           </p>
                           <p className="text-base text-gray-900">
@@ -917,29 +917,30 @@ const RequestDetailsPage: React.FC = () => {
 
                   <Separator className="my-6" />
 
-                  <div>
-                    <h3 className="font-medium text-gray-700 mb-4 text-lg">
+                  <div className="bg-indigo-50 p-5 rounded-xl border border-indigo-100 shadow-sm hover:shadow-md transition-all duration-300">
+                    <h3 className="font-medium text-indigo-800 mb-4 text-lg flex items-center">
+                      <FileText className="h-5 w-5 mr-2 text-indigo-600" />
                       Request Details
                     </h3>
                     <div className="space-y-4">
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">
+                      <div className="bg-white p-3 rounded-md border border-indigo-100">
+                        <p className="text-sm font-medium text-indigo-700">
                           Reason for Request
                         </p>
                         <p className="text-base text-gray-900 whitespace-pre-line mt-1">
                           {request.reason}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">
+                      <div className="bg-white p-3 rounded-md border border-indigo-100">
+                        <p className="text-sm font-medium text-indigo-700">
                           Benefit to Organization
                         </p>
                         <p className="text-base text-gray-900 whitespace-pre-line mt-1">
                           {request.benefit_to_organisation}
                         </p>
                       </div>
-                      <div>
-                        <p className="text-sm font-medium text-gray-500">
+                      <div className="bg-white p-3 rounded-md border border-indigo-100">
+                        <p className="text-sm font-medium text-indigo-700">
                           Policy Agreement
                         </p>
                         <p className="text-base mt-1">
@@ -955,7 +956,7 @@ const RequestDetailsPage: React.FC = () => {
                         </p>
                       </div>
                       {request.rejected && (
-                        <div>
+                        <div className="bg-red-50 p-3 rounded-md border border-red-100">
                           <p className="text-sm font-medium text-red-500">
                             Rejection Reason
                           </p>
@@ -967,15 +968,21 @@ const RequestDetailsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <AssetDetailsTable
-                    assets={
-                      Array.isArray(assestDetails)
-                        ? assestDetails
-                        : assestDetails
-                        ? [assestDetails]
-                        : []
-                    }
-                  />
+                  <div className="mt-6  p-5 rounded-xl border border-emerald-100 shadow-sm hover:shadow-md transition-all duration-300">
+                    <h3 className="font-medium text-emerald-800 mb-4 text-lg flex items-center">
+                      <BarChart className="h-5 w-5 mr-2 text-emerald-600" />
+                      Asset Details
+                    </h3>
+                    <AssetDetailsTable
+                      assets={
+                        Array.isArray(assestDetails)
+                          ? assestDetails
+                          : assestDetails
+                          ? [assestDetails]
+                          : []
+                      }
+                    />
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -991,11 +998,6 @@ const RequestDetailsPage: React.FC = () => {
                 <CardContent>
                   <DocumentsList documents={documents} />
                 </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    <PlusCircle className="h-4 w-4 mr-2" /> Add Document
-                  </Button>
-                </CardFooter>
               </Card>
             </TabsContent>
 
