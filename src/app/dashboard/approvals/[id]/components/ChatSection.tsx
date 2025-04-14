@@ -21,21 +21,17 @@ interface ChatSectionProps {
 }
 
 export default function ChatSection({
-  chatRoom,
   chatMessages,
   newComment,
   setNewComment,
-  handleStartChat,
   handleSendMessage,
   isChatLoading,
-  currentUserId = 1, // Default to approver ID
   comments,
   handleAddComment
 }: ChatSectionProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [chatTab, setChatTab] = React.useState<string>("history");
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
@@ -83,18 +79,10 @@ export default function ChatSection({
         <CardDescription>Communicate with the requester about this approval</CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="history" value={chatTab} onValueChange={setChatTab} className="mb-6">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="history" className="text-sm">
-              Chat History
-            </TabsTrigger>
-            <TabsTrigger value="live" className="text-sm">
-              Live Chat {!chatRoom && <span className="text-xs ml-1">(Start New)</span>}
-            </TabsTrigger>
-          </TabsList>
+       
           
           {/* Chat History Tab */}
-          <TabsContent value="history" className="mt-4">
+          <Card className="mt-4">
             {/* Message Input */}
             <div className="mb-6">
               <div className="flex gap-4">
@@ -151,103 +139,7 @@ export default function ChatSection({
                 ))
               )}
             </div>
-          </TabsContent>
-          
-          {/* Live Chat Tab */}
-          <TabsContent value="live" className="mt-4">
-            {!chatRoom ? (
-              // No chat room exists yet
-              <div className="text-center py-8">
-                <MessageSquarePlus className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <h3 className="text-lg font-medium mb-2">No live chat started yet</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Start a live chat with the requester to discuss this approval request in real-time.
-                </p>
-                <Button onClick={handleStartChat}>
-                  Start Live Chat
-                </Button>
-              </div>
-            ) : (
-              <>
-                {/* Live Chat Messages */}
-                <div className="mb-4 max-h-[400px] overflow-y-auto border rounded-md p-3">
-                  {chatMessages.length === 0 ? (
-                    <p className="text-center text-muted-foreground py-6">
-                      No messages yet. Start the conversation!
-                    </p>
-                  ) : (
-                    <div className="space-y-4">
-                      {chatMessages.map((message) => {
-                        const isCurrentUser = message.sender === currentUserId;
-                        const user = message.sender ? (users[message.sender as keyof typeof users] || { name: `User ${message.sender}`, designation: "Unknown" }) : { name: "Unknown", designation: "Unknown" };
-                        
-                        return (
-                          <div 
-                            key={message.id} 
-                            className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                          >
-                            <div className={`flex gap-2 max-w-[80%] ${isCurrentUser ? 'flex-row-reverse' : ''}`}>
-                              <Avatar className="h-8 w-8 mt-1">
-                                <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                                  {isCurrentUser ? 'YO' : 'TH'}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="flex items-baseline gap-2 mb-1">
-                                  <span className="font-medium text-sm">{user.name}</span>
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    {user.designation}
-                                  </span>
-                                </div>
-                                <div 
-                                  className={`rounded-lg px-3 py-2 text-sm ${
-                                    isCurrentUser 
-                                      ? 'bg-primary text-primary-foreground' 
-                                      : 'bg-gray-100 dark:bg-gray-800'
-                                  }`}
-                                >
-                                  {message.message}
-                                </div>
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  {new Date(message.timestamp).toLocaleString()}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      <div ref={messagesEndRef} />
-                    </div>
-                  )}
-                </div>
-
-                {/* Message Input */}
-                <div>
-                  <div className="flex gap-2">
-                    <Textarea
-                      value={newComment}
-                      onChange={(e) => setNewComment(e.target.value)}
-                      placeholder="Type your message..."
-                      className="min-h-[80px] flex-1"
-                      onKeyDown={handleKeyDown}
-                    />
-                    <Button 
-                      className="self-end"
-                      onClick={handleSendMessage}
-                      disabled={!newComment.trim()}
-                    >
-                      <Send className="h-4 w-4" />
-                      <span className="sr-only">Send</span>
-                    </Button>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Press Ctrl+Enter to send
-                  </p>
-                </div>
-              </>
-            )}
-          </TabsContent>
-        </Tabs>
+          </Card>
       </CardContent>
     </Card>
   );
