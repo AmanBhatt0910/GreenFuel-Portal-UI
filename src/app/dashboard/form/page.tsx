@@ -379,7 +379,7 @@ export default function AssetRequestForm() {
         form_category: formData.category,
         concerned_department: formData.concerned_department,
         current_category_level: currentCategoryLevel,
-        current_form_level: currentFormLevel,
+        current_form_level: 1,
         rejected: false,
         rejection_reason: null,
         items: formData.assets.map((asset) => ({
