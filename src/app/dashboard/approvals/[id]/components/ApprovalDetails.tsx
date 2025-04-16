@@ -2,18 +2,17 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { numberToWords } from '@/app/dashboard/approvals/components/utils';
-import { InfoIcon, DollarSign, BarChart2, Package } from 'lucide-react';
+import { InfoIcon, DollarSign, BarChart2, Package, IndianRupee, Calendar, FileText, Activity, Target } from 'lucide-react';
 import AssetDetailsTable from '@/app/dashboard/approvals/components/AssetDetailsTable';
 
 interface ApprovalDetailsProps {
   enrichedForm: any;
   loading: boolean;
-  assestDetail : any;
+  assestDetail: any;
 }
 
 export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: ApprovalDetailsProps) {
-
-  console.log(assestDetail);
+  console.log(enrichedForm);
 
   if (loading || !enrichedForm) {
     return (
@@ -38,6 +37,17 @@ export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: 
     currency: 'INR',
     maximumFractionDigits: 0
   }).format(Number(enrichedForm.total));
+  
+  // Format date
+  const formatDate = (dateString: string | number | Date) => {
+    if (!dateString) return "Not specified";
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
 
   return (
     <>
@@ -46,8 +56,8 @@ export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: 
         <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-1.5" />
         <CardHeader className="bg-green-50 dark:bg-green-900/10 border-b">
           <CardTitle className="text-xl flex items-center text-green-800 dark:text-green-400">
-            <DollarSign className="h-5 w-5 mr-2" />
-            Financial Information
+            <IndianRupee className="h-5 w-5 mr-2" />
+            Budget Information
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
@@ -59,7 +69,7 @@ export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: 
                 Total Amount
               </h3>
               <p className="text-3xl font-bold text-green-700 dark:text-green-400">{formattedTotal}</p>
-              <p className="text-sm text-green-600/70 dark:text-green-500/70 mt-2 italic">
+              <p className="text-sm font-semibold text-green-600/80 dark:text-green-500/70 mt-2 italic">
                 {amountInWords} Rupees Only
               </p>
             </div>
@@ -75,17 +85,28 @@ export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: 
                   <span className="text-sm text-gray-500 dark:text-gray-400">Budget ID:</span>
                   <p className="text-lg font-semibold">{enrichedForm.budget_id || "Not specified"}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-blue-500" />
-                  <span className="text-sm font-medium text-blue-700 dark:text-blue-400">Budget Status: Allocated</span>
+                <div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Approval Category:</span>
+                  <p className="text-lg font-semibold">{enrichedForm.approval_category || "Not specified"}</p>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="h-3 w-3 rounded-full bg-green-500" />
-                  <span className="text-sm font-medium text-green-700 dark:text-green-400">Within Budget: Yes</span>
+                <div>
+                  <span className="text-sm text-gray-500 dark:text-gray-400">Approval Type:</span>
+                  <p className="text-lg font-semibold">{enrichedForm.approval_type || "Not specified"}</p>
                 </div>
               </div>
             </div>
           </div>
+          
+          {/* Payback Period */}
+          {enrichedForm.payback_period && (
+            <div className="p-4 border border-amber-100 dark:border-amber-900/20 rounded-lg bg-amber-50/50 dark:bg-amber-900/5">
+              <h3 className="font-semibold text-base mb-2 flex items-center text-amber-700 dark:text-amber-400">
+                <Target className="h-4 w-4 mr-2" />
+                Payback Period
+              </h3>
+              <p className="text-lg font-semibold">{enrichedForm.payback_period}</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -113,6 +134,40 @@ export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: 
           <CardTitle className="text-xl text-blue-800 dark:text-blue-400">Request Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6 pt-6">
+          {/* Request Date */}
+          {/* <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <h3 className="font-semibold text-base mb-2 flex items-center">
+              <Calendar className="h-4 w-4 mr-2" />
+              Request Date
+            </h3>
+            <p className="text-foreground">{formatDate(enrichedForm.date)}</p>
+          </div> */}
+          
+          {/* Current Status */}
+          <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+            <h3 className="font-semibold text-base mb-2 flex items-center">
+              <Activity className="h-4 w-4 mr-2" />
+              Current Status
+            </h3>
+            <div className="flex items-center gap-2">
+              <div className={`h-3 w-3 rounded-full ${
+                enrichedForm.status === 'approved' ? 'bg-green-500' : 
+                enrichedForm.status === 'pending' ? 'bg-amber-500' : 
+                'bg-red-500'
+              }`} />
+              <span className={`font-medium ${
+                enrichedForm.status === 'approved' ? 'text-green-700 dark:text-green-400' : 
+                enrichedForm.status === 'pending' ? 'text-amber-700 dark:text-amber-400' : 
+                'text-red-700 dark:text-red-400'
+              }`}>
+                {enrichedForm.current_status || enrichedForm.status.charAt(0).toUpperCase() + enrichedForm.status.slice(1)}
+              </span>
+            </div>
+            <p className="text-sm text-gray-500 mt-2">
+              Approval Level: {enrichedForm.current_form_level} of {enrichedForm.form_max_level}
+            </p>
+          </div>
+
           {/* Reason */}
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
             <h3 className="font-semibold text-base mb-2">Reason for Request</h3>
@@ -124,6 +179,17 @@ export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: 
             <h3 className="font-semibold text-base mb-2 text-blue-800 dark:text-blue-400">Benefit to Organization</h3>
             <p className="text-foreground">{enrichedForm.benefit_to_organisation || "No benefit information provided"}</p>
           </div>
+          
+          {/* Document Enclosed Summary */}
+          {enrichedForm.document_enclosed_summary && (
+            <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
+              <h3 className="font-semibold text-base mb-2 flex items-center">
+                <FileText className="h-4 w-4 mr-2" />
+                Document Enclosed Summary
+              </h3>
+              <p className="text-foreground">{enrichedForm.document_enclosed_summary}</p>
+            </div>
+          )}
 
           {/* Policy Agreement */}
           <div className="p-4 border border-gray-200 dark:border-gray-700 rounded-lg">
@@ -136,10 +202,10 @@ export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: 
           </div>
 
           {/* Rejection Reason (Conditional) */}
-          {enrichedForm.rejected && (
+          {enrichedForm.rejected && enrichedForm.rejection_reason && enrichedForm.rejection_reason !== "null" && (
             <div className="p-4 border border-red-200 dark:border-red-900/30 rounded-lg bg-red-50/50 dark:bg-red-900/5">
               <h3 className="font-semibold text-base mb-2 text-red-700 dark:text-red-400">Rejection Reason</h3>
-              <p className="text-red-700 dark:text-red-400">{enrichedForm.rejection_reason || "No reason provided"}</p>
+              <p className="text-red-700 dark:text-red-400">{enrichedForm.rejection_reason}</p>
             </div>
           )}
         </CardContent>

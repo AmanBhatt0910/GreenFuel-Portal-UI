@@ -74,7 +74,7 @@ function ApprovalDetailsPage() {
   }
 
   return (
-    <div className="container max-w-7xl py-6 pb-32">
+    <div className="container max-w-full py-6 px-4 pb-32">
       <h1 className="sr-only">Approval Request Details - {form?.id}</h1>
 
       {/* Back Button */}
@@ -89,7 +89,7 @@ function ApprovalDetailsPage() {
       <ApprovalHeader enrichedForm={enrichedForm} loading={loading} />
 
       {/* Layout */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-3">
         {/* Main Content */}
         <div className="md:col-span-2">
           <Tabs 
@@ -99,17 +99,17 @@ function ApprovalDetailsPage() {
             className="mb-6"
           >
             {/* Tab Navigation */}
-            <TabsList className="grid w-full grid-cols-2 bg-muted rounded-md">
+            <TabsList className="grid w-full grid-cols-2 gap-2 bg-muted rounded-md">
               <TabsTrigger
                 value="details"
-                className="data-[state=active]:bg-indigo-500 data-[state=active]:text-white text-indigo-500 hover:bg-indigo-100"
+                className="data-[state=active]:bg-indigo-500/80 data-[state=active]:text-white text-indigo-500 hover:bg-indigo-100 rounded-2xl"
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Details
               </TabsTrigger>
               <TabsTrigger
                 value="comments"
-                className="data-[state=active]:bg-green-500 data-[state=active]:text-white text-green-500 hover:bg-green-100"
+                className="data-[state=active]:bg-green-500 bg-green-200/40 data-[state=active]:text-white text-green-500 hover:bg-green-100 rounded-2xl"
               >
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Chat

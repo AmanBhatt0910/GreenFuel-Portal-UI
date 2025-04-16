@@ -81,7 +81,7 @@ export default function useApprovalDetails({
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [isChatLoading, setIsChatLoading] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<number>(1); // Mock current user ID (approver)
+  const [currentUserId, setCurrentUserId] = useState<number>(1);
 
   // Add enriched data state
   const [enrichedForm, setEnrichedForm] = useState<any>(null);
@@ -275,6 +275,7 @@ export default function useApprovalDetails({
 
       const response = await api.get(`/approval-requests/${id}/`);
       const formData = response.data;
+      console.log(formData)
 
       setForm(formData);
 

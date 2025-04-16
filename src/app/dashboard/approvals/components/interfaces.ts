@@ -40,8 +40,8 @@ export interface ApprovalForm {
   approval_category: string;
   approval_type: string;
   notify_to: string | number;
-  current_level: number;
-  max_level: number;
+  current_form_level: number;
+  form_max_level: number;
   rejected: boolean;
   rejection_reason: string | null;
   budget_id: string;

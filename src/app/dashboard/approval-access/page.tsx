@@ -31,35 +31,9 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Approver, BusinessUnit, Department, User } from './types';
 
 // Type definitions
-interface User {
-  id: number;
-  name: string;
-  email?: string;
-}
-
-interface BusinessUnit {
-  id: number;
-  name: string;
-}
-
-interface Department {
-  id: number;
-  name: string;
-  business_unit: number;
-}
-
-interface Approver {
-  id?: number;
-  user: number;
-  business_unit: number;
-  department: number;
-  level: number;
-  user_details?: User;
-  business_unit_details?: BusinessUnit;
-  department_details?: Department;
-}
 
 const ApprovalAccessPage = () => {
   const api = useAxios();
@@ -104,16 +78,14 @@ const ApprovalAccessPage = () => {
     const fetchData = async () => {
       setLoading(true);
       try {
-        // Fetch users
+        
         const usersResponse = await api.get('/userInfo/');
         console.log('Users data:', usersResponse.data);
         
-        // Make sure we handle the user data correctly whether it's an array or not
         const userData = Array.isArray(usersResponse.data) 
           ? usersResponse.data 
           : [usersResponse.data];
         
-        // Map to the expected User interface format
         const formattedUsers = userData.map(user => ({
           id: user.id,
           name: user.name || user.username || `User ${user.id}`,
@@ -122,11 +94,9 @@ const ApprovalAccessPage = () => {
         
         setUsers(formattedUsers);
         
-        // Fetch business units
         const businessUnitsResponse = await api.get('/business-units/');
         setBusinessUnits(businessUnitsResponse.data);
         
-        // Fetch all departments for all business units
         const allDepartmentsPromises = businessUnitsResponse.data.map(async (bu: BusinessUnit) => {
           try {
             const deptResponse = await api.get(`/departments/?business_unit=${bu.id}`);
@@ -141,7 +111,6 @@ const ApprovalAccessPage = () => {
         const allDepartments = allDepartmentsArrays.flat();
         console.log('All departments:', allDepartments);
         
-        // Fetch existing approvers
         const approversResponse = await api.get('/approver/' , {
           params: {
             type: "approver"
@@ -158,7 +127,7 @@ const ApprovalAccessPage = () => {
             }))
           : [];
         
-        console.log('Enriched approvers with department details:', enrichedApprovers);
+        // console.log('Enriched approvers with department details:', enrichedApprovers);
         setApprovers(enrichedApprovers);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -245,9 +214,7 @@ const ApprovalAccessPage = () => {
     
     setLoading(true);
     try {
-      console.log('Submitting approver data:', formData);
       const response = await api.post('/approver/', formData);
-      console.log('Approver creation response:', response.data);
       
       // Find user, business unit, and department details
       const selectedUser = users.find(u => u.id === formData.user);
@@ -255,15 +222,12 @@ const ApprovalAccessPage = () => {
       
       // Get the actual department object with name
       const selectedDepartment = departments.find(dept => dept.id === formData.department);
-      console.log('Selected department:', selectedDepartment);
       
       if (!selectedDepartment) {
         console.warn('Department not found in local state, fetching again');
         try {
           const deptResponse = await api.get(`/departments/${formData.department}/`);
-          console.log('Fetched department details:', deptResponse.data);
           
-          // Update approvers list with the new entry including all details
           setApprovers(prev => [
             ...prev, 
             {
@@ -275,7 +239,6 @@ const ApprovalAccessPage = () => {
           ]);
         } catch (deptError) {
           console.error('Error fetching department details:', deptError);
-          // Fallback to adding without department details
           setApprovers(prev => [
             ...prev, 
             {
@@ -286,7 +249,6 @@ const ApprovalAccessPage = () => {
           ]);
         }
       } else {
-        // Update approvers list with the new entry including all details
         setApprovers(prev => [
           ...prev, 
           {
@@ -297,8 +259,6 @@ const ApprovalAccessPage = () => {
           }
         ]);
       }
-      
-      // Reset form
       setFormData({
         user: 0,
         business_unit: 0,
