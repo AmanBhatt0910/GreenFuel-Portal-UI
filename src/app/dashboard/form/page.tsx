@@ -92,8 +92,8 @@ const getInitialFormData = (): FormDataType => ({
   approvalCategory: "",
   approvalType: "",
   notifyTo: 0,
-  category: 0, // Default category value
-  concerned_department: 0, // Default concerned department value
+  category: 0, 
+  concerned_department: 0,
   paybackmonth : "",
   documentsSummary : "",
 });
@@ -113,21 +113,18 @@ export default function AssetRequestForm() {
 
   const api = useAxios();
 
-  // Pre-fill form data with user information when userInfo is available
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await api.get("/userInfo/");
         const userData = response.data;
+        console.log(userInfo)
         setUser(userData);
 
-        // Create a merged data object with values from both userInfo context and API response
         const mergedUserData = {
-          // Basic info
           name: userInfo?.name || userData?.name || "",
           employeeCode: userInfo?.employee_code || userData?.employee_code || "",
           
-          // Organizational info - properly handle both object and primitive value cases
           businessUnit: typeof userData?.business_unit === 'object' 
             ? userData?.business_unit?.id || 0 
             : userData?.business_unit || 0,
@@ -140,7 +137,6 @@ export default function AssetRequestForm() {
             ? userData?.designation?.id || 0 
             : userData?.designation || 0
         };
-        // Apply all the data at once to prevent multiple renders
         setFormData((prevData) => ({
           ...prevData,
           employeeName: mergedUserData.name,
@@ -155,7 +151,8 @@ export default function AssetRequestForm() {
     };
     
     fetchData();
-  }, [userInfo]); // Re-run when userInfo changes
+  }, [userInfo]);
+
 
   // State for asset management
   const [currentAsset, setCurrentAsset] = useState<AssetItem>({
@@ -391,14 +388,16 @@ export default function AssetRequestForm() {
         })),
       };
 
+      console.log(submittingFormData)
+
       formDataToSubmit.append("user", String(submittingFormData.user || 0));
       formDataToSubmit.append("business_unit", String(submittingFormData.business_unit));
       formDataToSubmit.append("department", String(submittingFormData.department));
       formDataToSubmit.append("designation", String(submittingFormData.designation));
       formDataToSubmit.append("total", String(submittingFormData.total));
       formDataToSubmit.append("reason", submittingFormData.reason);
-      formDataToSubmit.append("documentsSummary", submittingFormData.documentsSummary || "");
-      formDataToSubmit.append("paybackmonth", submittingFormData.paybackmonth || "");
+      formDataToSubmit.append("document_enclosed_summary", submittingFormData.documentsSummary || "");
+      formDataToSubmit.append("payback_period", submittingFormData.paybackmonth || "");
       formDataToSubmit.append("policy_agreement", String(submittingFormData.policy_agreement));
       formDataToSubmit.append("initiate_dept", submittingFormData.initiate_dept ? String(submittingFormData.initiate_dept) : "");
       formDataToSubmit.append("status", "pending");
@@ -494,46 +493,44 @@ export default function AssetRequestForm() {
     }
   };
 
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const generatePDF = async (): Promise<void> => {
+    let businessUnitName: string = "N/A";
+    let departmentName: string = "N/A";
+    let designationName: string = "N/A";
 
-  const generatePDF = async () => {
-    let businessUnitName = "N/A";
-    let departmentName = "N/A";
-    let designationName = "N/A";
-
+    // console.log(formData)
+    console.log(userInfo)
+  
     try {
       // Fetch business unit name
       if (formData.plant) {
         const businessUnitResponse = await api.get(
           `business-units/${formData.plant}/`
         );
+      
         if (businessUnitResponse.data && businessUnitResponse.data.name) {
           businessUnitName = businessUnitResponse.data.name;
         }
       }
 
-      // Fetch department name
-      if (formData.department) {
+      
+
+      if (formData.initiateDept) {
         const departmentResponse = await api.get(
-          `/departments/?business_unit=${formData.plant}`
+          `/departments/${formData.initiateDept}/`
         );
-        if (departmentResponse.data) {
+
+        if (departmentResponse.data && departmentResponse.data.name) {
           departmentName = departmentResponse.data.name;
         }
       }
-
+  
       // Fetch designation name
       if (formData.designation) {
         const designationResponse = await api.get(
-          `/designations/?department=${formData.initiateDept}`
+          `/designations/${formData.designation}/`
         );
+        
         if (designationResponse.data && designationResponse.data.name) {
           designationName = designationResponse.data.name;
         }
@@ -541,27 +538,22 @@ export default function AssetRequestForm() {
     } catch (error) {
       console.error("Error fetching entity names:", error);
     }
-
+  
     // Create a new PDF document
     const doc = new jsPDF({
       orientation: "portrait",
       unit: "mm",
       format: "a4",
     });
-
-    const timeline: { approval: string; processing: string; delivery: string } =
-      getEstimatedTimeline();
-
-    // Define colors
-    const primaryColor = [0, 102, 51]; // Green
-    const secondaryColor = [0, 71, 36]; // Darker green
-    const accentColor = [0, 153, 76]; // Lighter green
-    const grayColor = [100, 100, 100];
-    const lightGrayBg = [248, 250, 248];
-
-    // Add company logo
+  
+    // Define a simpler, more professional color scheme
+    const primaryColor: [number, number, number] = [44, 62, 80]; // Dark blue-gray
+    const accentColor: [number, number, number] = [52, 152, 219]; // Bright blue
+    const textColor: [number, number, number] = [50, 50, 50]; // Dark gray for text
+    const lightGrayBg: [number, number, number] = [245, 245, 245]; // Light gray for backgrounds
+  
     try {
-      const imgData = "/green.png"; // Path to logo in assets folder
+      const imgData: string = "/green.png"; 
       doc.addImage(imgData, "PNG", 14, 10, 30, 15);
     } catch (error) {
       console.error("Error adding logo:", error);
@@ -571,65 +563,61 @@ export default function AssetRequestForm() {
       doc.setFont("helvetica", "bold");
       doc.text("GREEN CORP", 14, 20);
     }
-
-    // Document title
-    doc.setFontSize(22);
+  
+    // Document title with cleaner styling
+    doc.setFontSize(20);
     doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.setFont("helvetica", "bold");
     doc.text("ASSET REQUEST", 105, 20, { align: "center" });
-
+  
     // Document subtitle with request ID
-    doc.setFontSize(14);
-    doc.setTextColor(secondaryColor[0], secondaryColor[1], secondaryColor[2]);
+    doc.setFontSize(12);
+    doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
     doc.text(`Request #${budgetId}`, 105, 28, { align: "center" });
-
-    // Add header decorative element - improved contrast
-    doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
-    doc.rect(0, 35, 210, 12, "F");
-
-    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setLineWidth(1);
+  
+    // Add simple divider line
+    doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
+    doc.setLineWidth(0.5);
     doc.line(14, 35, 196, 35);
-
-    // Date and confidentiality - ensuring proper alignment
+  
+    // Date and confidentiality
     doc.setFontSize(9);
-    doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     doc.setFont("helvetica", "normal");
     doc.text(`Generated: ${format(new Date(), "MMMM dd, yyyy")}`, 14, 42);
     doc.text("CONFIDENTIAL - INTERNAL USE ONLY", 196, 42, { align: "right" });
-
-    // Add decorative element
-    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setLineWidth(0.5);
-    doc.line(14, 47, 196, 47);
-
-    // Introduction paragraph - improved line spacing
+  
+    // Introduction paragraph
     doc.setFontSize(10);
-    doc.setTextColor(50, 50, 50);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     doc.setFont("helvetica", "normal");
     const introText: string =
       "This document contains a formal request for company assets as submitted through the Asset Management System. The request is subject to approval according to company policies and budgetary constraints. Please review all details carefully before proceeding with the approval process.";
     const splitIntro: string[] = doc.splitTextToSize(introText, 180);
     doc.text(splitIntro, 14, 55);
-
+  
     let y: number = 55 + splitIntro.length * 5 + 8;
-
-    // REQUESTOR INFORMATION SECTION
+  
+    // REQUESTOR INFORMATION SECTION - cleaner header
     addSectionHeader(doc, "REQUESTOR INFORMATION", y, primaryColor);
-    y += 8;
-
+    y += 10;
+  
+    // Add subtle background for section content
+    doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
+    doc.rect(14, y, 182, 38, "F");
+  
     // Create two-column layout for requestor info
-    const leftColX = 14;
-    const rightColX = 110;
-    const labelWidth = 40;
-
+    const leftColX: number = 20;
+    const rightColX: number = 110;
+    const labelWidth: number = 40;
+  
     // Add field labels and values
     addLabelValuePair(
       doc,
       "Name:",
       formData.employeeName,
       leftColX,
-      y,
+      y + 8,
       labelWidth
     );
     addLabelValuePair(
@@ -637,17 +625,16 @@ export default function AssetRequestForm() {
       "Submission Date:",
       format(new Date(), "MMMM dd, yyyy"),
       rightColX,
-      y,
+      y + 8,
       labelWidth
     );
-    y += 8;
-
+  
     addLabelValuePair(
       doc,
       "Employee ID:",
       formData.employeeCode,
       leftColX,
-      y,
+      y + 16,
       labelWidth
     );
     addLabelValuePair(
@@ -655,17 +642,16 @@ export default function AssetRequestForm() {
       "Business Unit:",
       businessUnitName,
       rightColX,
-      y,
+      y + 16,
       labelWidth
     );
-    y += 8;
-
+  
     addLabelValuePair(
       doc,
       "Department:",
       departmentName,
       leftColX,
-      y,
+      y + 24,
       labelWidth
     );
     addLabelValuePair(
@@ -673,17 +659,16 @@ export default function AssetRequestForm() {
       "Designation:",
       designationName,
       rightColX,
-      y,
+      y + 24,
       labelWidth
     );
-    y += 8;
-
+  
     addLabelValuePair(
       doc,
       "Request Status:",
       "Pending Approval",
       leftColX,
-      y,
+      y + 32,
       labelWidth
     );
     addLabelValuePair(
@@ -691,19 +676,32 @@ export default function AssetRequestForm() {
       "Approval Level:",
       "Initial",
       rightColX,
-      y,
+      y + 32,
       labelWidth
     );
-
-    y += 16;
-
-    // ASSET SUMMARY SECTION - improved table formatting
+  
+    y += 48;
+  
+    // ASSET SUMMARY SECTION
     addSectionHeader(doc, "ASSET SUMMARY", y, primaryColor);
     y += 10;
-
+  
+    interface TableColumn {
+      header: string;
+      dataKey: string;
+    }
+  
+    interface TableRow {
+      asset: string;
+      description: string;
+      sapCode: string;
+      qty: string;
+      unitPrice: string;
+      total: string;
+    }
+  
     if (formData.assets && formData.assets.length > 0) {
-      // Improved table columns with proper width distribution
-      const tableColumn: { header: string; dataKey: string }[] = [
+      const tableColumn: TableColumn[] = [
         { header: "Asset", dataKey: "asset" },
         { header: "Description", dataKey: "description" },
         { header: "SAP Code", dataKey: "sapCode" },
@@ -711,8 +709,8 @@ export default function AssetRequestForm() {
         { header: "Unit Price", dataKey: "unitPrice" },
         { header: "Total", dataKey: "total" },
       ];
-
-      const tableRows = formData.assets.map((asset) => ({
+  
+      const tableRows: TableRow[] = formData.assets.map((asset) => ({
         asset: asset.title,
         description: asset.description || "-",
         sapCode: asset.sapItemCode || "N/A",
@@ -723,8 +721,8 @@ export default function AssetRequestForm() {
         ),
         total: formatCurrency(Number(asset.total)).replace("₹", "INR "),
       }));
-
-      // Improved table formatting with better column widths
+  
+      // Clean, professional table styling
       autoTable(doc, {
         head: [tableColumn.map((col) => col.header)],
         body: tableRows.map((row) => [
@@ -738,7 +736,7 @@ export default function AssetRequestForm() {
         startY: y,
         styles: {
           fontSize: 9,
-          cellPadding: 3,
+          cellPadding: 4,
           overflow: "linebreak",
           lineWidth: 0.1,
         },
@@ -756,11 +754,13 @@ export default function AssetRequestForm() {
           fontStyle: "bold",
           halign: "left",
         },
-        alternateRowStyles: { fillColor: [245, 250, 245] },
+        alternateRowStyles: { fillColor: [lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]] },
         footStyles: {
-          fillColor: [240, 248, 240],
+          fillColor: [accentColor[0], accentColor[1], accentColor[2]],
+          textColor: [255, 255, 255],
           fontStyle: "bold",
           halign: "right",
+          fontSize: 10,
         },
         foot: [
           [
@@ -772,214 +772,85 @@ export default function AssetRequestForm() {
             formatCurrency(Number(formData.assetAmount)).replace("₹", "INR "),
           ],
         ],
-        didDrawPage: (data) => {
-          // Ensure footer appears on every page of the table
-          doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-          doc.rect(0, 287, 210, 10, "F");
-
-          doc.setFontSize(8);
-          doc.setTextColor(255, 255, 255);
-          doc.text(
-            `Request #${budgetId} | Page ${doc.getNumberOfPages()} of ${doc.getNumberOfPages()}`,
-            105,
-            293,
-            { align: "center" }
-          );
-          doc.text(`Asset Management System`, 14, 293);
-          doc.text(`Confidential Document`, 196, 293, { align: "right" });
-        },
       });
-
-      y = (doc as any).lastAutoTable.finalY + 15;
+  
+      interface AutoTableOutput {
+        finalY: number;
+      }
+      
+      const lastTable = (doc as any).lastAutoTable as AutoTableOutput;
+      y = lastTable?.finalY !== undefined ? lastTable.finalY + 15 : y + 20;
     } else {
       doc.setFontSize(10);
-      doc.setTextColor(grayColor[0], grayColor[1], grayColor[2]);
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
       doc.text("No assets have been requested.", 14, y);
       y += 15;
     }
-
+  
     // Business Justification Section
     addSectionHeader(doc, "BUSINESS JUSTIFICATION", y, primaryColor);
-    y += 8;
-
-    // Add boxed justification
-    doc.setFillColor(248, 250, 248);
-    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    y += 10;
+  
+    // Add simple boxed justification
+    doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
+    doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
     doc.roundedRect(14, y, 182, 40, 2, 2, "FD");
-
+  
     doc.setFontSize(10);
-    doc.setTextColor(50, 50, 50);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     doc.setFont("helvetica", "normal");
-
+  
     // Handle multiline text for reason
     const splitReason: string[] = doc.splitTextToSize(
       formData.reason || "No justification provided",
       170
     );
     doc.text(splitReason, 19, y + 8);
-
+  
     y += 45;
-
+  
     // Benefits to Organization
     if (formData.benefitToOrg) {
+      // Check if we need to add a new page
+      if (y > 220) {
+        doc.addPage();
+        y = 20;
+      } else {
+        y += 5; // Add some spacing if on the same page
+      }
+      
       addSectionHeader(doc, "ORGANIZATIONAL BENEFITS", y, primaryColor);
-      y += 8;
-
-      // Add boxed benefits with proper padding
-      doc.setFillColor(248, 250, 248);
-      doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      y += 10;
+  
+      // Add boxed benefits
+      doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
+      doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
       doc.roundedRect(14, y, 182, 35, 2, 2, "FD");
-
+  
       doc.setFontSize(10);
-      doc.setTextColor(50, 50, 50);
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
       const splitBenefits: string[] = doc.splitTextToSize(
         formData.benefitToOrg,
         170
       );
       doc.text(splitBenefits, 19, y + 8);
-
+  
       y += 40;
     }
-
+  
     // Check if need to add a new page
-    if (y > 240) {
+    if (y > 220) {
       doc.addPage();
       y = 20;
     }
-
-    // APPROVAL WORKFLOW SECTION
-    addSectionHeader(doc, "APPROVAL WORKFLOW", y, primaryColor);
-    y += 10;
-
-    // Draw workflow steps
-    const workflowSteps: { title: string; status: string; date: string }[] = [
-      {
-        title: "Request Submitted",
-        status: "Complete",
-        date: format(new Date(), "MMM dd, yyyy"),
-      },
-      {
-        title: "Department Approval",
-        status: "Pending",
-        date: timeline.approval,
-      },
-      { title: "Financial Approval", status: "Pending", date: "TBD" },
-      {
-        title: "Procurement Process",
-        status: "Pending",
-        date: timeline.processing,
-      },
-      {
-        title: "Delivery & Handover",
-        status: "Pending",
-        date: timeline.delivery,
-      },
-    ];
-
-    // Draw workflow diagram with improved spacing and alignment
-    const startX: number = 25;
-    const colWidth: number = 35;
-
-    workflowSteps.forEach((step, index) => {
-      const x: number = startX + index * colWidth;
-
-      // Draw circle with better contrast
-      if (step.status === "Complete") {
-        doc.setFillColor(accentColor[0], accentColor[1], accentColor[2]);
-      } else {
-        doc.setFillColor(220, 220, 220);
-      }
-      doc.circle(x, y, 5, "F");
-
-      // Draw connecting line with improved visibility
-      if (index < workflowSteps.length - 1) {
-        doc.setDrawColor(150, 150, 150);
-        doc.setLineWidth(0.7);
-        doc.line(x + 5, y, x + colWidth - 5, y);
-      }
-
-      // Draw text with improved positioning and readability
-      doc.setFontSize(8);
-      doc.setTextColor(80, 80, 80);
-      doc.text(step.title, x, y + 10, { align: "center" });
-
-      // Draw status with better color contrast
-      doc.setFontSize(7);
-      if (step.status === "Complete") {
-        doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-      } else {
-        doc.setTextColor(120, 120, 120);
-      }
-      doc.text(step.status, x, y + 15, { align: "center" });
-
-      // Draw date with consistent formatting
-      doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
-      doc.text(step.date, x, y + 20, { align: "center" });
-    });
-
-    y += 30;
-
-    // ESTIMATED TIMELINE
-    addSectionHeader(doc, "ESTIMATED TIMELINE", y, primaryColor);
-    y += 10;
-
-    // Add timeline information in a box with better contrast
-    doc.setFillColor(248, 250, 248);
-    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.roundedRect(14, y, 182, 40, 2, 2, "FD");
-
-    doc.setFontSize(10);
-    doc.setTextColor(50, 50, 50);
-
-    // Add timeline details with better spacing
-    addLabelValuePair(
-      doc,
-      "Current Status:",
-      "Pending Department Approval",
-      20,
-      y + 8,
-      60
-    );
-    addLabelValuePair(
-      doc,
-      "Management Approval Expected:",
-      timeline.approval,
-      20,
-      y + 16,
-      85
-    );
-    addLabelValuePair(
-      doc,
-      "Procurement Process Expected:",
-      timeline.processing,
-      20,
-      y + 24,
-      85
-    );
-    addLabelValuePair(
-      doc,
-      "Estimated Delivery:",
-      timeline.delivery,
-      20,
-      y + 32,
-      85
-    );
-
-    y += 50;
-
+  
     // TERMS AND CONDITIONS
-    if (y > 240) {
-      doc.addPage();
-      y = 20;
-    }
-
     addSectionHeader(doc, "TERMS & CONDITIONS", y, primaryColor);
     y += 10;
-
+    
     doc.setFontSize(9);
-    doc.setTextColor(80, 80, 80);
-
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+  
     // Terms with better spacing
     const terms: string[] = [
       "1. All asset requests are subject to company approval policies and budget availability.",
@@ -988,141 +859,104 @@ export default function AssetRequestForm() {
       "4. Damaged or lost assets may result in financial liability as per company policy.",
       "5. Use of assets for purposes other than company business is strictly prohibited.",
     ];
-
+  
     terms.forEach((term) => {
       doc.text(term, 14, y);
       y += 6;
     });
-
+  
     // Policy agreement
     y += 5;
-    doc.setFillColor(240, 248, 240);
-    doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
+    doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
     doc.roundedRect(14, y, 182, 20, 2, 2, "FD");
-
+  
     doc.setFontSize(9);
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+    doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
     doc.setFont("helvetica", "bold");
     doc.text("Policy Agreement Confirmation", 19, y + 6);
-
+  
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(80, 80, 80);
+    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
     const policyText: string =
       "The requestor has acknowledged and agreed to comply with all company policies related to asset usage, maintenance, and return as specified in the Asset Management Procedure document (Ref: AMP-2023-01).";
     const splitPolicy: string[] = doc.splitTextToSize(policyText, 172);
     doc.text(splitPolicy, 19, y + 12);
-
-    // APPROVAL SECTION
-    y += 30;
-    if (y > 250) {
-      doc.addPage();
-      y = 20;
-    }
-
-    addSectionHeader(doc, "APPROVAL SECTION", y, primaryColor);
-    y += 10;
-
-    // Draw signature boxes
-    const signatureWidth: number = 80;
-    const signatureHeight: number = 35;
-    const leftSigX: number = 14;
-    const rightSigX: number = 116;
-
-    // Requestor signature box with better borders
-    doc.setDrawColor(150, 150, 150);
-    doc.setLineWidth(0.3);
-    doc.rect(leftSigX, y, signatureWidth, signatureHeight);
-
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text("Requestor", leftSigX + 2, y + 5);
-
-    doc.setFontSize(10);
-    doc.setTextColor(50, 50, 50);
-    doc.text(formData.employeeName, leftSigX + 40, y + 15, { align: "center" });
-
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text(
-      "Date: " + format(new Date(), "dd/MM/yyyy"),
-      leftSigX + 40,
-      y + 23,
-      { align: "center" }
-    );
-    doc.text("Employee ID: " + formData.employeeCode, leftSigX + 40, y + 30, {
-      align: "center",
-    });
-
-    // Approver signature box with consistent styling
-    doc.setDrawColor(150, 150, 150);
-    doc.rect(rightSigX, y, signatureWidth, signatureHeight);
-
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text("Department Approver", rightSigX + 2, y + 5);
-
-    doc.setFontSize(8);
-    doc.setTextColor(100, 100, 100);
-    doc.text("Signature: _________________________", rightSigX + 40, y + 15, {
-      align: "center",
-    });
-    doc.text("Name: _________________________", rightSigX + 40, y + 23, {
-      align: "center",
-    });
-    doc.text("Date: _________________________", rightSigX + 40, y + 30, {
-      align: "center",
-    });
-
-    // Footer for all pages
+  
+    // Add footers to all pages - fixing the overlapping issue
     const pageCount: number = doc.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
       doc.setPage(i);
-
-      // Add green footer bar
-      doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.rect(0, 287, 210, 10, "F");
-
-      // Footer text with improved alignment
+  
+      // Simple footer line
+      doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
+      doc.setLineWidth(0.5);
+      doc.line(14, 280, 196, 280);
+  
+      // Footer text - properly spaced to avoid overlapping
       doc.setFontSize(8);
-      doc.setTextColor(255, 255, 255);
-      doc.text(`Request #${budgetId} | Page ${i} of ${pageCount}`, 105, 293, {
+      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
+      
+      // Left-aligned text
+      doc.text(`Asset Management System`, 14, 287);
+      
+      // Center-aligned text
+      doc.text(`Request #${budgetId} | Page ${i} of ${pageCount}`, 105, 287, {
         align: "center",
       });
-      doc.text(`Asset Management System`, 14, 293);
-      doc.text(`Confidential Document`, 196, 293, { align: "right" });
+      
+      // Right-aligned text
+      doc.text(`Confidential Document`, 196, 287, { align: "right" });
     }
+    
     doc.save(`Asset_Request_${budgetId}.pdf`);
   };
-
-  // Helper function to add section headers
-  function addSectionHeader(doc: any, title: any, y: any, primaryColor: any) {
+  
+  // Helper function to add section headers - with cleaner styling
+  function addSectionHeader(
+    doc: any,
+    title: string,
+    y: number,
+    primaryColor: [number, number, number]
+  ): void {
+    // Use a clean, professional look for headers
     doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
     doc.rect(14, y, 182, 6, "F");
-
+  
     doc.setFontSize(10);
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.text(title, 17, y + 4);
   }
-
+  
   // Helper function to add label-value pairs
   function addLabelValuePair(
     doc: any,
-    label: any,
-    value: any,
-    x: any,
-    y: any,
-    labelWidth: any
-  ) {
+    label: string,
+    value: string | undefined,
+    x: number,
+    y: number,
+    labelWidth: number
+  ): void {
     doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
+    doc.setTextColor(80, 80, 80);
     doc.setFont("helvetica", "normal");
     doc.text(label, x, y);
-
+  
     doc.setTextColor(0, 0, 0);
     doc.setFont("helvetica", "bold");
     doc.text(value || "N/A", x + labelWidth, y);
+  }
+
+  
+  // Format currency with proper thousand separators
+  function formatCurrency(amount: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
   }
 
   // Render form step content
@@ -1219,27 +1053,6 @@ export default function AssetRequestForm() {
     }
   };
 
-  // Generate estimated timeline
-  const getEstimatedTimeline = () => {
-    const today = new Date();
-    const approvalDate = new Date(today);
-    approvalDate.setDate(today.getDate() + 3);
-
-    const processingDate = new Date(approvalDate);
-    processingDate.setDate(approvalDate.getDate() + 2);
-
-    const deliveryDate = new Date(processingDate);
-    deliveryDate.setDate(processingDate.getDate() + 5);
-
-    return {
-      approval: format(approvalDate, "MMM dd, yyyy"),
-      processing: format(processingDate, "MMM dd, yyyy"),
-      delivery: format(deliveryDate, "MMM dd, yyyy"),
-    };
-  };
-
-  const timeline = getEstimatedTimeline();
-
   return (
     <div className="container py-4 mx-auto max-w-[95%] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
       <CustomBreadcrumb
@@ -1295,14 +1108,6 @@ export default function AssetRequestForm() {
               </div>
               <div>
                 <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Department
-                </p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {formData.initiateDept}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
                   Submission Date
                 </p>
                 <p className="font-medium text-gray-900 dark:text-white">
@@ -1315,15 +1120,6 @@ export default function AssetRequestForm() {
                 </p>
                 <p className="font-medium text-gray-900 dark:text-white">
                   {formatCurrency(Number(formData.assetAmount))}
-                </p>
-              </div>
-            </div>
-
-            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg mb-4">
-              <div className="flex items-center">
-                <Clock className="h-4 w-4 text-blue-600 dark:text-blue-400 mr-2" />
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  Estimated Completion: {timeline.delivery}
                 </p>
               </div>
             </div>

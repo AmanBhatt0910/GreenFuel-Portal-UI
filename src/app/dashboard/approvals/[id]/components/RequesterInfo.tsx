@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Mail, Building2, Users, Briefcase, Calendar, MapPin, Phone, Bell } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import useAxios from '@/app/hooks/use-axios';
 
@@ -170,31 +169,39 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
 
   const notifyToDisplay = () => {
     if (isLoadingUsers) {
-      return <span className="text-muted-foreground italic">Loading users...</span>;
+      return "Loading users...";
     }
     
     if (notifyToUsers.length > 0) {
-      return (
-        <span className="text-gray-900 dark:text-gray-100">
-          {notifyToUsers.map(user => user.email || user.name).join(', ')}
-        </span>
-      );
+      return notifyToUsers.map(user => user.email || user.name).join(', ');
     }
     
-    return <span className="text-gray-900 dark:text-gray-100">Not specified</span>;
+    return enrichedForm.notify_to || "Not specified";
   };
 
   const concernedDepartmentDisplay = () => {
     if (isLoadingDepartment) {
-      return <span className="text-muted-foreground italic">Loading department...</span>;
+      return "Loading department...";
     }
     
     if (concernedDepartment) {
-      return <span className="text-gray-900 dark:text-gray-100">{concernedDepartment.name}</span>;
+      return concernedDepartment.name;
     }
     
-    return <span className="text-gray-900 dark:text-gray-100">{enrichedForm.concerned_department_name || "Not specified"}</span>;
+    return enrichedForm.concerned_department_name || "Not specified";
   };
+
+  // Information rows definition - this makes it easy to maintain and modify
+  const infoRows = [
+    // { key: "Designation", value: enrichedForm.designation_name || "Not specified" },
+    { key: "Department", value: enrichedForm.department_name || "Not specified" },
+    { key: "Business Unit", value: enrichedForm.business_unit_name || "Not specified" },
+    { key: "Concerned Dept", value: concernedDepartmentDisplay() },
+    { key: "Notify To", value: notifyToDisplay() },
+    { key: "Phone", value: user?.contact || enrichedForm.phone || "Not available" },
+    { key: "Location", value: user?.city || enrichedForm.location || "Not available" },
+    { key: "Joined", value: formatDate(user?.date_joined || "") }
+  ];
 
   return (
     <Card className="mb-6 shadow-sm">
@@ -223,93 +230,18 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
         
         <Separator />
         
-        {/* Info grid */}
-        <div className="grid grid-cols-2 gap-0">
-          {/* Left column items */}
-          <div className="border-r border-gray-100 dark:border-gray-800">
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center mb-1 text-indigo-600 dark:text-indigo-400">
-                <Briefcase className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">Designation</span>
+        {/* Clean two-column information layout with proper text wrapping */}
+        <div className="divide-y divide-gray-100 dark:divide-gray-800">
+          {infoRows.map((row, index) => (
+            <div key={index} className="grid grid-cols-5 w-full">
+              <div className="col-span-2 py-3 pl-4 font-bold text-gray-600 dark:text-gray-400 border-r border-gray-100 dark:border-gray-800">
+                {row.key}
               </div>
-              <div className="text-gray-900 dark:text-gray-100 font-medium">
-                {enrichedForm.designation_name || "Not specified"}
+              <div className="col-span-3 py-3 pl-4 pr-4 text-sm text-gray-900 dark:text-gray-100 break-words">
+                {row.value}
               </div>
             </div>
-            
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center mb-1 text-indigo-600 dark:text-indigo-400">
-                <Building2 className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">Business Unit</span>
-              </div>
-              <div className="text-gray-900 dark:text-gray-100 font-medium">
-                {enrichedForm.business_unit_name || "Not specified"}
-              </div>
-            </div>
-            
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center mb-1 text-indigo-600 dark:text-indigo-400">
-                <Bell className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">Notify To</span>
-              </div>
-              <div className="font-sm">
-                {notifyToDisplay()}
-              </div>
-            </div>
-            
-            <div className="p-4 border-b md:border-b-0 border-gray-100 dark:border-gray-800">
-              <div className="flex items-center mb-1 text-indigo-600 dark:text-indigo-400">
-                <MapPin className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">Location</span>
-              </div>
-              <div className="text-gray-900 dark:text-gray-100 font-medium">
-                {user?.city || "Not available"}
-              </div>
-            </div>
-          </div>
-          
-          {/* Right column items */}
-          <div>
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center mb-1 text-indigo-600 dark:text-indigo-400">
-                <Users className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">Department</span>
-              </div>
-              <div className="text-gray-900 dark:text-gray-100 font-medium">
-                {enrichedForm.department_name || "Not specified"}
-              </div>
-            </div>
-            
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center mb-1 text-indigo-600 dark:text-indigo-400">
-                <Building2 className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">Concerned Dept</span>
-              </div>
-              <div className="font-medium">
-                {concernedDepartmentDisplay()}
-              </div>
-            </div>
-            
-            <div className="p-4 border-b border-gray-100 dark:border-gray-800">
-              <div className="flex items-center mb-1 text-indigo-600 dark:text-indigo-400">
-                <Phone className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">Phone</span>
-              </div>
-              <div className="text-gray-900 dark:text-gray-100 font-medium">
-                {user?.contact || "Not available"}
-              </div>
-            </div>
-            
-            <div className="p-4">
-              <div className="flex items-center mb-1 text-indigo-600 dark:text-indigo-400">
-                <Calendar className="h-4 w-4 mr-2" />
-                <span className="text-sm font-medium">Joined</span>
-              </div>
-              <div className="text-gray-900 dark:text-gray-100 font-medium">
-                {formatDate(user?.date_joined || "")}
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </CardContent>
     </Card>

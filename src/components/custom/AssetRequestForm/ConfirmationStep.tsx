@@ -20,7 +20,6 @@ export const ConfirmationStep: React.FC<FormStepProps> = ({
   const [isExpanded, setIsExpanded] = useState(true);
   const api = useAxios();
 
-  // Fetch entity names
   useEffect(() => {
     const fetchData = async () => {
       try {

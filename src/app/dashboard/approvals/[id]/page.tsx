@@ -7,11 +7,11 @@ import { ArrowLeft, MessageSquare, FileText } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import useApprovalDetails from './hooks/useApprovalDetails';
 import ApprovalHeader from './components/ApprovalHeader';
-import ApprovalDetails from './components/ApprovalDetails';
 import RequesterInfo from './components/RequesterInfo';
 import ApprovalActions from './components/ApprovalActions';
 import ChatSection from './components/ChatSection';
 import LoadingState from './components/LoadingState';
+import ApprovalDetails from './components/ApprovalDetails';
 
 function ApprovalDetailsPage() {
   const params = useParams();

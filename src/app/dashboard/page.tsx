@@ -116,6 +116,7 @@ const DashboardPage: React.FC = () => {
   const fetchDepartment = async (id: number | string): Promise<void> => {
     try {
       const response = await api.get(`/departments/${id}/`);
+      console.log(response)
       setDepartment(response.data);
     } catch (error) {
       console.error("Error fetching department:", error);

@@ -46,6 +46,7 @@ export default function ChatSection({
     }
   };
 
+
   if (isChatLoading) {
     return (
       <Card className="mb-6">
