@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useContext } from "react";
 import useAxios from "@/app/hooks/use-axios";
 import {
   ApprovalForm,
@@ -16,6 +16,7 @@ import {
 } from "@/app/dashboard/approvals/components/interfaces";
 import { formatDate } from "@/app/dashboard/approvals/components/utils";
 import { toast } from "sonner";
+import { GFContext } from "@/context/AuthContext";
 
 interface UseApprovalDetailsProps {
   id: string;
@@ -81,7 +82,9 @@ export default function useApprovalDetails({
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [isChatLoading, setIsChatLoading] = useState(false);
-  const [currentUserId, setCurrentUserId] = useState<number>(1);
+  const { userInfo, setUserInfo } = useContext(GFContext);
+
+  const [currentUserId, setCurrentUserId] = useState<number>(userInfo?.id || 0);
 
   // Add enriched data state
   const [enrichedForm, setEnrichedForm] = useState<any>(null);
@@ -162,6 +165,8 @@ export default function useApprovalDetails({
       };
     }
   };
+
+  
 
   // Fetch business unit details
   const fetchBusinessUnitDetails = async (
@@ -317,6 +322,7 @@ export default function useApprovalDetails({
     try {
       setIsChatLoading(true);
       const response = await api.get(`/chats?form_id=${formId}`);
+      console.log(response)
       
       if (response.data && Array.isArray(response.data)) {
         // Map API response to Comment interface
@@ -469,14 +475,14 @@ export default function useApprovalDetails({
     try {
       const commentData = {
         form: form.id,
-        sender: currentUserId, // Current user ID (approver)
+        sender: currentUserId,
         message: newComment,
       };
 
-      // Make API call to post comment
+      
       const response = await api.post(`/chats/`, commentData);
       
-      // Create a comment object from the API response
+      
       const newCommentObj: Comment = {
         id: response.data.id,
         user: response.data.sender?.name || response.data.sender?.username || "You",
