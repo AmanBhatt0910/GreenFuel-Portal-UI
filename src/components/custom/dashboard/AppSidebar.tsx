@@ -173,7 +173,6 @@ const AppSidebar = () => {
   }
 
   const isItemVisible = (item: MenuItem): boolean => {
-    // Check username exclusions first
     if (
       item.excludeUsernames &&
       userInfo?.username &&
@@ -181,13 +180,18 @@ const AppSidebar = () => {
     ) {
       return false;
     }
-
+  
+    if (item.title === "Budget Approvals" && !userInfo?.is_budget_requester) {
+      return false;
+    }
+  
     return (
       item.roles.includes("all") ||
       item.roles.includes(userRole) ||
       (!!userInfo?.is_staff && item.roles.includes("admin"))
     );
   };
+  
 
   const filteredDashboardItems = DashboardItems.filter(isItemVisible);
   const filteredApprovalItems = ApprovalItems.filter(isItemVisible);
@@ -308,6 +312,7 @@ const AppSidebar = () => {
                   <CollapsibleContent className="pl-4 space-y-1 mt-1">
                     {filteredApprovalItems.map((item, index) => {
                       const isActive = pathname === item.url;
+                      
                       return (
                         <Link
                           key={index}
