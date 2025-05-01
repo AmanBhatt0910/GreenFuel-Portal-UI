@@ -9,31 +9,18 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Category, Approver, User, BusinessUnit, Department } from "./types";
 import {
   LayersIcon,
   UsersIcon,
-  Plus,
   Settings2,
-  ActivitySquare,
   UserPlus,
-  ListFilter,
-  RefreshCw,
-  HelpCircle,
-  ChevronUpIcon,
   Search,
 } from "lucide-react";
 import CategoryForm from "./CategoryForm";
@@ -58,7 +45,6 @@ const CategoryManagementContent: React.FC = () => {
   const [showScrollToTop, setShowScrollToTop] = useState(false);
 
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
-  const [approverSearchTerm, setApproverSearchTerm] = useState("");
 
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(categorySearchTerm.toLowerCase())

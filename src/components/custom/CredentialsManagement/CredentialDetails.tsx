@@ -26,18 +26,6 @@ export function CredentialDetails({
 }: CredentialDetailsProps) {
   if (!selectedUser) return null;
 
-  const renderStatusBadge = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case "active":
-        return <Badge className="bg-green-500 ">Active</Badge>;
-      case "inactive":
-        return <Badge className="bg-gray-500">Inactive</Badge>;
-      case "pending":
-        return <Badge className="bg-yellow-500">Pending</Badge>;
-      default:
-        return <Badge className="bg-gray-500">{status || "Unknown"}</Badge>;
-    }
-  };
 
   const designationMap = useMemo(() => {
     const map = new Map<number, string>();
