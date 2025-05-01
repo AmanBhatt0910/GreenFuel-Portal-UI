@@ -1,7 +1,5 @@
 import { BusinessUnit, Department, Designation, NewBusinessUnit, NewDepartment, NewDesignation, Approver, NewApprover } from './types';
 
-// Since useAxios is a hook, we need to pass the api instance to these functions
-// We can't call hooks directly in this file
 
 // Business Unit API calls
 export const fetchBusinessUnits = async (api: any): Promise<BusinessUnit[]> => {
@@ -47,7 +45,7 @@ export const deleteDepartment = async (api: any, id: string | number): Promise<v
   await api.delete(`/departments/${id}/`);
 };
 
-// Designation API calls (for employee roles)
+
 export const fetchDesignations = async (api: any, departmentId?: number): Promise<Designation[]> => {
   let url = '/designations/';
   if (departmentId) {
@@ -71,8 +69,8 @@ export const deleteDesignation = async (api: any, id: string | number): Promise<
   await api.delete(`/designations/${id}/`);
 };
 
-// Approver API calls
+
 export const createApprover = async (api: any, approver: NewApprover): Promise<Approver> => {
   const response = await api.post('/approvers/', approver);
   return response.data;
-}; 
+}

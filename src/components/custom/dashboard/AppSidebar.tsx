@@ -65,7 +65,7 @@ const ApprovalItems = [
     title: "Budget Approvals",
     url: "/dashboard/form",
     icon: CreditCard,
-    roles: ["manager", "approver"],
+    roles: ["user", "approver"],
     excludeUsernames: ["Admin"],
   },
   {

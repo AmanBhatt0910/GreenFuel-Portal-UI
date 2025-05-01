@@ -6,9 +6,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { BusinessUnit, BusinessUnitActionsProps } from './types';
+import { BusinessUnit, BusinessUnitActionsProps, Department } from './types';
 import { DepartmentItem } from './DepartmentItem';
-import { createDepartment, createDesignation } from './api';
+import { createDepartment, createDesignation, updateDepartment, deleteDepartment } from './api';
 import useAxios from '@/app/hooks/use-axios';
 import { toast } from '@/lib/toast-util';
 
@@ -30,15 +30,12 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
 }) => {
   const [newDepartmentName, setNewDepartmentName] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isAddDepartmentDialogOpen, setIsAddDepartmentDialogOpen] = useState(false);
   const [validationMessage, setValidationMessage] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  // New state for direct designation creation
   const [newDesignationName, setNewDesignationName] = useState('');
   const [isAddingDesignation, setIsAddingDesignation] = useState(false);
   const api = useAxios();
 
-  // Get active business unit
   const activeBusinessUnit = businessUnits.find(bu => bu.id === activeBusinessUnitId) || null;
 
   const handleAddDepartment = async () => {
@@ -47,13 +44,11 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
     setIsLoading(true);
     
     try {
-      // Make API call to create department
       const newDepartment = await createDepartment(api, {
         name: newDepartmentName,
         business_unit: Number(activeBusinessUnitId)
       });
       
-      // Update business units with the new department
       const updatedBusinessUnits = businessUnits.map(bu => {
         if (bu.id === activeBusinessUnitId) {
           return {
@@ -72,54 +67,6 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
       toast.error('Failed to create department');
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  // New function to add designation directly without dialog
-  const handleAddDesignation = async () => {
-    if (!newDesignationName.trim() || !selectedDepartmentId) return;
-    
-    setIsAddingDesignation(true);
-    
-    try {
-      // Make API call to create designation
-      const designationData = {
-        name: newDesignationName.trim(),
-        department: Number(selectedDepartmentId)
-      };
-      
-      const response = await api.post('/designations/', designationData);
-      const newDesignation = response.data;
-      
-      // Update business units with the new designation
-      const updatedBusinessUnits = businessUnits.map(bu => {
-        if (bu.id === activeBusinessUnitId) {
-          const updatedDepartments = bu.departments?.map(dept => {
-            if (dept.id?.toString() === selectedDepartmentId) {
-              return {
-                ...dept,
-                designations: [...(dept.designations || []), newDesignation]
-              };
-            }
-            return dept;
-          });
-          
-          return {
-            ...bu,
-            departments: updatedDepartments
-          };
-        }
-        return bu;
-      });
-      
-      setBusinessUnits(updatedBusinessUnits);
-      setNewDesignationName('');
-      toast.success('Designation added successfully');
-    } catch (error) {
-      console.error('Error creating designation:', error);
-      toast.error('Failed to create designation');
-    } finally {
-      setIsAddingDesignation(false);
     }
   };
 
@@ -148,26 +95,19 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
       return;
     }
     
-    // All checks passed
     setValidationMessage({
       message: "Validation successful! The department has designations configured.",
       type: "success"
     });
   };
 
-  // Filter departments based on search term
   const filteredDepartments = activeBusinessUnit?.departments?.filter(
     department => department.name.toLowerCase().includes(searchTerm.toLowerCase())
   ) || [];
 
-  // Get current department
-  const currentDepartment = activeBusinessUnit?.departments?.find(
-    d => d.id?.toString() === selectedDepartmentId
-  );
 
   return (
     <div className="space-y-2">
-      {/* Active Business Unit Info */}
       {activeBusinessUnit && (
         <div className="flex items-center">
           <Badge className="px-3 py-1 bg-green-50 text-green-700 border border-green-200">
@@ -213,42 +153,6 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
         </CardContent>
       </Card>
 
-      {/* Add Designation Form (when department is selected) */}
-      {selectedDepartmentId && currentDepartment && (
-        <Card className="border border-gray-200 mb-1">
-          <CardHeader className="pb-2 border-b border-gray-200">
-            <CardTitle className="text-lg flex items-center">
-              <BriefcaseIcon className="mr-2 h-5 w-5" />
-              Add Designation to {currentDepartment.name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-3">
-            <div className="flex gap-2">
-              <div className="relative flex-1">
-                <Input
-                  placeholder="Designation Name"
-                  value={newDesignationName}
-                  onChange={(e) => setNewDesignationName(e.target.value)}
-                  disabled={isAddingDesignation}
-                  className="h-9 border-gray-300"
-                />
-                {isAddingDesignation && (
-                  <div className="absolute right-3 top-2.5 animate-spin h-4 w-4 border-2 border-gray-300 rounded-full border-t-gray-600" />
-                )}
-              </div>
-              <Button
-                onClick={handleAddDesignation}
-                disabled={!newDesignationName.trim() || isAddingDesignation}
-                className="h-9 bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <Plus className="mr-1 h-4 w-4" /> Add Designation
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Search and Filters */}
       {activeBusinessUnit?.departments && activeBusinessUnit.departments.length > 0 && (
         <div className="flex items-center gap-2 bg-transparent p-2 rounded">
           <div className="relative flex-1">
@@ -282,7 +186,6 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
         </Alert>
       )}
 
-      {/* Departments list */}
       {activeBusinessUnit?.departments && activeBusinessUnit.departments.length > 0 ? (
         <div className="grid grid-cols-1 gap-3">
           {filteredDepartments.map(department => (
@@ -299,6 +202,25 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
                 setSelectedDepartmentId(department.id?.toString() || '');
                 setIsAddDesignationDialogOpen(true);
               }}
+              departments={activeBusinessUnit?.departments || []}
+              setDepartments={(updatedDepartments) => {
+                const updatedBusinessUnits = businessUnits.map(bu => {
+                  if (bu.id === activeBusinessUnitId) {
+                    const newDepartments = Array.isArray(updatedDepartments) 
+                      ? updatedDepartments 
+                      : updatedDepartments(bu.departments || []);
+                    
+                    return {
+                      ...bu,
+                      departments: newDepartments,
+                    };
+                  }
+                  return bu;
+                });
+                
+                setBusinessUnits(updatedBusinessUnits as BusinessUnit[]);
+              }}
+              businessUnitId={activeBusinessUnitId}
             />
           ))}
         </div>

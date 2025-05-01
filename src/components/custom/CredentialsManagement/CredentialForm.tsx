@@ -27,7 +27,6 @@ import { toast } from "@/lib/toast-util";
 import { CredentialFormData, CredentialFormProps, Department, Designation, BusinessUnit, FormFieldProps } from "./types";
 
 
-
 const FormField = memo(({
   label,
   name,
@@ -303,42 +302,67 @@ function CredentialFormContent({
 
   // Fetch master data if not provided in props
   useEffect(() => {
-    const fetchData = async () => {
-      setFormLoading(true);
-      try {
-        // Use existing data if provided as props
-        if (designations.length > 0) {
-          setLoadedDesignations(designations);
-        } else {
-          const res = await api.get("/designations/");
-          setLoadedDesignations(res.data);
-        }
-
-        if (businessUnits.length > 0) {
-          setLoadedBusinessUnits(businessUnits);
-        } else {
-          const res = await api.get("/business-units/");
-          setLoadedBusinessUnits(res.data);
-        }
-
-        if (departments.length > 0) {
-          setLoadedDepartments(departments);
-        } else {
-          const res = await api.get("/departments/");
-          setLoadedDepartments(res.data);
-        }
-      } catch (error) {
-        console.error("Error fetching form data:", error);
-        toast.error("Failed to load form data. Please try again.");
-      } finally {
-        setFormLoading(false);
-      }
-    };
-
-    if (isOpen) {
-      fetchData();
+    // Only fetch data if the form is open
+    if (!isOpen) return;
+    
+    // Set loaded data from props immediately to avoid loading state
+    if (designations.length > 0) {
+      setLoadedDesignations(designations);
     }
-  }, [isOpen, designations, businessUnits, departments]);
+    
+    if (businessUnits.length > 0) {
+      setLoadedBusinessUnits(businessUnits);
+    }
+    
+    if (departments.length > 0) {
+      setLoadedDepartments(departments);
+    }
+    
+    // Only fetch data if we don't have it from props
+    const needsFetching = 
+      (designations.length === 0 && loadedDesignations.length === 0) ||
+      (businessUnits.length === 0 && loadedBusinessUnits.length === 0) ||
+      (departments.length === 0 && loadedDepartments.length === 0);
+    
+    if (needsFetching) {
+      const fetchData = async () => {
+        setFormLoading(true);
+        try {
+          const promises = [];
+          
+          if (designations.length === 0 && loadedDesignations.length === 0) {
+            promises.push(
+              api.get("/designations/").then(res => setLoadedDesignations(res.data))
+            );
+          }
+          
+          if (businessUnits.length === 0 && loadedBusinessUnits.length === 0) {
+            promises.push(
+              api.get("/business-units/").then(res => setLoadedBusinessUnits(res.data))
+            );
+          }
+          
+          if (departments.length === 0 && loadedDepartments.length === 0) {
+            promises.push(
+              api.get("/departments/").then(res => setLoadedDepartments(res.data))
+            );
+          }
+          
+          await Promise.all(promises);
+        } catch (error) {
+          console.error("Error fetching form data:", error);
+          toast.error("Failed to load form data. Please try again.");
+        } finally {
+          setFormLoading(false);
+        }
+      };
+      
+      fetchData();
+    } else {
+      // If we already have all data, just set formLoading to false
+      setFormLoading(false);
+    }
+  }, [isOpen, designations, businessUnits, departments, loadedDesignations.length, loadedBusinessUnits.length, loadedDepartments.length, api]);
 
   // Initialize form data when selectedUser changes or component mounts
   useEffect(() => {
@@ -511,14 +535,20 @@ function CredentialFormContent({
       e.preventDefault();
       if (!validateForm()) return;
 
+      // Disable form submission button to prevent double-clicks
+      setFormLoading(true);
+
       // Set username to email if not provided
       const dataForSubmit = {
         ...formData,
         username: formData.username || formData.email,
       };
 
+      // Submit the form data
       onSubmit(dataForSubmit);
       
+      // Note: We don't need to reset form loading state here
+      // as the parent component will close the form or handle errors
     },
     [validateForm, onSubmit, formData]
   );

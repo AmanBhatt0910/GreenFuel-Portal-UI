@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { BusinessUnit, BusinessUnitActionsProps } from "./types";
-import useAxios from "@/app/hooks/use-axios"; // Import your Axios hook
+import useAxios from "@/app/hooks/use-axios";
 import { toast } from "@/lib/toast-util";
 
 interface BusinessUnitCardProps extends BusinessUnitActionsProps {
@@ -38,27 +38,24 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
   const [editingName, setEditingName] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
-  const [isSaving, setIsSaving] = useState(false); // State to track saving status
-  const api = useAxios(); // Use Axios instance
+  const [isSaving, setIsSaving] = useState(false);
+  const api = useAxios();
 
-  // Start editing
   const startEditing = () => {
     setEditingName(businessUnit.name);
     setIsEditing(true);
   };
 
-  // Save edited business unit
   const saveEditedBusinessUnit = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
     if (!editingName.trim()) {
-      return; // Don't save empty names
+      return;
     }
 
     try {
-      setIsSaving(true); // Set saving state to true
+      setIsSaving(true);
 
-      // Call the API to update the business unit
       const response = await api.put(`/business-units/${businessUnit.id}/`, {
         name: editingName,
       });
@@ -78,7 +75,7 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
     } catch (error) {
       console.error("Error updating the business unit:", error);
     } finally {
-      setIsSaving(false); 
+      setIsSaving(false);
     }
   };
 
@@ -87,16 +84,18 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
     setIsEditing(false);
   };
 
-  // Delete business unit
   const deleteBusinessUnit = async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (window.confirm("Are you sure you want to delete this business unit? This will also delete all associated departments and designations.")) {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this business unit? This will also delete all associated departments and designations."
+      )
+    ) {
       const response = await api.delete(`/business-units/${businessUnit.id}/`);
       if (response.status == 200) {
         toast.success("Successfully deleted business unit");
-      }
-      else {
+      } else {
         toast.error("Failed to delete business unit");
       }
       setBusinessUnits(businessUnits.filter((bu) => bu.id !== businessUnit.id));
@@ -106,13 +105,11 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
     }
   };
 
-  // Select business unit and go to departments tab
   const selectBusinessUnit = () => {
     setActiveBusinessUnitId(businessUnit.id || "");
     setActiveTab("departments");
   };
 
-  // Count total designations across all departments
   const getTotalDesignations = () => {
     return (
       businessUnit.departments?.reduce(
@@ -140,13 +137,11 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      {/* Active indicator */}
       {isActive && (
         <div className="absolute top-0 left-0 w-0.5 h-full bg-green-500 dark:bg-green-400"></div>
       )}
 
       <div className="flex items-stretch">
-        {/* Left icon section */}
         <div className="flex items-center justify-center p-4 bg-gray-50 dark:bg-gray-800/30">
           <Building2
             className={`h-9 w-9 ${
@@ -172,7 +167,7 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
                   size="icon"
                   variant="outline"
                   onClick={saveEditedBusinessUnit}
-                  disabled={isSaving} // Disable button while saving
+                  disabled={isSaving}
                   className={`h-9 w-9 ${
                     isSaving
                       ? "opacity-50 cursor-not-allowed"

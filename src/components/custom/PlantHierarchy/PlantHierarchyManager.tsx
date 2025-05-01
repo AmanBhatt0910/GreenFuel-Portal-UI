@@ -4,19 +4,14 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
-import { BusinessUnit, Department, Designation, NewDesignation } from './types';
+import { BusinessUnit, Department, NewDesignation } from './types';
 import { CustomBreadcrumb } from './CustomBreadcrumb';
 import { PlantsTab } from './PlantsTab';
 import { DepartmentsTab } from './DepartmentsTab';
 import { HierarchyTab } from './HierarchyTab';
-import { EmployeeDialog } from './EmployeeDialog';
 import { DesignationDialog } from './DesignationDialog';
 import { 
-  fetchBusinessUnits, 
-  fetchDepartments, 
-  fetchDesignations,
   createBusinessUnit,
-  createDepartment,
   createDesignation 
 } from './api';
 import { toast } from "@/lib/toast-util";
@@ -33,18 +28,9 @@ export const PlantHierarchyManager: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   
-  // Expanded departments tracking
-  const [expandedDepartments, setExpandedDepartments] = useState<Record<string, boolean>>({});
-  
   // Department and Designation selection state
   const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
   const [isAddDesignationDialogOpen, setIsAddDesignationDialogOpen] = useState(false);
-  
-  // New designation data
-  const [newDesignation, setNewDesignation] = useState<NewDesignation>({
-    name: '',
-    department: 0
-  });
 
   // Load data on initial render
   useEffect(() => {
@@ -53,13 +39,11 @@ export const PlantHierarchyManager: React.FC = () => {
       setError(null);
       
       try {
-        console.log("Fetching business units...");
-        // Fetch all business units directly
+
         const businessUnitsResponse = await api.get('/business-units/');
         const businessUnitsData = businessUnitsResponse.data;
         console.log("Business units data:", businessUnitsData);
         
-        // Set business units without fetching departments yet
         setBusinessUnits(businessUnitsData.map((bu: BusinessUnit) => ({
           ...bu,
           departments: []
@@ -75,7 +59,6 @@ export const PlantHierarchyManager: React.FC = () => {
     loadInitialData();
   }, []);
 
-  // Load departments when a business unit is selected
   useEffect(() => {
     if (!activeBusinessUnitId) return;
 
@@ -84,16 +67,12 @@ export const PlantHierarchyManager: React.FC = () => {
       setError(null);
       
       try {
-        console.log(`Fetching departments for business unit ${activeBusinessUnitId}...`);
         
         const response = await api.get(`/departments/?business_unit=${activeBusinessUnitId}`);
         const departments = response.data;
-        console.log("Departments data:", departments);
         
-        // Process each department to load its designations
         const departmentsWithDesignations = await Promise.all(departments.map(async (dept: Department) => {
           try {
-            // Fetch designations for this department
             const designationsResponse = await api.get(`/designations/?department=${dept.id}`);
             
             return { 
@@ -109,7 +88,6 @@ export const PlantHierarchyManager: React.FC = () => {
           }
         }));
         
-        // Update the business units with the new departments data including designations
         setBusinessUnits(prevBusinessUnits => 
           prevBusinessUnits.map(bu => 
             bu.id === activeBusinessUnitId
@@ -118,7 +96,6 @@ export const PlantHierarchyManager: React.FC = () => {
           )
         );
       } catch (err) {
-        console.error("Failed to load departments", err);
         setError("Failed to load departments. Please try again.");
       } finally {
         setLoading(false);
@@ -128,7 +105,6 @@ export const PlantHierarchyManager: React.FC = () => {
     loadDepartments();
   }, [activeBusinessUnitId]);
 
-  // Handle adding a new business unit
   const handleAddBusinessUnit = async (name: string) => {
     try {
       setError(null);
@@ -148,13 +124,11 @@ export const PlantHierarchyManager: React.FC = () => {
     }
   };
 
-  // Handle adding a new designation
   const handleAddDesignation = async (designation: NewDesignation) => {
     try {
       setError(null);
       const newDesignation = await createDesignation(api, designation);
       
-      // Update local state with the new designation
       setBusinessUnits(prevBusinessUnits => 
         prevBusinessUnits.map(bu => ({
           ...bu,
@@ -182,9 +156,7 @@ export const PlantHierarchyManager: React.FC = () => {
       className="container mx-auto"
       data-component="plant-hierarchy-management"
     >
-      {/* Main container */}
       <div className="container py-4 mx-auto max-w-[95%] bg-transparent">
-        {/* Breadcrumb navigation */}
         <CustomBreadcrumb
           items={[
             { label: "Dashboard", href: "/dashboard" },
@@ -193,7 +165,6 @@ export const PlantHierarchyManager: React.FC = () => {
           aria-label="Breadcrumb Navigation"
         />
 
-        {/* Page header */}
         <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6 mt-4">
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
@@ -205,14 +176,12 @@ export const PlantHierarchyManager: React.FC = () => {
           </div>
         </div>
 
-        {/* Error messages */}
         {error && (
           <Alert className="mb-6 bg-red-50 border-red-200 text-red-800">
             <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
 
-        {/* Loading indicator */}
         {loading && (
           <Card className="mb-6">
             <CardContent className="py-6">
@@ -224,7 +193,6 @@ export const PlantHierarchyManager: React.FC = () => {
           </Card>
         )}
 
-        {/* Tabs navigation */}
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as string)}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="plants">Business Units</TabsTrigger>
