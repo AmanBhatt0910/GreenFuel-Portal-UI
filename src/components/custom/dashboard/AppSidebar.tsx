@@ -49,12 +49,15 @@ const DashboardItems = [
     title: "Overview",
     url: "/dashboard",
     icon: Home,
+    roles: ["all"],
   },
   {
-    title: "Approval Dasboard",
+    title: "Approval Dashboard",
     url: "/dashboard/approvals",
-    icon: CheckCircle
-  }
+    icon: CheckCircle,
+    roles: ["manager", "approver", "staff"],
+    excludeUsernames: ["Admin"],
+  },
 ];
 
 const ApprovalItems = [
@@ -62,11 +65,15 @@ const ApprovalItems = [
     title: "Budget Approvals",
     url: "/dashboard/form",
     icon: CreditCard,
+    roles: ["manager", "approver"],
+    excludeUsernames: ["Admin"],
   },
   {
     title: "My Requests",
     url: "/dashboard/requests",
     icon: FileCheck,
+    roles: ["manager", "approver", "staff", "user"],
+    excludeUsernames: ["Admin"],
   },
 ];
 
@@ -75,6 +82,8 @@ const RequestItems = [
     title: "My Requests",
     url: "/dashboard/requests",
     icon: FileCheck,
+    roles: ["manager", "approver", "staff", "user"],
+    excludeUsernames: ["Admin"],
   },
 ];
 
@@ -83,6 +92,7 @@ const Credentials = [
     title: "Credentials",
     url: "/dashboard/credentials",
     icon: Key,
+    roles: ["admin", "superadmin"],
   },
 ];
 
@@ -91,16 +101,19 @@ const BusinessUnits = [
     title: "Business Units",
     url: "/dashboard/business-units",
     icon: Building,
+    roles: ["admin", "superadmin"],
   },
   {
     title: "Category",
     url: "/dashboard/category-management",
     icon: List,
+    roles: ["admin", "superadmin"],
   },
   {
     title: "Approval Access",
     url: "/dashboard/approval-access",
     icon: Key,
+    roles: ["admin", "superadmin"],
   },
 ];
 
@@ -110,13 +123,12 @@ const AppSidebar = () => {
   const { userInfo } = useContext(GFContext);
   const api = useAxios();
   const [designation, setDesignation] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState("user");
 
   const fetchedRef = React.useRef<string | null>(null);
 
   useEffect(() => {
-    // Only fetch if userInfo exists and has a designation
     if (userInfo && userInfo.designation) {
-      // Only fetch if we haven't already fetched this designation
       if (fetchedRef.current !== userInfo.designation) {
         const fetchDesignation = async () => {
           try {
@@ -125,6 +137,16 @@ const AppSidebar = () => {
             );
             setDesignation(response.data.level);
             fetchedRef.current = String(userInfo.designation);
+
+            if (userInfo.is_staff) {
+              setUserRole("admin");
+            } else if (parseInt(response.data.level) > 2) {
+              setUserRole("manager");
+            } else if (parseInt(response.data.level) > 1) {
+              setUserRole("approver");
+            } else if (parseInt(response.data.level) === 1) {
+              setUserRole("staff");
+            }
           } catch (error) {
             console.error("Error fetching designation:", error);
           }
@@ -135,14 +157,46 @@ const AppSidebar = () => {
     }
   }, [userInfo]);
 
-  // console.log("designation", userInfo);  
-
   const handleLogout = () => {
     if (typeof window !== "undefined") {
       localStorage.removeItem("authToken");
       window.location.href = "/";
     }
   };
+
+  interface MenuItem {
+    title: string;
+    url: string;
+    icon: React.ComponentType;
+    roles: string[];
+    excludeUsernames?: string[];
+  }
+
+  const isItemVisible = (item: MenuItem): boolean => {
+    // Check username exclusions first
+    if (
+      item.excludeUsernames &&
+      userInfo?.username &&
+      item.excludeUsernames.includes(userInfo.username)
+    ) {
+      return false;
+    }
+
+    return (
+      item.roles.includes("all") ||
+      item.roles.includes(userRole) ||
+      (!!userInfo?.is_staff && item.roles.includes("admin"))
+    );
+  };
+
+  const filteredDashboardItems = DashboardItems.filter(isItemVisible);
+  const filteredApprovalItems = ApprovalItems.filter(isItemVisible);
+  const filteredRequestItems = RequestItems.filter(isItemVisible);
+
+  const showApprovalsSection = filteredApprovalItems.length > 0;
+
+  const showRequestsSection =
+    filteredRequestItems.length > 0 && designation && parseInt(designation) > 1;
 
   return (
     <Sidebar className="h-screen flex flex-col border-r dark:bg-gray-800 dark:border-gray-700">
@@ -156,139 +210,143 @@ const AppSidebar = () => {
 
       <SidebarContent className="flex-1 overflow-y-auto px-3 py-4 bg-gray-50 dark:bg-gray-900">
         {/* Dashboard Section */}
-        <div className="mt-5">
-          <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
-            Dashboard
-          </h3>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {DashboardItems.map((item, index) => {
-                  const isActive = pathname === item.url;
-                  return (
-                    <SidebarMenuItem key={index} className="mb-1">
-                      <SidebarMenuButton
-                        asChild
-                        className="hover:bg-gray-600/10 dark:hover:bg-gray-600/20"
-                      >
-                        <Link
-                          href={item.url}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
-                            ${
-                              isActive
-                                ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
-                                : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-green-900/20 dark:hover:text-green-400"
-                            }`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <item.icon
-                              className={`h-4 w-4 ${
-                                isActive
-                                  ? "text-gray-700 dark:text-gray-200"
-                                  : "text-gray-500 dark:text-gray-400 dark:hover:text-green-400"
-                              }`}
-                            />
-                            <span
-                              className={`${
-                                isActive
-                                  ? "text-gray-700 dark:text-gray-200"
-                                  : "dark:hover:text-green-400"
-                              }`}
-                            >
-                              {item.title}
-                            </span>
-                          </div>
-                        </Link>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </div>
-
-        {/* Approvals Section with Dropdown */}
-        <div className="mt-5">
-          <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
-            Approvals
-          </h3>
-          <SidebarGroup>
-            <SidebarGroupContent>
-              <Collapsible
-                open={approvalOpen}
-                onOpenChange={setApprovalOpen}
-                className="w-full"
-              >
-                <CollapsibleTrigger asChild>
-                  <button
-                    className={`flex w-full items-center justify-between px-3 py-2 text-sm rounded-md transition-all duration-200 
-                        ${
-                          approvalOpen
-                            ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200"
-                            : "text-gray-500 hover:bg-gray-600/10 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
-                        }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <PanelRight
-                        className={`h-4 w-4 ${
-                          approvalOpen
-                            ? "text-gray-700 dark:text-gray-200"
-                            : "text-gray-500 dark:text-gray-400"
-                        }`}
-                      />
-                      <span>Approval Notes</span>
-                    </div>
-                    <ChevronDown
-                      className={`h-4 w-4 transition-transform duration-200 ${
-                        approvalOpen
-                          ? "transform rotate-180 text-gray-700 dark:text-gray-200"
-                          : "text-gray-500 dark:text-gray-400"
-                      }`}
-                    />
-                  </button>
-                </CollapsibleTrigger>
-                <CollapsibleContent className="pl-4 space-y-1 mt-1">
-                  {ApprovalItems.map((item, index) => {
+        {filteredDashboardItems.length > 0 && (
+          <div className="mt-5">
+            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
+              Dashboard
+            </h3>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  {filteredDashboardItems.map((item, index) => {
                     const isActive = pathname === item.url;
                     return (
-                      <Link
-                        key={index}
-                        href={item.url}
-                        className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200
-                             ${
-                               isActive
-                                 ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
-                                 : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
-                             }`}
-                      >
-                        <item.icon
+                      <SidebarMenuItem key={index} className="mb-1">
+                        <SidebarMenuButton
+                          asChild
+                          className="hover:bg-gray-600/10 dark:hover:bg-gray-600/20"
+                        >
+                          <Link
+                            href={item.url}
+                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
+                              ${
+                                isActive
+                                  ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
+                                  : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-green-900/20 dark:hover:text-green-400"
+                              }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <item.icon
+                                className={`h-4 w-4 ${
+                                  isActive
+                                    ? "text-gray-700 dark:text-gray-200"
+                                    : "text-gray-500 dark:text-gray-400 dark:hover:text-green-400"
+                                }`}
+                              />
+                              <span
+                                className={`${
+                                  isActive
+                                    ? "text-gray-700 dark:text-gray-200"
+                                    : "dark:hover:text-green-400"
+                                }`}
+                              >
+                                {item.title}
+                              </span>
+                            </div>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
+        )}
+
+        {/* Approvals Section with Dropdown */}
+        {showApprovalsSection && (
+          <div className="mt-5">
+            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
+              Approvals
+            </h3>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <Collapsible
+                  open={approvalOpen}
+                  onOpenChange={setApprovalOpen}
+                  className="w-full"
+                >
+                  <CollapsibleTrigger asChild>
+                    <button
+                      className={`flex w-full items-center justify-between px-3 py-2 text-sm rounded-md transition-all duration-200 
+                          ${
+                            approvalOpen
+                              ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200"
+                              : "text-gray-500 hover:bg-gray-600/10 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
+                          }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <PanelRight
                           className={`h-4 w-4 ${
-                            isActive
+                            approvalOpen
                               ? "text-gray-700 dark:text-gray-200"
                               : "text-gray-500 dark:text-gray-400"
                           }`}
                         />
-                        <span
-                          className={`${
-                            isActive
-                              ? "text-gray-700 dark:text-gray-200"
-                              : "text-gray-500 dark:text-gray-400 transition-all duration-200"
-                          }`}
+                        <span>Approval Notes</span>
+                      </div>
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform duration-200 ${
+                          approvalOpen
+                            ? "transform rotate-180 text-gray-700 dark:text-gray-200"
+                            : "text-gray-500 dark:text-gray-400"
+                        }`}
+                      />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="pl-4 space-y-1 mt-1">
+                    {filteredApprovalItems.map((item, index) => {
+                      const isActive = pathname === item.url;
+                      return (
+                        <Link
+                          key={index}
+                          href={item.url}
+                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200
+                               ${
+                                 isActive
+                                   ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
+                                   : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
+                               }`}
                         >
-                          {item.title}
-                        </span>
-                      </Link>
-                    );
-                  })}
-                </CollapsibleContent>
-              </Collapsible>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        </div>
+                          <item.icon
+                            className={`h-4 w-4 ${
+                              isActive
+                                ? "text-gray-700 dark:text-gray-200"
+                                : "text-gray-500 dark:text-gray-400"
+                            }`}
+                          />
+                          <span
+                            className={`${
+                              isActive
+                                ? "text-gray-700 dark:text-gray-200"
+                                : "text-gray-500 dark:text-gray-400 transition-all duration-200"
+                            }`}
+                          >
+                            {item.title}
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </CollapsibleContent>
+                </Collapsible>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
+        )}
 
-        {/* Request Section with Dropdown */}
-        {designation && parseInt(designation) > 1 && (
+        {/* Request Section */}
+        {showRequestsSection && (
           <div className="mt-5">
             <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
               Requests
@@ -297,7 +355,7 @@ const AppSidebar = () => {
             <SidebarGroup>
               <SidebarGroupContent>
                 <SidebarMenu>
-                  {RequestItems.map((item, index) => {
+                  {filteredRequestItems.map((item, index) => {
                     const isActive = pathname === item.url;
                     return (
                       <SidebarMenuItem key={index} className="mb-1">
@@ -337,6 +395,7 @@ const AppSidebar = () => {
           </div>
         )}
 
+        {/* Credentials Section - Only visible for admin users */}
         {userInfo?.is_staff && (
           <div className="mt-5">
             <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
@@ -389,6 +448,7 @@ const AppSidebar = () => {
           </div>
         )}
 
+        {/* Business Units Section - Only visible for admin users */}
         {userInfo && userInfo.is_staff && (
           <div className="mt-5">
             <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
@@ -432,8 +492,6 @@ const AppSidebar = () => {
                             </span>
                           </Link>
                         </SidebarMenuButton>
-
-                       
                       </SidebarMenuItem>
                     );
                   })}
@@ -456,7 +514,7 @@ const AppSidebar = () => {
               </Avatar>
               <div className="flex flex-col items-start">
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                  {userInfo && (userInfo.name ? userInfo.name : userInfo.email) }
+                  {userInfo && (userInfo.name ? userInfo.name : userInfo.email)}
                 </p>
                 <p className="text-xs text-gray-600 dark:text-gray-400">
                   {userInfo && userInfo.email}
