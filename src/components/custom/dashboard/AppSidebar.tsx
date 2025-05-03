@@ -1,5 +1,5 @@
 "use client";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState, useRef } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,18 +15,18 @@ import Image from "next/image";
 import {
   CreditCard,
   ChevronDown,
-  ClipboardList,
+  FileCheck,
   Settings,
   LogOut,
   User,
   Mail,
   Home,
-  FileCheck,
   PanelRight,
   Key,
   Building,
   CheckCircle,
   List,
+  LayoutDashboard,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -41,14 +41,24 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { GFContext } from "@/context/AuthContext";
 import useAxios from "@/app/hooks/use-axios";
 
-const DashboardItems = [
+interface MenuItem {
+  title: string;
+  url: string;
+  icon: React.ComponentType;
+  roles: string[];
+  excludeUsernames?: string[];
+  badge?: string;
+}
+
+const DashboardItems: MenuItem[] = [
   {
     title: "Overview",
     url: "/dashboard",
-    icon: Home,
+    icon: LayoutDashboard,
     roles: ["all"],
   },
   {
@@ -57,10 +67,11 @@ const DashboardItems = [
     icon: CheckCircle,
     roles: ["manager", "approver", "staff"],
     excludeUsernames: ["Admin"],
+    badge: "New",
   },
 ];
 
-const ApprovalItems = [
+const ApprovalItems: MenuItem[] = [
   {
     title: "Budget Approvals",
     url: "/dashboard/form",
@@ -77,7 +88,7 @@ const ApprovalItems = [
   },
 ];
 
-const RequestItems = [
+const RequestItems: MenuItem[] = [
   {
     title: "My Requests",
     url: "/dashboard/requests",
@@ -87,7 +98,7 @@ const RequestItems = [
   },
 ];
 
-const Credentials = [
+const Credentials: MenuItem[] = [
   {
     title: "Credentials",
     url: "/dashboard/credentials",
@@ -96,7 +107,7 @@ const Credentials = [
   },
 ];
 
-const BusinessUnits = [
+const BusinessUnits: MenuItem[] = [
   {
     title: "Business Units",
     url: "/dashboard/business-units",
@@ -119,43 +130,37 @@ const BusinessUnits = [
 
 const AppSidebar = () => {
   const pathname = usePathname();
-  const [approvalOpen, setApprovalOpen] = React.useState(false);
+  const [approvalOpen, setApprovalOpen] = useState(false);
   const { userInfo } = useContext(GFContext);
   const api = useAxios();
   const [designation, setDesignation] = useState<string | null>(null);
   const [userRole, setUserRole] = useState("user");
-
-  const fetchedRef = React.useRef<string | null>(null);
+  const fetchedRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (userInfo && userInfo.designation) {
-      if (fetchedRef.current !== userInfo.designation) {
-        const fetchDesignation = async () => {
-          try {
-            const response = await api.get(
-              `/designations/${userInfo.designation}/`
-            );
-            setDesignation(response.data.level);
-            fetchedRef.current = String(userInfo.designation);
+    if (userInfo && userInfo.designation && fetchedRef.current !== userInfo.designation) {
+      const fetchDesignation = async () => {
+        try {
+          const response = await api.get(`/designations/${userInfo.designation}/`);
+          setDesignation(response.data.level);
+          fetchedRef.current = String(userInfo.designation);
 
-            if (userInfo.is_staff) {
-              setUserRole("admin");
-            } else if (parseInt(response.data.level) > 2) {
-              setUserRole("manager");
-            } else if (parseInt(response.data.level) > 1) {
-              setUserRole("approver");
-            } else if (parseInt(response.data.level) === 1) {
-              setUserRole("staff");
-            }
-          } catch (error) {
-            console.error("Error fetching designation:", error);
+          if (userInfo.is_staff) {
+            setUserRole("admin");
+          } else if (parseInt(response.data.level) > 2) {
+            setUserRole("manager");
+          } else if (parseInt(response.data.level) > 1) {
+            setUserRole("approver");
+          } else if (parseInt(response.data.level) === 1) {
+            setUserRole("staff");
           }
-        };
-
-        fetchDesignation();
-      }
+        } catch (error) {
+          console.error("Error fetching designation:", error);
+        }
+      };
+      fetchDesignation();
     }
-  }, [userInfo]);
+  }, [userInfo, api]);
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
@@ -163,14 +168,6 @@ const AppSidebar = () => {
       window.location.href = "/";
     }
   };
-
-  interface MenuItem {
-    title: string;
-    url: string;
-    icon: React.ComponentType;
-    roles: string[];
-    excludeUsernames?: string[];
-  }
 
   const isItemVisible = (item: MenuItem): boolean => {
     if (
@@ -180,391 +177,357 @@ const AppSidebar = () => {
     ) {
       return false;
     }
-  
     if (item.title === "Budget Approvals" && !userInfo?.is_budget_requester) {
       return false;
     }
-  
     return (
       item.roles.includes("all") ||
       item.roles.includes(userRole) ||
       (!!userInfo?.is_staff && item.roles.includes("admin"))
     );
   };
-  
 
   const filteredDashboardItems = DashboardItems.filter(isItemVisible);
   const filteredApprovalItems = ApprovalItems.filter(isItemVisible);
   const filteredRequestItems = RequestItems.filter(isItemVisible);
-
   const showApprovalsSection = filteredApprovalItems.length > 0;
+  const showRequestsSection = filteredRequestItems.length > 0 && designation && parseInt(designation) > 1;
 
-  const showRequestsSection =
-    filteredRequestItems.length > 0 && designation && parseInt(designation) > 1;
+  const MenuItemComponent = ({ item, isActive }: { item: MenuItem, isActive: boolean }) => (
+    <div className="flex items-center justify-between w-full">
+      <div className="flex items-center gap-3">
+        <item.icon
+          className={`h-5 w-5 ${
+            isActive
+              ? "text-green-600 dark:text-green-400"
+              : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400"
+          }`}
+        />
+        <span
+          className={`${
+            isActive
+              ? "text-gray-800 dark:text-gray-100 font-medium"
+              : "text-gray-600 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400"
+          } transition-all duration-200`}
+        >
+          {item.title}
+        </span>
+      </div>
+      {item.badge && (
+        <span className="inline-flex items-center justify-center px-2.5 py-0.5 text-xs font-semibold rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300">
+          {item.badge}
+        </span>
+      )}
+    </div>
+  );
+
+  const SectionHeader = ({ title }: { title: string }) => (
+    <h3 className="text-xs uppercase font-bold px-3 mb-3 text-gray-600 dark:text-gray-300 tracking-wider">
+      {title}
+    </h3>
+  );
 
   return (
-    <Sidebar className="h-screen flex flex-col border-r dark:bg-gray-800 dark:border-gray-700">
-      <SidebarHeader className="p-[15px] border-b dark:border-gray-700 bg-gray-100 dark:bg-gray-900">
-        <div className="flex items-center gap-3">
-          <div className="rounded flex items-center justify-center w-full h-7.5">
-            <Image src="/green.png" alt="Logo" width={100} height={100} />
+    <TooltipProvider>
+      <Sidebar className="h-screen flex flex-col border-r dark:border-gray-700 bg-white dark:bg-gray-900 shadow-md">
+        <SidebarHeader className="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <div className="flex items-center justify-center w-full">
+            <Image 
+              src="/green.png" 
+              alt="Logo" 
+              width={120} 
+              height={40} 
+              className="object-contain"
+              priority
+            />
           </div>
-        </div>
-      </SidebarHeader>
+        </SidebarHeader>
 
-      <SidebarContent className="flex-1 overflow-y-auto px-3 py-4 bg-gray-50 dark:bg-gray-900">
-        {/* Dashboard Section */}
-        {filteredDashboardItems.length > 0 && (
-          <div className="mt-5">
-            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
-              Dashboard
-            </h3>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {filteredDashboardItems.map((item, index) => {
-                    const isActive = pathname === item.url;
-                    return (
-                      <SidebarMenuItem key={index} className="mb-1">
-                        <SidebarMenuButton
-                          asChild
-                          className="hover:bg-gray-600/10 dark:hover:bg-gray-600/20"
-                        >
-                          <Link
-                            href={item.url}
-                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
-                              ${
-                                isActive
-                                  ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
-                                  : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-green-900/20 dark:hover:text-green-400"
-                              }`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <item.icon
-                                className={`h-4 w-4 ${
-                                  isActive
-                                    ? "text-gray-700 dark:text-gray-200"
-                                    : "text-gray-500 dark:text-gray-400 dark:hover:text-green-400"
-                                }`}
-                              />
-                              <span
-                                className={`${
-                                  isActive
-                                    ? "text-gray-700 dark:text-gray-200"
-                                    : "dark:hover:text-green-400"
-                                }`}
-                              >
-                                {item.title}
-                              </span>
-                            </div>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </div>
-        )}
-
-        {/* Approvals Section with Dropdown */}
-        {showApprovalsSection && (
-          <div className="mt-5">
-            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
-              Approvals
-            </h3>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <Collapsible
-                  open={approvalOpen}
-                  onOpenChange={setApprovalOpen}
-                  className="w-full"
-                >
-                  <CollapsibleTrigger asChild>
-                    <button
-                      className={`flex w-full items-center justify-between px-3 py-2 text-sm rounded-md transition-all duration-200 
-                          ${
-                            approvalOpen
-                              ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200"
-                              : "text-gray-500 hover:bg-gray-600/10 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
-                          }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <PanelRight
-                          className={`h-4 w-4 ${
-                            approvalOpen
-                              ? "text-gray-700 dark:text-gray-200"
-                              : "text-gray-500 dark:text-gray-400"
-                          }`}
-                        />
-                        <span>Approval Notes</span>
-                      </div>
-                      <ChevronDown
-                        className={`h-4 w-4 transition-transform duration-200 ${
-                          approvalOpen
-                            ? "transform rotate-180 text-gray-700 dark:text-gray-200"
-                            : "text-gray-500 dark:text-gray-400"
-                        }`}
-                      />
-                    </button>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="pl-4 space-y-1 mt-1">
-                    {filteredApprovalItems.map((item, index) => {
+        <SidebarContent className="flex-1 overflow-y-auto py-5 px-3 bg-gray-50 dark:bg-gray-900">
+          {filteredDashboardItems.length > 0 && (
+            <div className="mb-6">
+              <SectionHeader title="Dashboard" />
+              <SidebarGroup>
+                <SidebarGroupContent>
+                  <SidebarMenu className="space-y-2">
+                    {filteredDashboardItems.map((item, index) => {
                       const isActive = pathname === item.url;
-                      
                       return (
-                        <Link
-                          key={index}
-                          href={item.url}
-                          className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200
-                               ${
-                                 isActive
-                                   ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
-                                   : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
-                               }`}
-                        >
-                          <item.icon
-                            className={`h-4 w-4 ${
-                              isActive
-                                ? "text-gray-700 dark:text-gray-200"
-                                : "text-gray-500 dark:text-gray-400"
-                            }`}
-                          />
-                          <span
-                            className={`${
-                              isActive
-                                ? "text-gray-700 dark:text-gray-200"
-                                : "text-gray-500 dark:text-gray-400 transition-all duration-200"
-                            }`}
-                          >
-                            {item.title}
-                          </span>
-                        </Link>
+                        <SidebarMenuItem key={index}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <SidebarMenuButton
+                                asChild
+                                className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group"
+                              >
+                                <Link
+                                  href={item.url}
+                                  className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
+                                    ${
+                                      isActive
+                                        ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500"
+                                        : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
+                                    }`}
+                                >
+                                  <MenuItemComponent item={item} isActive={isActive} />
+                                </Link>
+                              </SidebarMenuButton>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
+                              {item.title}
+                            </TooltipContent>
+                          </Tooltip>
+                        </SidebarMenuItem>
                       );
                     })}
-                  </CollapsibleContent>
-                </Collapsible>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </div>
-        )}
-
-        {/* Request Section */}
-        {showRequestsSection && (
-          <div className="mt-5">
-            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
-              Requests
-            </h3>
-
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {filteredRequestItems.map((item, index) => {
-                    const isActive = pathname === item.url;
-                    return (
-                      <SidebarMenuItem key={index} className="mb-1">
-                        <SidebarMenuButton asChild>
-                          <Link
-                            href={item.url}
-                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 ${
-                              isActive
-                                ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200"
-                                : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
-                            }`}
-                          >
-                            <item.icon
-                              className={`h-4 w-4 ${
-                                isActive
-                                  ? "text-gray-700 dark:text-gray-200"
-                                  : "text-gray-500 dark:text-gray-400"
-                              }`}
-                            />
-                            <span
-                              className={`${
-                                isActive
-                                  ? "text-gray-700 dark:text-gray-200"
-                                  : "text-gray-500 dark:text-gray-400 transition-all duration-200"
-                              }`}
-                            >
-                              {item.title}
-                            </span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </div>
-        )}
-
-        {/* Credentials Section - Only visible for admin users */}
-        {userInfo?.is_staff && (
-          <div className="mt-5">
-            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
-              Credentials
-            </h3>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {Credentials.map((item, index) => {
-                    const isActive = pathname === item.url;
-                    return (
-                      <SidebarMenuItem key={index} className="mb-1">
-                        <SidebarMenuButton
-                          asChild
-                          className="hover:bg-gray-600/10 dark:hover:bg-gray-600/20"
-                        >
-                          <Link
-                            href={item.url}
-                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
-                                    ${
-                                      isActive
-                                        ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
-                                        : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
-                                    }`}
-                          >
-                            <item.icon
-                              className={`h-4 w-4 ${
-                                isActive
-                                  ? "text-gray-700 dark:text-gray-200"
-                                  : "text-gray-500 dark:text-gray-400"
-                              }`}
-                            />
-                            <span
-                              className={`${
-                                isActive
-                                  ? "text-gray-700 dark:text-gray-200"
-                                  : ""
-                              }`}
-                            >
-                              {item.title}
-                            </span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </div>
-        )}
-
-        {/* Business Units Section - Only visible for admin users */}
-        {userInfo && userInfo.is_staff && (
-          <div className="mt-5">
-            <h3 className="text-xs uppercase font-semibold px-3 mb-2 text-gray-600 dark:text-gray-300">
-              Business Units
-            </h3>
-            <SidebarGroup>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {BusinessUnits.map((item, index) => {
-                    const isActive = pathname === item.url;
-                    return (
-                      <SidebarMenuItem key={index} className="mb-1">
-                        <SidebarMenuButton
-                          asChild
-                          className="hover:bg-gray-600/10 dark:hover:bg-gray-600/20"
-                        >
-                          <Link
-                            href={item.url}
-                            className={`flex items-center gap-3 px-3 py-2 rounded-md text-sm transition-all duration-200 
-                                    ${
-                                      isActive
-                                        ? "bg-gray-600/10 text-gray-700 dark:bg-gray-600/20 dark:text-gray-200 font-medium"
-                                        : "text-gray-500 hover:bg-gray-600/20 hover:text-gray-700 dark:text-gray-400 dark:hover:bg-gray-600/20 dark:hover:text-gray-200"
-                                    }`}
-                          >
-                            <item.icon
-                              className={`h-4 w-4 ${
-                                isActive
-                                  ? "text-gray-700 dark:text-gray-200"
-                                  : "text-gray-500 dark:text-gray-400"
-                              }`}
-                            />
-                            <span
-                              className={`${
-                                isActive
-                                  ? "text-gray-700 dark:text-gray-200"
-                                  : ""
-                              }`}
-                            >
-                              {item.title}
-                            </span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </div>
-        )}
-      </SidebarContent>
-
-      <SidebarFooter className="p-4 mt-auto border-t dark:border-gray-700 bg-gray-100 dark:bg-gray-900">
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-600/10 dark:hover:bg-gray-600/20 transition-all duration-200">
-              <Avatar className="h-10 w-10 border-2 dark:border-gray-700">
-                <AvatarImage src="https://github.com/shadcn.png" alt="User" />
-                <AvatarFallback className="bg-gray-600 dark:bg-gray-700 text-gray-200">
-                  JD
-                </AvatarFallback>
-              </Avatar>
-              <div className="flex flex-col items-start">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                  {userInfo && (userInfo.name ? userInfo.name : userInfo.email)}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {userInfo && userInfo.email}
-                </p>
-              </div>
-              <ChevronDown className="ml-auto h-4 w-4 text-gray-500 dark:text-gray-400" />
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            className="w-56 p-2 dark:bg-gray-900 border dark:border-gray-700 text-gray-200"
-            side="top"
-            align="start"
-          >
-            <div className="space-y-1">
-              <button className="w-full flex items-center gap-2 p-2 rounded-md text-sm hover:bg-gray-600/20 transition-colors duration-150">
-                <User className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                <span className="text-gray-600 dark:text-gray-400">
-                  Profile
-                </span>
-              </button>
-              <button className="w-full flex items-center gap-2 p-2 rounded-md text-sm hover:bg-gray-600/20 transition-colors duration-150">
-                <Mail className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                <span className="text-gray-600 dark:text-gray-400">
-                  Messages
-                </span>
-              </button>
-              <button className="w-full flex items-center gap-2 p-2 rounded-md text-sm hover:bg-gray-600/20 transition-colors duration-150">
-                <Settings className="h-4 w-4 text-gray-400 dark:text-gray-500" />
-                <span className="text-gray-600 dark:text-gray-400">
-                  Settings
-                </span>
-              </button>
-              <hr className="my-1 border-red-600 dark:border-red-700" />
-              <button
-                className="w-full flex items-center gap-2 p-2 rounded-md text-sm text-red-600 hover:bg-red-600/20 transition-colors duration-150"
-                onClick={handleLogout}
-              >
-                <LogOut className="h-4 w-4 text-red-600 dark:text-red-400" />
-                <span className="text-red-600 dark:text-red-400">Logout</span>
-              </button>
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
             </div>
-          </PopoverContent>
-        </Popover>
-      </SidebarFooter>
-    </Sidebar>
+          )}
+
+          {showApprovalsSection && (
+            <div className="mb-6">
+              <SectionHeader title="Approvals" />
+              <SidebarGroup>
+                <SidebarGroupContent>
+                  <Collapsible open={approvalOpen} onOpenChange={setApprovalOpen}>
+                    <CollapsibleTrigger asChild>
+                      <button
+                        className={`flex w-full items-center justify-between px-4 py-3 text-sm rounded-lg transition-all duration-200 group
+                          hover:bg-gray-100 dark:hover:bg-gray-700/30
+                          ${approvalOpen ? "bg-white dark:bg-gray-800 border-l-4 border-green-500" : ""}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <PanelRight
+                            className={`h-5 w-5 ${
+                              approvalOpen
+                                ? "text-green-600 dark:text-green-400"
+                                : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400"
+                            }`}
+                          />
+                          <span className={`${
+                            approvalOpen
+                              ? "text-gray-800 dark:text-gray-100 font-medium"
+                              : "text-gray-600 dark:text-gray-300 group-hover:text-green-600 dark:group-hover:text-green-400"
+                          }`}>
+                            Approval Notes
+                          </span>
+                        </div>
+                        <ChevronDown
+                          className={`h-5 w-5 transition-transform duration-200 ${
+                            approvalOpen
+                              ? "transform rotate-180 text-green-600 dark:text-green-400"
+                              : "text-gray-500 dark:text-gray-400 group-hover:text-green-600 dark:group-hover:text-green-400"
+                          }`}
+                        />
+                      </button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pl-6 mt-2 space-y-2">
+                      {filteredApprovalItems.map((item, index) => {
+                        const isActive = pathname === item.url;
+                        return (
+                          <Tooltip key={index}>
+                            <TooltipTrigger asChild>
+                              <Link
+                                href={item.url}
+                                className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 group
+                                  hover:bg-gray-100 dark:hover:bg-gray-700/30
+                                  ${isActive ? "bg-white dark:bg-gray-800 border-l-4 border-green-500" : ""}`}
+                              >
+                                <MenuItemComponent item={item} isActive={isActive} />
+                              </Link>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
+                              {item.title}
+                            </TooltipContent>
+                          </Tooltip>
+                        );
+                      })}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </div>
+          )}
+
+          {showRequestsSection && (
+            <div className="mb-6">
+              <SectionHeader title="Requests" />
+              <SidebarGroup>
+                <SidebarGroupContent>
+                  <SidebarMenu className="space-y-2">
+                    {filteredRequestItems.map((item, index) => {
+                      const isActive = pathname === item.url;
+                      return (
+                        <SidebarMenuItem key={index}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <SidebarMenuButton asChild className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group">
+                                <Link
+                                  href={item.url}
+                                  className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
+                                    ${
+                                      isActive
+                                        ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500"
+                                        : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
+                                    }`}
+                                >
+                                  <MenuItemComponent item={item} isActive={isActive} />
+                                </Link>
+                              </SidebarMenuButton>
+                            </TooltipTrigger>
+                            <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
+                              {item.title}
+                            </TooltipContent>
+                          </Tooltip>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            </div>
+          )}
+
+          {userInfo?.is_staff && (
+            <>
+              <div className="mb-6">
+                <SectionHeader title="Credentials" />
+                <SidebarGroup>
+                  <SidebarGroupContent>
+                    <SidebarMenu className="space-y-2">
+                      {Credentials.map((item, index) => {
+                        const isActive = pathname === item.url;
+                        return (
+                          <SidebarMenuItem key={index}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <SidebarMenuButton
+                                  asChild
+                                  className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group"
+                                >
+                                  <Link
+                                    href={item.url}
+                                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
+                                      ${
+                                        isActive
+                                          ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500"
+                                          : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
+                                      }`}
+                                  >
+                                    <MenuItemComponent item={item} isActive={isActive} />
+                                  </Link>
+                                </SidebarMenuButton>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
+                                {item.title}
+                              </TooltipContent>
+                            </Tooltip>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              </div>
+
+              <div className="mb-6">
+                <SectionHeader title="Business Units" />
+                <SidebarGroup>
+                  <SidebarGroupContent>
+                    <SidebarMenu className="space-y-2">
+                      {BusinessUnits.map((item, index) => {
+                        const isActive = pathname === item.url;
+                        return (
+                          <SidebarMenuItem key={index}>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <SidebarMenuButton
+                                  asChild
+                                  className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group"
+                                >
+                                  <Link
+                                    href={item.url}
+                                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
+                                      ${
+                                        isActive
+                                          ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500" 
+                                          : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
+                                      }`}
+                                  >
+                                    <MenuItemComponent item={item} isActive={isActive} />
+                                  </Link>
+                                </SidebarMenuButton>
+                              </TooltipTrigger>
+                              <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
+                                {item.title}
+                              </TooltipContent>
+                            </Tooltip>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </SidebarGroupContent>
+                </SidebarGroup>
+              </div>
+            </>
+          )}
+        </SidebarContent>
+
+        <SidebarFooter className="p-4 mt-auto border-t dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700/30 transition-colors">
+                <Avatar className="h-10 w-10 border-2 border-white dark:border-gray-600">
+                  <AvatarImage src="https://github.com/shadcn.png" alt="User" />
+                  <AvatarFallback className="bg-green-600 dark:bg-green-700 text-white font-semibold">
+                    {userInfo?.name?.substring(0, 2) || userInfo?.email?.substring(0, 2) || "JD"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex flex-col items-start overflow-hidden flex-1">
+                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-100 truncate">
+                    {userInfo?.name || userInfo?.email || "John Doe"}
+                  </p>
+                  <p className="text-xs font-medium text-gray-600 dark:text-gray-300 truncate">
+                    {userInfo?.email || "john.doe@example.com"}
+                  </p>
+                </div>
+                <ChevronDown className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              className="w-64 p-2 dark:bg-gray-800 border dark:border-gray-700 rounded-lg shadow-lg"
+              side="top"
+              align="start"
+            >
+              <div className="space-y-1.5">
+                <button className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  Profile
+                </button>
+                <button className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <Mail className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  Messages
+                </button>
+                <button className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <Settings className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  Settings
+                </button>
+                <hr className="my-2 border-gray-200 dark:border-gray-700" />
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <LogOut className="h-5 w-5 text-red-600 dark:text-red-400" />
+                  Logout
+                </button>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </SidebarFooter>
+      </Sidebar>
+    </TooltipProvider>
   );
 };
 
