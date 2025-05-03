@@ -69,7 +69,7 @@ export default function CredentialsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filter.searchValue, filter.business_unit, credentials.length, api]);
+  }, [filter.searchValue, filter.business_unit, credentials.length]);
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
@@ -79,20 +79,17 @@ export default function CredentialsPage() {
     return () => clearTimeout(debounceTimer);
   }, [filter.searchValue, filter.business_unit]);
 
-  const fetchCredentialById = useCallback(
-    async (id: number) => {
-      // We don't need to set global loading state for individual user fetches
-      try {
-        const response = await api.get(`/userInfo/${id}/`);
-        return response.data;
-      } catch (error) {
-        console.error(`Error fetching credential with ID ${id}:`, error);
-        // Only show error toast for critical operations
-        return null;
-      }
-    },
-    [api]
-  );
+  const fetchCredentialById = useCallback(async (id: number) => {
+    // We don't need to set global loading state for individual user fetches
+    try {
+      const response = await api.get(`/userInfo/${id}/`);
+      return response.data;
+    } catch (error) {
+      console.error(`Error fetching credential with ID ${id}:`, error);
+      // Only show error toast for critical operations
+      return null;
+    }
+  }, []);
 
   const handleAddNew = useCallback(() => {
     setSelectedUser(null);
@@ -154,7 +151,7 @@ export default function CredentialsPage() {
     };
 
     fetchMasterData();
-  }, [api, businessUnits.length, departments.length, designations.length]);
+  }, [businessUnits.length, departments.length, designations.length]);
 
   const handleDelete = (id: number) => {
     setUserIdToDelete(id);
@@ -169,21 +166,16 @@ export default function CredentialsPage() {
           prev.filter((user) => user.id !== userIdToDelete)
         );
 
-        // Close the dialog immediately
         setIsDeleteDialogOpen(false);
 
-        // Show a loading toast that we'll update with the result
         const toastId = toast.loading("Deleting employee...");
 
-        // Make the API call in the background
         await api.put(`/userInfo/${userIdToDelete}/`, { is_deleted: true });
 
-        // Update the toast on success
         toast.success("Employee deleted successfully", { id: toastId });
       } catch (error) {
         console.error("Error deleting employee:", error);
 
-        // If there was an error, fetch the data again to restore the deleted item
         toast.error("Failed to delete employee");
         fetchCredentials();
       } finally {
@@ -230,6 +222,8 @@ export default function CredentialsPage() {
       try {
         setIsLoading(true);
 
+        console.log(formData);
+
         if (selectedUser?.id) {
           // Update existing user
           const response = await api.put(
@@ -246,19 +240,41 @@ export default function CredentialsPage() {
           toast.success("Employee updated successfully");
         } else {
           // Create new user
-          const response = await api.post("/register/", formData);
-          const newUser = response.data as Credential;
-
-          // Add the new user to the list without re-fetching or reloading
-          // Fetch the complete user data to ensure we have all fields
-          try {
-            const completeUserData = await api.get(`/userInfo/${newUser.id}/`);
-            setCredentials((prev) => [...prev, completeUserData.data]);
-          } catch (err) {
-            // If fetching complete data fails, still add the partial data we have
-            setCredentials((prev) => [...prev, newUser]);
-          }
-
+          await api.post("/register/", formData);
+          
+          // Create a new credential object from the form data
+          // This allows us to show the new user in the table immediately without a page refresh
+          const newCredential: Credential = {
+            id: Date.now(),
+            username: formData.username || formData.email,
+            email: formData.email,
+            name: formData.name,
+            employee_code: formData.employee_code || "",
+            department: formData.department,
+            designation: formData.designation,
+            business_unit: formData.business_unit,
+            status: formData.status,
+            dob: formData.dob,
+            contact: formData.contact,
+            address: formData.address,
+            city: formData.city,
+            state: formData.state,
+            country: formData.country,
+            first_name: formData.first_name,
+            last_name: formData.last_name,
+            is_active: formData.is_active,
+            is_staff: formData.is_staff,
+            is_superuser: formData.is_superuser,
+            is_budget_requester: formData.is_budget_requester || false
+          };
+          
+          // Add the new user to the credentials list
+          setCredentials((prev) => [...prev, newCredential]);
+          
+          // Fetch all credentials in the background to ensure we have the latest data
+          // This will update the temporary entry with the real one from the server
+          fetchCredentials();
+          
           toast.success("Employee added successfully");
         }
 
@@ -274,7 +290,7 @@ export default function CredentialsPage() {
         setIsLoading(false);
       }
     },
-    [selectedUser, api]
+    [selectedUser, fetchCredentials, api, setCredentials, setIsFormOpen, setIsLoading]
   );
 
   return (
@@ -302,13 +318,6 @@ export default function CredentialsPage() {
             disabled={isLoading}
           >
             <Plus className="mr-2 h-4 w-4" /> Add Employee
-          </Button>
-          <Button
-            onClick={handleAddNew}
-            className="md:w-auto w-full bg-gradient-to-r from-green-800 to-green-500 hover:from-green-700 hover:to-green-800 text-white transition-colors duration-300 ease-in-out"
-            disabled={isLoading}
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add MD
           </Button>
         </div>
       </div>

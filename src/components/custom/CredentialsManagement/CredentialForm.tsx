@@ -27,6 +27,7 @@ import { toast } from "@/lib/toast-util";
 import { CredentialFormData, CredentialFormProps, Department, Designation, BusinessUnit, FormFieldProps } from "./types";
 
 
+// Optimize FormField with better memoization and equality checking
 const FormField = memo(({
   label,
   name,
@@ -38,6 +39,16 @@ const FormField = memo(({
   helperText = "",
   disabled = false,
 }: FormFieldProps) => {
+  // Convert value to string only once
+  const stringValue = useMemo(() => {
+    return value === null || value === undefined ? "" : String(value);
+  }, [value]);
+  
+  // Memoize the input handler to prevent recreating on each render
+  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    onChange(e);
+  }, [onChange]);
+  
   return (
     <div className="space-y-2">
       <Label htmlFor={name} className="text-sm font-medium">
@@ -47,8 +58,8 @@ const FormField = memo(({
         id={name}
         name={name}
         type={type}
-        value={value === null || value === undefined ? "" : String(value)}
-        onChange={onChange}
+        value={stringValue}
+        onChange={handleChange}
         placeholder={placeholder}
         className="w-full"
         required={required}
@@ -58,6 +69,13 @@ const FormField = memo(({
         <div className="text-xs text-gray-500">{helperText}</div>
       )}
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom equality check to prevent unnecessary re-renders
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.disabled === nextProps.disabled &&
+    prevProps.name === nextProps.name
   );
 });
 FormField.displayName = "FormField";
@@ -84,14 +102,29 @@ const SelectField = memo(({
   required = false,
   disabled = false,
 }: SelectFieldProps) => {
+  // Memoize the string value to prevent recalculation
+  const stringValue = useMemo(() => {
+    return value !== null && value !== undefined ? value.toString() : undefined;
+  }, [value]);
+  
+  // Memoize the change handler
+  const handleValueChange = useCallback((newValue: string) => {
+    onChange(name, newValue);
+  }, [name, onChange]);
+  
+  // Memoize filtered options to prevent filtering on every render
+  const filteredOptions = useMemo(() => {
+    return options.filter((option) => option.name && option.name.trim() !== "");
+  }, [options]);
+  
   return (
     <div className="space-y-2">
       <Label htmlFor={name} className="text-sm font-medium">
         {label} {required && <span className="text-red-500">*</span>}
       </Label>
       <Select
-        value={value !== null && value !== undefined ? value.toString() : undefined}
-        onValueChange={(value) => onChange(name, value)}
+        value={stringValue}
+        onValueChange={handleValueChange}
         disabled={disabled}
       >
         <SelectTrigger className="w-full">
@@ -99,19 +132,25 @@ const SelectField = memo(({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="placeholder">Select...</SelectItem>
-          {options
-            .filter((option) => option.name && option.name.trim() !== "")
-            .map((option) => (
-              <SelectItem
-                key={option.id.toString()}
-                value={option.id.toString()}
-              >
-                {option.name}
-              </SelectItem>
-            ))}
+          {filteredOptions.map((option) => (
+            <SelectItem
+              key={option.id.toString()}
+              value={option.id.toString()}
+            >
+              {option.name}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom equality check to prevent unnecessary re-renders
+  return (
+    prevProps.value === nextProps.value &&
+    prevProps.disabled === nextProps.disabled &&
+    prevProps.name === nextProps.name &&
+    prevProps.options.length === nextProps.options.length
   );
 });
 SelectField.displayName = "SelectField";
@@ -130,6 +169,7 @@ interface CascadingDropdownProps {
   isLoading: boolean;
 }
 
+// Optimize CascadingDropdowns with better memoization
 const CascadingDropdowns = memo(({
   businessUnits,
   departments,
@@ -142,6 +182,27 @@ const CascadingDropdowns = memo(({
   onDesignationChange,
   isLoading,
 }: CascadingDropdownProps) => {
+  // Memoize the business unit string value
+  const businessUnitValue = useMemo(() => {
+    return selectedBusinessUnit !== null && selectedBusinessUnit !== undefined 
+      ? selectedBusinessUnit.toString() 
+      : undefined;
+  }, [selectedBusinessUnit]);
+  
+  // Memoize the department string value
+  const departmentValue = useMemo(() => {
+    return selectedDepartment !== null && selectedDepartment !== undefined 
+      ? selectedDepartment.toString() 
+      : undefined;
+  }, [selectedDepartment]);
+  
+  // Memoize the designation string value
+  const designationValue = useMemo(() => {
+    return selectedDesignation !== null && selectedDesignation !== undefined 
+      ? selectedDesignation.toString() 
+      : undefined;
+  }, [selectedDesignation]);
+  
   // Filter departments based on selected business unit
   const filteredDepartments = useMemo(() => {
     if (!selectedBusinessUnit) return [];
@@ -157,6 +218,24 @@ const CascadingDropdowns = memo(({
       (desig) => desig.department === selectedDepartment
     );
   }, [designations, selectedDepartment]);
+  
+  // Memoize handlers to prevent recreation on each render
+  const handleBusinessUnitValueChange = useCallback((value: string) => {
+    onBusinessUnitChange(value ? parseInt(value, 10) : null);
+    // Reset department and designation when business unit changes
+    onDepartmentChange(null);
+    onDesignationChange(null);
+  }, [onBusinessUnitChange, onDepartmentChange, onDesignationChange]);
+  
+  const handleDepartmentValueChange = useCallback((value: string) => {
+    onDepartmentChange(value ? parseInt(value, 10) : null);
+    // Reset designation when department changes
+    onDesignationChange(null);
+  }, [onDepartmentChange, onDesignationChange]);
+  
+  const handleDesignationValueChange = useCallback((value: string) => {
+    onDesignationChange(value ? parseInt(value, 10) : null);
+  }, [onDesignationChange]);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -165,13 +244,8 @@ const CascadingDropdowns = memo(({
           Business Unit / Plant
         </Label>
         <Select
-          value={selectedBusinessUnit !== null && selectedBusinessUnit !== undefined ? selectedBusinessUnit.toString() : undefined}
-          onValueChange={(value) => {
-            onBusinessUnitChange(value ? parseInt(value, 10) : null);
-            // Reset department and designation when business unit changes
-            onDepartmentChange(null);
-            onDesignationChange(null);
-          }}
+          value={businessUnitValue}
+          onValueChange={handleBusinessUnitValueChange}
           disabled={isLoading}
         >
           <SelectTrigger className="w-full">
@@ -193,12 +267,8 @@ const CascadingDropdowns = memo(({
           Department
         </Label>
         <Select
-          value={selectedDepartment !== null && selectedDepartment !== undefined ? selectedDepartment.toString() : undefined}
-          onValueChange={(value) => {
-            onDepartmentChange(value ? parseInt(value, 10) : null);
-            // Reset designation when department changes
-            onDesignationChange(null);
-          }}
+          value={departmentValue}
+          onValueChange={handleDepartmentValueChange}
           disabled={!selectedBusinessUnit || isLoading}
         >
           <SelectTrigger className="w-full">
@@ -226,10 +296,8 @@ const CascadingDropdowns = memo(({
           Designation
         </Label>
         <Select
-          value={selectedDesignation !== null && selectedDesignation !== undefined ? selectedDesignation.toString() : undefined}
-          onValueChange={(value) =>
-            onDesignationChange(value ? parseInt(value, 10) : null)
-          }
+          value={designationValue}
+          onValueChange={handleDesignationValueChange}
           disabled={!selectedDepartment || isLoading}
         >
           <SelectTrigger className="w-full">
@@ -255,6 +323,17 @@ const CascadingDropdowns = memo(({
         </Select>
       </div>
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom equality check to prevent unnecessary re-renders
+  return (
+    prevProps.selectedBusinessUnit === nextProps.selectedBusinessUnit &&
+    prevProps.selectedDepartment === nextProps.selectedDepartment &&
+    prevProps.selectedDesignation === nextProps.selectedDesignation &&
+    prevProps.isLoading === nextProps.isLoading &&
+    prevProps.businessUnits.length === nextProps.businessUnits.length &&
+    prevProps.departments.length === nextProps.departments.length &&
+    prevProps.designations.length === nextProps.designations.length
   );
 });
 CascadingDropdowns.displayName = "CascadingDropdowns";
@@ -444,24 +523,37 @@ function CredentialFormContent({
     }));
   }, []);
 
-  // Handle input changes including special handling for the name field
+  // Handle input changes with performance optimization
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
 
+      // Use a functional update to ensure we're working with the latest state
       if (name === "name") {
-        // When name changes, split it into first_name and last_name
-        const nameParts = value.trim().split(/\s+/);
-        const firstName = nameParts[0] || "";
-        const lastName = nameParts.slice(1).join(" ");
-
+        // For name field, update the name immediately but debounce the first/last name update
         setFormData((prev) => ({
           ...prev,
-          name: value,
-          first_name: firstName,
-          last_name: lastName,
+          [name]: value,
         }));
+        
+        // Use requestAnimationFrame for better performance than setTimeout
+        // This will run after the browser has processed the input change
+        const frameId = requestAnimationFrame(() => {
+          const nameParts = value.trim().split(/\s+/);
+          const firstName = nameParts[0] || "";
+          const lastName = nameParts.slice(1).join(" ");
+          
+          setFormData((prev) => ({
+            ...prev,
+            first_name: firstName,
+            last_name: lastName,
+          }));
+        });
+        
+        // Cleanup animation frame on next render
+        return () => cancelAnimationFrame(frameId);
       } else {
+        // For all other fields, just update the value directly
         setFormData((prev) => ({
           ...prev,
           [name]: value,
@@ -570,38 +662,38 @@ function CredentialFormContent({
     [activeTab]
   );
 
-  const basicTabContent = useMemo(
-    () => (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FormField
-          label="Email Address"
-          name="email"
-          value={formData.email}
-          type="email"
-          onChange={handleInputChange}
-          placeholder="john.doe@company.com"
-          required
-          disabled={isLoading || formLoading}
-        />
+  // Create a memoized basic tab content
+  const basicTabContent = useMemo(() => (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <FormField
+        label="Email Address"
+        name="email"
+        value={formData.email}
+        type="email"
+        onChange={handleInputChange}
+        placeholder="john.doe@company.com"
+        required
+        disabled={isLoading || formLoading}
+      />
 
-        <FormField
-          label="Username"
-          name="username"
-          value={formData.username}
-          onChange={handleInputChange}
-          placeholder="Same as email if left empty"
-          disabled={isLoading || formLoading}
-        />
+      <FormField
+        label="Username"
+        name="username"
+        value={formData.username}
+        onChange={handleInputChange}
+        placeholder="Same as email if left empty"
+        disabled={isLoading || formLoading}
+      />
 
-        <FormField
-          label="Full Name"
-          name="name"
-          value={formData.name}
-          onChange={handleInputChange}
-          placeholder="John Doe"
-          required
-          disabled={isLoading || formLoading}
-        />
+      <FormField
+        label="Full Name"
+        name="name"
+        value={formData.name}
+        onChange={handleInputChange}
+        placeholder="John Doe"
+        required
+        disabled={isLoading || formLoading}
+      />
 
         <FormField
           label="Employee Code"
@@ -656,75 +748,75 @@ function CredentialFormContent({
     [formData, handleInputChange, handleSwitchChange, isLoading, formLoading, selectedUser]
   );
 
-  const contactTabContent = useMemo(
-    () => (
-      <>
-        <div className="mb-6">
-          <CascadingDropdowns
-            businessUnits={loadedBusinessUnits}
-            departments={loadedDepartments}
-            designations={loadedDesignations}
-            selectedBusinessUnit={formData.business_unit}
-            selectedDepartment={formData.department}
-            selectedDesignation={formData.designation}
-            onBusinessUnitChange={handleBusinessUnitChange}
-            onDepartmentChange={handleDepartmentChange}
-            onDesignationChange={handleDesignationChange}
-            isLoading={isLoading || formLoading}
-          />
-        </div>
+  // Create a memoized contact tab content
+  const contactTabContent = useMemo(() => (
+    <>
+      <div className="mb-6">
+        <CascadingDropdowns
+          businessUnits={loadedBusinessUnits}
+          departments={loadedDepartments}
+          designations={loadedDesignations}
+          selectedBusinessUnit={formData.business_unit}
+          selectedDepartment={formData.department}
+          selectedDesignation={formData.designation}
+          onBusinessUnitChange={handleBusinessUnitChange}
+          onDepartmentChange={handleDepartmentChange}
+          onDesignationChange={handleDesignationChange}
+          isLoading={isLoading || formLoading}
+        />
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            label="Contact Number"
-            name="contact"
-            value={formData.contact || ""}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <FormField
+          label="Contact Number"
+          name="contact"
+          value={formData.contact || ""}
+          onChange={handleInputChange}
+          placeholder="+1 123-456-7890"
+          disabled={isLoading || formLoading}
+        />
+
+        <div className="space-y-2">
+          <Label htmlFor="address" className="text-sm font-medium">
+            Address
+          </Label>
+          <Textarea
+            id="address"
+            name="address"
+            value={formData.address === null ? "" : formData.address || ""}
             onChange={handleInputChange}
-            placeholder="+1 123-456-7890"
-            disabled={isLoading || formLoading}
-          />
-
-          <div className="space-y-2">
-            <Label htmlFor="address" className="text-sm font-medium">
-              Address
-            </Label>
-            <Textarea
-              id="address"
-              name="address"
-              value={formData.address === null ? "" : formData.address || ""}
-              onChange={handleInputChange}
-              placeholder="Street address"
-              className="w-full"
-              disabled={isLoading || formLoading}
-            />
-          </div>
-
-          <FormField
-            label="City"
-            name="city"
-            value={formData.city || ""}
-            onChange={handleInputChange}
-            disabled={isLoading || formLoading}
-          />
-
-          <FormField
-            label="State/Province"
-            name="state"
-            value={formData.state || ""}
-            onChange={handleInputChange}
-            disabled={isLoading || formLoading}
-          />
-
-          <FormField
-            label="Country"
-            name="country"
-            value={formData.country || ""}
-            onChange={handleInputChange}
+            placeholder="Street address"
+            className="w-full"
             disabled={isLoading || formLoading}
           />
         </div>
-      </>
-    ),
+
+        <FormField
+          label="City"
+          name="city"
+          value={formData.city || ""}
+          onChange={handleInputChange}
+          disabled={isLoading || formLoading}
+        />
+
+        <FormField
+          label="State/Province"
+          name="state"
+          value={formData.state || ""}
+          onChange={handleInputChange}
+          disabled={isLoading || formLoading}
+        />
+
+        <FormField
+          label="Country"
+          name="country"
+          value={formData.country || ""}
+          onChange={handleInputChange}
+          disabled={isLoading || formLoading}
+        />
+      </div>
+    </>
+  ),
     [
       formData,
       handleInputChange,

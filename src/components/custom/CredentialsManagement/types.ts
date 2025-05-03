@@ -71,7 +71,7 @@ export interface CredentialFormProps {
   isOpen: boolean;
   onClose: () => void;
   selectedUser: Credential | null;
-  onSubmit: (formData: CredentialFormData) => void;
+  onSubmit: (formData: CredentialFormData) => Promise<void>;
   departments: Department[];
   businessUnits: BusinessUnit[];
   designations: Designation[];
