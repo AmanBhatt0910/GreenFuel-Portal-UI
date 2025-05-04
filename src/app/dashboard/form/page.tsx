@@ -502,461 +502,220 @@ export default function AssetRequestForm() {
     }
   };
 
-  const generatePDF = async (): Promise<void> => {
-    let businessUnitName: string = "N/A";
-    let departmentName: string = "N/A";
-    let designationName: string = "N/A";
-
-    // console.log(formData)
-    console.log(userInfo)
+// Push here
+const generatePDF = async (): Promise<void> => {
+  let businessUnitName: string = "N/A";
+  let departmentName: string = "N/A";
+  let designationName: string = "N/A";
   
-    try {
-      // Fetch business unit name
-      if (formData.plant) {
-        const businessUnitResponse = await api.get(
-          `business-units/${formData.plant}/`
-        );
-      
-        if (businessUnitResponse.data && businessUnitResponse.data.name) {
-          businessUnitName = businessUnitResponse.data.name;
-        }
-      }
-
-      
-
-      if (formData.initiateDept) {
-        const departmentResponse = await api.get(
-          `/departments/${formData.initiateDept}/`
-        );
-
-        if (departmentResponse.data && departmentResponse.data.name) {
-          departmentName = departmentResponse.data.name;
-        }
-      }
-  
-      // Fetch designation name
-      if (formData.designation) {
-        const designationResponse = await api.get(
-          `/designations/${formData.designation}/`
-        );
-        
-        if (designationResponse.data && designationResponse.data.name) {
-          designationName = designationResponse.data.name;
-        }
-      }
-    } catch (error) {
-      console.error("Error fetching entity names:", error);
-    }
-  
-    // Create a new PDF document
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-  
-    // Define a simpler, more professional color scheme
-    const primaryColor: [number, number, number] = [44, 62, 80]; // Dark blue-gray
-    const accentColor: [number, number, number] = [52, 152, 219]; // Bright blue
-    const textColor: [number, number, number] = [50, 50, 50]; // Dark gray for text
-    const lightGrayBg: [number, number, number] = [245, 245, 245]; // Light gray for backgrounds
-  
-    try {
-      const imgData: string = "/green.png"; 
-      doc.addImage(imgData, "PNG", 14, 10, 30, 15);
-    } catch (error) {
-      console.error("Error adding logo:", error);
-      // Fallback: Write company name instead of logo
-      doc.setFontSize(18);
-      doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.setFont("helvetica", "bold");
-      doc.text("GREEN CORP", 14, 20);
-    }
-  
-    // Document title with cleaner styling
-    doc.setFontSize(20);
-    doc.setTextColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.setFont("helvetica", "bold");
-    doc.text("ASSET REQUEST", 105, 20, { align: "center" });
-  
-    // Document subtitle with request ID
-    doc.setFontSize(12);
-    doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-    doc.text(`Request #${budgetId}`, 105, 28, { align: "center" });
-  
-    // Add simple divider line
-    doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
-    doc.setLineWidth(0.5);
-    doc.line(14, 35, 196, 35);
-  
-    // Date and confidentiality
-    doc.setFontSize(9);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Generated: ${format(new Date(), "MMMM dd, yyyy")}`, 14, 42);
-    doc.text("CONFIDENTIAL - INTERNAL USE ONLY", 196, 42, { align: "right" });
-  
-    // Introduction paragraph
-    doc.setFontSize(10);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    doc.setFont("helvetica", "normal");
-    const introText: string =
-      "This document contains a formal request for company assets as submitted through the Asset Management System. The request is subject to approval according to company policies and budgetary constraints. Please review all details carefully before proceeding with the approval process.";
-    const splitIntro: string[] = doc.splitTextToSize(introText, 180);
-    doc.text(splitIntro, 14, 55);
-  
-    let y: number = 55 + splitIntro.length * 5 + 8;
-  
-    // REQUESTOR INFORMATION SECTION - cleaner header
-    addSectionHeader(doc, "REQUESTOR INFORMATION", y, primaryColor);
-    y += 10;
-  
-    // Add subtle background for section content
-    doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
-    doc.rect(14, y, 182, 38, "F");
-  
-    // Create two-column layout for requestor info
-    const leftColX: number = 20;
-    const rightColX: number = 110;
-    const labelWidth: number = 40;
-  
-    // Add field labels and values
-    addLabelValuePair(
-      doc,
-      "Name:",
-      formData.employeeName,
-      leftColX,
-      y + 8,
-      labelWidth
-    );
-    addLabelValuePair(
-      doc,
-      "Submission Date:",
-      format(new Date(), "MMMM dd, yyyy"),
-      rightColX,
-      y + 8,
-      labelWidth
-    );
-  
-    addLabelValuePair(
-      doc,
-      "Employee ID:",
-      formData.employeeCode,
-      leftColX,
-      y + 16,
-      labelWidth
-    );
-    addLabelValuePair(
-      doc,
-      "Business Unit:",
-      businessUnitName,
-      rightColX,
-      y + 16,
-      labelWidth
-    );
-  
-    addLabelValuePair(
-      doc,
-      "Department:",
-      departmentName,
-      leftColX,
-      y + 24,
-      labelWidth
-    );
-    addLabelValuePair(
-      doc,
-      "Designation:",
-      designationName,
-      rightColX,
-      y + 24,
-      labelWidth
-    );
-  
-    addLabelValuePair(
-      doc,
-      "Request Status:",
-      "Pending Approval",
-      leftColX,
-      y + 32,
-      labelWidth
-    );
-    addLabelValuePair(
-      doc,
-      "Approval Level:",
-      "Initial",
-      rightColX,
-      y + 32,
-      labelWidth
-    );
-  
-    y += 48;
-  
-    // ASSET SUMMARY SECTION
-    addSectionHeader(doc, "ASSET SUMMARY", y, primaryColor);
-    y += 10;
-  
-    interface TableColumn {
-      header: string;
-      dataKey: string;
-    }
-  
-    interface TableRow {
-      asset: string;
-      description: string;
-      sapCode: string;
-      qty: string;
-      unitPrice: string;
-      total: string;
-    }
-  
-    if (formData.assets && formData.assets.length > 0) {
-      const tableColumn: TableColumn[] = [
-        { header: "Asset", dataKey: "asset" },
-        { header: "Description", dataKey: "description" },
-        { header: "SAP Code", dataKey: "sapCode" },
-        { header: "Qty", dataKey: "qty" },
-        { header: "Unit Price", dataKey: "unitPrice" },
-        { header: "Total", dataKey: "total" },
-      ];
-  
-      const tableRows: TableRow[] = formData.assets.map((asset) => ({
-        asset: asset.title,
-        description: asset.description || "-",
-        sapCode: asset.sapItemCode || "N/A",
-        qty: asset.quantity.toString(),
-        unitPrice: formatCurrency(Number(asset.pricePerUnit)).replace(
-          "₹",
-          "INR "
-        ),
-        total: formatCurrency(Number(asset.total)).replace("₹", "INR "),
-      }));
-  
-      // Clean, professional table styling
-      autoTable(doc, {
-        head: [tableColumn.map((col) => col.header)],
-        body: tableRows.map((row) => [
-          row.asset,
-          row.description,
-          row.sapCode,
-          row.qty,
-          row.unitPrice,
-          row.total,
-        ]),
-        startY: y,
-        styles: {
-          fontSize: 9,
-          cellPadding: 4,
-          overflow: "linebreak",
-          lineWidth: 0.1,
-        },
-        columnStyles: {
-          0: { cellWidth: 30 }, // Asset
-          1: { cellWidth: 60 }, // Description
-          2: { cellWidth: 20 }, // SAP Code
-          3: { cellWidth: 10 }, // Qty
-          4: { cellWidth: 25 }, // Unit Price
-          5: { cellWidth: 25 }, // Total
-        },
-        headStyles: {
-          fillColor: [primaryColor[0], primaryColor[1], primaryColor[2]],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-          halign: "left",
-        },
-        alternateRowStyles: { fillColor: [lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]] },
-        footStyles: {
-          fillColor: [accentColor[0], accentColor[1], accentColor[2]],
-          textColor: [255, 255, 255],
-          fontStyle: "bold",
-          halign: "right",
-          fontSize: 10,
-        },
-        foot: [
-          [
-            "",
-            "",
-            "",
-            "",
-            "Total Request Value:",
-            formatCurrency(Number(formData.assetAmount)).replace("₹", "INR "),
-          ],
-        ],
-      });
-  
-      interface AutoTableOutput {
-        finalY: number;
-      }
-      
-      const lastTable = (doc as any).lastAutoTable as AutoTableOutput;
-      y = lastTable?.finalY !== undefined ? lastTable.finalY + 15 : y + 20;
-    } else {
-      doc.setFontSize(10);
-      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-      doc.text("No assets have been requested.", 14, y);
-      y += 15;
-    }
-  
-    // Business Justification Section
-    addSectionHeader(doc, "BUSINESS JUSTIFICATION", y, primaryColor);
-    y += 10;
-  
-    // Add simple boxed justification
-    doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
-    doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
-    doc.roundedRect(14, y, 182, 40, 2, 2, "FD");
-  
-    doc.setFontSize(10);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    doc.setFont("helvetica", "normal");
-  
-    // Handle multiline text for reason
-    const splitReason: string[] = doc.splitTextToSize(
-      formData.reason || "No justification provided",
-      170
-    );
-    doc.text(splitReason, 19, y + 8);
-  
-    y += 45;
-  
-    // Benefits to Organization
-    if (formData.benefitToOrg) {
-      // Check if we need to add a new page
-      if (y > 220) {
-        doc.addPage();
-        y = 20;
-      } else {
-        y += 5; // Add some spacing if on the same page
-      }
-      
-      addSectionHeader(doc, "ORGANIZATIONAL BENEFITS", y, primaryColor);
-      y += 10;
-  
-      // Add boxed benefits
-      doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
-      doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
-      doc.roundedRect(14, y, 182, 35, 2, 2, "FD");
-  
-      doc.setFontSize(10);
-      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-      const splitBenefits: string[] = doc.splitTextToSize(
-        formData.benefitToOrg,
-        170
+  try {
+    if (formData.plant) {
+      const businessUnitResponse = await api.get(
+        `business-units/${formData.plant}/`
       );
-      doc.text(splitBenefits, 19, y + 8);
-  
-      y += 40;
-    }
-  
-    // Check if need to add a new page
-    if (y > 220) {
-      doc.addPage();
-      y = 20;
-    }
-  
-    // TERMS AND CONDITIONS
-    addSectionHeader(doc, "TERMS & CONDITIONS", y, primaryColor);
-    y += 10;
-    
-    doc.setFontSize(9);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-  
-    // Terms with better spacing
-    const terms: string[] = [
-      "1. All asset requests are subject to company approval policies and budget availability.",
-      "2. The requestor is responsible for the proper use and care of company assets.",
-      "3. Assets remain company property and must be returned upon request or termination.",
-      "4. Damaged or lost assets may result in financial liability as per company policy.",
-      "5. Use of assets for purposes other than company business is strictly prohibited.",
-    ];
-  
-    terms.forEach((term) => {
-      doc.text(term, 14, y);
-      y += 6;
-    });
-  
-    // Policy agreement
-    y += 5;
-    doc.setFillColor(lightGrayBg[0], lightGrayBg[1], lightGrayBg[2]);
-    doc.setDrawColor(accentColor[0], accentColor[1], accentColor[2]);
-    doc.roundedRect(14, y, 182, 20, 2, 2, "FD");
-  
-    doc.setFontSize(9);
-    doc.setTextColor(accentColor[0], accentColor[1], accentColor[2]);
-    doc.setFont("helvetica", "bold");
-    doc.text("Policy Agreement Confirmation", 19, y + 6);
-  
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(8);
-    doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-    const policyText: string =
-      "The requestor has acknowledged and agreed to comply with all company policies related to asset usage, maintenance, and return as specified in the Asset Management Procedure document (Ref: AMP-2023-01).";
-    const splitPolicy: string[] = doc.splitTextToSize(policyText, 172);
-    doc.text(splitPolicy, 19, y + 12);
-  
-    // Add footers to all pages - fixing the overlapping issue
-    const pageCount: number = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-  
-      // Simple footer line
-      doc.setDrawColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-      doc.setLineWidth(0.5);
-      doc.line(14, 280, 196, 280);
-  
-      // Footer text - properly spaced to avoid overlapping
-      doc.setFontSize(8);
-      doc.setTextColor(textColor[0], textColor[1], textColor[2]);
-      
-      // Left-aligned text
-      doc.text(`Asset Management System`, 14, 287);
-      
-      // Center-aligned text
-      doc.text(`Request #${budgetId} | Page ${i} of ${pageCount}`, 105, 287, {
-        align: "center",
-      });
-      
-      // Right-aligned text
-      doc.text(`Confidential Document`, 196, 287, { align: "right" });
+      if (businessUnitResponse.data?.name) {
+        businessUnitName = businessUnitResponse.data.name;
+      }
     }
     
-    doc.save(`Asset_Request_${budgetId}.pdf`);
+    if (formData.initiateDept) {
+      const departmentResponse = await api.get(
+        `/departments/${formData.initiateDept}/`
+      );
+      if (departmentResponse.data?.name) {
+        departmentName = departmentResponse.data.name;
+      }
+    }
+    
+    if (formData.designation) {
+      const designationResponse = await api.get(
+        `/designations/${formData.designation}/`
+      );
+      if (designationResponse.data?.name) {
+        designationName = designationResponse.data.name;
+      }
+    }
+  } catch (error) {
+    console.error("Error fetching entity names:", error);
+  }
+
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4",
+  });
+
+  // Fixed color type definitions with explicit tuple types
+  const colors: {
+    primary: [number, number, number];
+    secondary: [number, number, number];
+    text: [number, number, number];
+    background: [number, number, number];
+    border: [number, number, number];
+  } = {
+    primary: [44, 62, 80],
+    secondary: [52, 152, 219],
+    text: [51, 51, 51],
+    background: [245, 245, 245],
+    border: [221, 221, 221]
   };
-  
-  // Helper function to add section headers - with cleaner styling
-  function addSectionHeader(
-    doc: any,
-    title: string,
-    y: number,
-    primaryColor: [number, number, number]
-  ): void {
-    // Use a clean, professional look for headers
-    doc.setFillColor(primaryColor[0], primaryColor[1], primaryColor[2]);
-    doc.rect(14, y, 182, 6, "F");
-  
+
+  // Header Section
+  try {
+    const imgData: string = "/green.png"; 
+    doc.addImage(imgData, "PNG", 14, 10, 35, 15);
+  } catch (error) {
+    doc.setFontSize(18);
+    doc.setFillColor(...colors.primary);
+    doc.setFont("helvetica", "bold");
+    doc.text("GREEN CORP", 14, 20);
+  }
+
+  // Title Section
+  doc.setFontSize(20);
+  doc.setTextColor(...colors.primary);
+  doc.setFont("helvetica", "bold");
+  doc.text("ASSET REQUEST", 105, 25, { align: "center" });
+
+  // Subtitle
+  doc.setFontSize(12);
+  doc.setTextColor(...colors.secondary);
+  doc.text(`Request #${budgetId}`, 105, 33, { align: "center" });
+
+  // Divider Line
+  doc.setDrawColor(...colors.border);
+  doc.setLineWidth(0.5);
+  doc.line(14, 38, 196, 38);
+
+  // Metadata
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.text);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Generated: ${format(new Date(), "MMMM dd, yyyy")}`, 14, 45);
+  doc.text("CONFIDENTIAL", 196, 45, { align: "right" });
+
+  // Introduction
+  doc.setFontSize(10);
+  const introText = "This document contains a formal request for company assets...";
+  const splitIntro = doc.splitTextToSize(introText, 180);
+  doc.text(splitIntro, 14, 55);
+
+  let y: number = 55 + splitIntro.length * 5 + 10;
+
+  // Requestor Information Section
+  const addSectionHeader = (title: string, y: number) => {
+    doc.setFillColor(...colors.background);
+    doc.rect(14, y, 182, 10, "F");
+    doc.setFontSize(12);
+    doc.setTextColor(...colors.primary);
+    doc.setFont("helvetica", "bold");
+    doc.text(title, 14, y + 7);
+  };
+
+  addSectionHeader("REQUESTOR INFORMATION", y);
+  y += 15;
+
+  // Requestor Info Card
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(...colors.border);
+  doc.roundedRect(14, y, 182, 40, 3, 3, "S");
+
+  const addInfoRow = (label: string, value: string, x: number, yOffset: number) => {
     doc.setFontSize(10);
-    doc.setTextColor(255, 255, 255);
-    doc.setFont("helvetica", "bold");
-    doc.text(title, 17, y + 4);
+    doc.setTextColor(100, 100, 100);
+    doc.text(label, x, y + yOffset);
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.text);
+    doc.text(value, x + 35, y + yOffset);
+  };
+
+  addInfoRow("Name:", formData.employeeName, 20, 8);
+  addInfoRow("Employee ID:", formData.employeeCode, 20, 16);
+  addInfoRow("Department:", departmentName, 20, 24);
+  addInfoRow("Business Unit:", businessUnitName, 110, 8);
+  addInfoRow("Designation:", designationName, 110, 16);
+  addInfoRow("Status:", "Pending Approval", 110, 24);
+
+  y += 45;
+
+  // Asset Summary Section
+  addSectionHeader("ASSET SUMMARY", y);
+  y += 15;
+
+  if (formData.assets?.length) {
+    autoTable(doc, {
+      startY: y,
+      head: [["Asset", "Description", "SAP Code", "Qty", "Unit Price", "Total"]],
+      body: formData.assets.map(asset => [
+        asset.title,
+        asset.description || "-",
+        asset.sapItemCode || "N/A",
+        asset.quantity,
+        formatCurrency(asset.pricePerUnit),
+        formatCurrency(asset.total)
+      ]),
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 4,
+        lineColor: colors.border,
+        textColor: colors.text
+      },
+      headStyles: {
+        fillColor: colors.primary,
+        textColor: 255,
+        fontSize: 10
+      },
+      columnStyles: {
+        3: { halign: "right" },
+        4: { halign: "right" },
+        5: { halign: "right" }
+      },
+      foot: [
+        ["", "", "", "", "Total:", formatCurrency(formData.assetAmount)]
+      ]
+    });
+
+    y = (doc as any).lastAutoTable.finalY + 10;
+  } else {
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.text);
+    doc.text("No assets requested", 14, y);
+    y += 15;
   }
-  
-  // Helper function to add label-value pairs
-  function addLabelValuePair(
-    doc: any,
-    label: string,
-    value: string | undefined,
-    x: number,
-    y: number,
-    labelWidth: number
-  ): void {
-    doc.setFontSize(9);
-    doc.setTextColor(80, 80, 80);
-    doc.setFont("helvetica", "normal");
-    doc.text(label, x, y);
-  
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "bold");
-    doc.text(value || "N/A", x + labelWidth, y);
+
+  // Justification Section
+  addSectionHeader("BUSINESS JUSTIFICATION", y);
+  y += 15;
+
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.text);
+  const splitReason = doc.splitTextToSize(formData.reason || "No justification provided", 180);
+  doc.text(splitReason, 14, y);
+  y += splitReason.length * 5 + 15;
+
+  // Policy Agreement Section
+  addSectionHeader("POLICY AGREEMENT", y);
+  y += 15;
+
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.text);
+  const policyText = "The requestor has acknowledged and agreed to comply with all company policies...";
+  const splitPolicy = doc.splitTextToSize(policyText, 180);
+  doc.text(splitPolicy, 14, y);
+
+  // Footer
+  const pageCount = doc.getNumberOfPages();
+  for (let i = 1; i <= pageCount; i++) {
+    doc.setPage(i);
+    doc.setFontSize(8);
+    doc.setTextColor(...colors.text);
+    doc.text(`Page ${i} of ${pageCount}`, 196, 287, { align: "right" });
+    doc.text("Confidential Document", 14, 287);
   }
+
+  doc.save(`Asset_Request_${budgetId}.pdf`);
+};
 
   
   // Format currency with proper thousand separators
