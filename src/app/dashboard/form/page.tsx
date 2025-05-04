@@ -428,6 +428,15 @@ export default function AssetRequestForm() {
         });
       }
 
+      for (let [key, value] of formDataToSubmit.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}: File name = ${value.name}, size = ${value.size} bytes`);
+        } else {
+          console.log(`${key}:`, value);
+        }
+      }
+      
+
       const response = await api.post("approval-requests/", formDataToSubmit, {
         headers: {
           "Content-Type": "multipart/form-data",

@@ -48,7 +48,7 @@ import useAxios from "@/app/hooks/use-axios";
 interface MenuItem {
   title: string;
   url: string;
-  icon: React.ComponentType;
+  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   roles: string[];
   excludeUsernames?: string[];
   badge?: string;
@@ -65,7 +65,7 @@ const DashboardItems: MenuItem[] = [
     title: "Approval Dashboard",
     url: "/dashboard/approvals",
     icon: CheckCircle,
-    roles: ["manager", "approver", "staff"],
+    roles: ["user", "approver", "staff"],
     excludeUsernames: ["Admin"],
     badge: "New",
   },
