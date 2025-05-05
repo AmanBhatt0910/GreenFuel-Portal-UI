@@ -77,8 +77,6 @@ const DashboardPage: React.FC = () => {
   const [designation, setDesignation] = useState<DesignationType | null>(null);
   const api = useAxios();
 
-  console.log(userInfo)
-
   const getUserDashboardData = async (): Promise<void> => {
     try {
       const response = await api.get("/userInfo/?self=true");

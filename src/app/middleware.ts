@@ -1,39 +1,40 @@
 // import { NextRequest, NextResponse } from "next/server";
+// import { RoleType, roleProtectedRoutes } from "../lib/roles";
 
-// type Role = "Admin" | "approver" | "superuser" | "all";
 
-// const roleProtectedRoutes: { [key: string]: Role[] } = {
-//   "/dashboard": ["all"],
-//   "/dashboard/approvals": ["approver", "Admin"],
-//   "/dashboard/form": ["approver"],
-//   "/dashboard/requests": ["approver", "Admin"],
-//   "/dashboard/credentials": ["Admin", "superuser"],
-//   "/dashboard/business-units": ["Admin", "superuser"],
-//   "/dashboard/category-management": ["Admin", "superuser"],
-//   "/dashboard/approval-access": ["Admin", "superuser"],
-// };
-
-// function getUserRole(req: NextRequest): Role {
-//   const role = req.cookies.get("role")?.value as Role | undefined;
+// function getUserRoleFromCookies(req: NextRequest): RoleType {
+//   const role = req.cookies.get("role")?.value as RoleType | undefined;
 //   return role || "all";
 // }
 
 // export function middleware(req: NextRequest) {
-//     const { pathname } = req.nextUrl
-//     const userRole = getUserRole(req)
+//   const { pathname } = req.nextUrl;
   
-    
-//     for (const route in roleProtectedRoutes) {
-//       if (pathname.startsWith(route)) {
-//         const allowedRoles = roleProtectedRoutes[route]
-//         if (!allowedRoles.includes(userRole)) {
-          
-//           const url = req.nextUrl.clone()
-//           url.pathname = '/login'
-//           return NextResponse.redirect(url)
-//         }
+//   // For server-side middleware, we can only use cookies
+//   // localStorage is only available on the client side
+//   const userRole = getUserRoleFromCookies(req);
+  
+//   // Check if the user has access to the requested route
+//   for (const route in roleProtectedRoutes) {
+//     if (pathname.startsWith(route)) {
+//       const allowedRoles = roleProtectedRoutes[route];
+//       if (!allowedRoles.includes(userRole)) {
+//         // Redirect to login page if user doesn't have access
+//         const url = req.nextUrl.clone();
+//         url.pathname = '/dashboard';
+//         return NextResponse.redirect(url);
 //       }
 //     }
-  
-//     return NextResponse.next()
 //   }
+  
+//   return NextResponse.next();
+// }
+
+// // Configure which paths should be checked by the middleware
+// export const config = {
+//   matcher: [
+//     // Match all routes that start with /dashboard
+//     '/dashboard/:path*',
+//     // Add other protected routes here
+//   ],
+// };

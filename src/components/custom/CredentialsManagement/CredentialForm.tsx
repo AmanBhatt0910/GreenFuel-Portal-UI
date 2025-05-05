@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import useAxios from "@/app/hooks/use-axios";
 import { toast } from "@/lib/toast-util";
+import { ROLES } from "@/lib/roles";
 import { CredentialFormData, CredentialFormProps, Department, Designation, BusinessUnit, FormFieldProps } from "./types";
 
 
@@ -370,6 +371,7 @@ function CredentialFormContent({
     is_staff: false,
     is_superuser: false,
     is_budget_requester: false,
+    role: null,
   });
 
   const [activeTab, setActiveTab] = useState<"basic" | "contact">("basic");
@@ -397,7 +399,7 @@ function CredentialFormContent({
       setLoadedDepartments(departments);
     }
     
-    // Only fetch data if we don't have it from props
+    
     const needsFetching = 
       (designations.length === 0 && loadedDesignations.length === 0) ||
       (businessUnits.length === 0 && loadedBusinessUnits.length === 0) ||
@@ -443,7 +445,7 @@ function CredentialFormContent({
     }
   }, [isOpen, designations, businessUnits, departments, loadedDesignations.length, loadedBusinessUnits.length, loadedDepartments.length, api]);
 
-  // Initialize form data when selectedUser changes or component mounts
+  
   useEffect(() => {
     if (selectedUser) {
       setFormData({
@@ -468,6 +470,7 @@ function CredentialFormContent({
         is_staff: selectedUser.is_staff || false,
         is_superuser: selectedUser.is_superuser || false,
         is_budget_requester: selectedUser.is_budget_requester || false,
+        role: selectedUser.role || null,
       });
     } else {
       // Reset form when adding a new user
@@ -492,6 +495,7 @@ function CredentialFormContent({
         is_staff: false,
         is_superuser: false,
         is_budget_requester: false,
+        role: null,
       });
     }
   }, [selectedUser, isOpen]);
@@ -520,6 +524,13 @@ function CredentialFormContent({
     setFormData((prev) => ({
       ...prev,
       designation: value,
+    }));
+  }, []);
+  
+  const handleRoleChange = useCallback((value: string | null) => {
+    setFormData((prev) => ({
+      ...prev,
+      role: value,
     }));
   }, []);
 
@@ -562,27 +573,6 @@ function CredentialFormContent({
     },
     []
   );
-
-  const handleSelectChange = useCallback((name: string, value: string) => {
-    // If user selects the placeholder, treat it as null
-    if (value === "placeholder") {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: null,
-      }));
-      return;
-    }
-    
-    // Convert string value to number for IDs, or keep as null if empty
-    const processedValue = ["designation", "business_unit", "department"].includes(name)
-      ? value ? parseInt(value, 10) : null
-      : value;
-  
-    setFormData((prev) => ({
-      ...prev,
-      [name]: processedValue,
-    }));
-  }, []);
 
   const handleSwitchChange = useCallback((name: string, checked: boolean) => {
     setFormData((prev) => ({
@@ -728,6 +718,31 @@ function CredentialFormContent({
           </div>
         </div>
 
+        <div className="col-span-1">
+          <div className="space-y-2">
+            <Label htmlFor="role" className="text-sm font-medium">
+              Role
+            </Label>
+            <Select
+              value={formData.role || undefined}
+              onValueChange={(value) => handleRoleChange(value)}
+              disabled={isLoading || formLoading}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Role" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="placeholder">Select...</SelectItem>
+                {ROLES.map((role) => (
+                  <SelectItem key={role.id} value={role.id}>
+                    {role.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {selectedUser && (
           <div className="col-span-1">
             <div className="flex items-center space-x-2">
@@ -745,7 +760,7 @@ function CredentialFormContent({
         )}
       </div>
     ),
-    [formData, handleInputChange, handleSwitchChange, isLoading, formLoading, selectedUser]
+    [formData, handleInputChange, handleSwitchChange, handleRoleChange, isLoading, formLoading, selectedUser]
   );
 
   // Create a memoized contact tab content

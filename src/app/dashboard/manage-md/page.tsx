@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Search,
@@ -12,10 +12,9 @@ import {
   LockIcon,
   KeyRound,
   UserPlus,
-  RefreshCw,
   User,
-  Clock,
   LogOut,
+  RefreshCw,
   AlertCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -49,7 +48,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Progress } from "@/components/ui/progress";
 
 // Define types
 interface User {
@@ -73,11 +71,8 @@ interface AuthAttempt {
   username?: string;
 }
 
-// Security constants
-const MAX_LOGIN_ATTEMPTS = 3;
-const LOCK_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
-const SESSION_TIMEOUT = 5 * 60; // 5 minutes in seconds
-const SESSION_WARNING_THRESHOLD = 60; // Show warning when 60 seconds left
+// Import security constants
+import { MAX_LOGIN_ATTEMPTS, LOCK_DURATION } from "@/lib/security-constants";
 
 // Mock data - replace with your API call
 const mockUsers: User[] = [
@@ -161,14 +156,23 @@ const mockCurrentMDs: CurrentMD[] = [
   },
 ];
 
+// Using fixed timestamps to avoid hydration errors
 const mockAuthAttempts: AuthAttempt[] = [
   {
-    timestamp: Date.now() - 86400000 * 2,
+    timestamp: 1672531200000, // Jan 1, 2023
     success: true,
     ipAddress: "192.168.1.1",
   },
-  { timestamp: Date.now() - 86400000, success: false, ipAddress: "10.0.0.5" },
-  { timestamp: Date.now() - 3600000, success: true, ipAddress: "192.168.1.1" },
+  {
+    timestamp: 1672617600000, // Jan 2, 2023
+    success: false,
+    ipAddress: "10.0.0.5",
+  },
+  {
+    timestamp: 1672704000000, // Jan 3, 2023
+    success: true,
+    ipAddress: "192.168.1.1",
+  },
 ];
 
 const MDSelectionPage: React.FC = () => {
@@ -187,20 +191,34 @@ const MDSelectionPage: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [showAuthDialog, setShowAuthDialog] = useState<boolean>(false);
   const [adminName, setAdminName] = useState<string>("");
-  const [lockTime, setLockTime] = useState<number>(0);
-  const [isLocked, setIsLocked] = useState<boolean>(false);
-  const [loginAttempts, setLoginAttempts] = useState<number>(0);
-  const [authAttempts, setAuthAttempts] =
-    useState<AuthAttempt[]>(mockAuthAttempts);
-  const [sessionTimeout, setSessionTimeout] = useState<number | null>(null);
-  const [sessionTimeLeft, setSessionTimeLeft] =
-    useState<number>(SESSION_TIMEOUT);
-  const [showTimeoutWarning, setShowTimeoutWarning] = useState<boolean>(false);
-  const [showTimeoutDialog, setShowTimeoutDialog] = useState<boolean>(false);
+  // Initialize state from localStorage if available, otherwise use defaults
+  const [lockTime, setLockTime] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const storedLockTime = localStorage.getItem('lockTime');
+      return storedLockTime ? parseInt(storedLockTime, 10) : 0;
+    }
+    return 0;
+  });
+  
+  const [isLocked, setIsLocked] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('isLocked') === 'true';
+    }
+    return false;
+  });
+  
+  const [loginAttempts, setLoginAttempts] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      const storedAttempts = localStorage.getItem('loginAttempts');
+      return storedAttempts ? parseInt(storedAttempts, 10) : 0;
+    }
+    return 0;
+  });
+  
+  const [authAttempts, setAuthAttempts] = useState<AuthAttempt[]>(mockAuthAttempts);
   const [lockTimeLeft, setLockTimeLeft] = useState<number>(0);
 
-  // Refs for intervals
-  const sessionTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Ref for lock timer interval
   const lockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Filter users based on search term
@@ -233,6 +251,28 @@ const MDSelectionPage: React.FC = () => {
     }
   };
 
+  // Custom setter functions that update both state and localStorage
+  const updateIsLocked = (value: boolean) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('isLocked', value.toString());
+    }
+    setIsLocked(value);
+  };
+
+  const updateLockTime = (value: number) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('lockTime', value.toString());
+    }
+    setLockTime(value);
+  };
+
+  const updateLoginAttempts = (value: number) => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('loginAttempts', value.toString());
+    }
+    setLoginAttempts(value);
+  };
+
   // Update lock time countdown
   useEffect(() => {
     if (isLocked) {
@@ -258,8 +298,9 @@ const MDSelectionPage: React.FC = () => {
 
         // If lock time has expired
         if (timeLeft <= 0) {
-          setIsLocked(false);
-          setLoginAttempts(0);
+          updateIsLocked(false);
+          updateLoginAttempts(0);
+          updateLockTime(0); // Reset lockTime when lock expires
           if (lockTimerRef.current) {
             clearInterval(lockTimerRef.current);
           }
@@ -296,20 +337,17 @@ const MDSelectionPage: React.FC = () => {
       setIsAuthorized(true);
       setShowAuthDialog(false);
       setErrors([]);
-      setLoginAttempts(0);
+      updateLoginAttempts(0);
       if (isEditMode) {
         setActiveTab("change");
       }
-
-      // Start session timer
-      startSessionTimer();
     } else {
       const newAttemptCount = loginAttempts + 1;
-      setLoginAttempts(newAttemptCount);
+      updateLoginAttempts(newAttemptCount);
 
       if (newAttemptCount >= MAX_LOGIN_ATTEMPTS) {
-        setIsLocked(true);
-        setLockTime(Date.now());
+        updateIsLocked(true);
+        updateLockTime(Date.now());
         setErrors([
           `Too many failed attempts. Account locked for ${
             LOCK_DURATION / 60000
@@ -325,89 +363,8 @@ const MDSelectionPage: React.FC = () => {
     }
   };
 
-  // Start session timer
-  const startSessionTimer = useCallback(() => {
-    // Reset session time
-    setSessionTimeLeft(SESSION_TIMEOUT);
-    setShowTimeoutWarning(false);
-
-    // Clear any existing timer
-    if (sessionTimerRef.current) {
-      clearInterval(sessionTimerRef.current);
-    }
-
-    // Start new timer
-    sessionTimerRef.current = setInterval(() => {
-      setSessionTimeLeft((prev) => {
-        // Show warning when approaching timeout
-        if (
-          prev <= SESSION_WARNING_THRESHOLD &&
-          prev > 1 &&
-          !showTimeoutWarning
-        ) {
-          setShowTimeoutWarning(true);
-          setShowTimeoutDialog(true);
-        }
-
-        // Handle session expiry
-        if (prev <= 1) {
-          handleSessionExpiry();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  }, []);
-
-  // Reset session timer (for user activity)
-  const resetSessionTimer = useCallback(() => {
-    if (isAuthorized) {
-      startSessionTimer();
-    }
-  }, [isAuthorized, startSessionTimer]);
-
-  // Handle session expiry
-  const handleSessionExpiry = useCallback(() => {
-    // Clear timer
-    if (sessionTimerRef.current) {
-      clearInterval(sessionTimerRef.current);
-      sessionTimerRef.current = null;
-    }
-
-    setIsAuthorized(false);
-    setActiveTab("current");
-    setSuccessMessage("");
-    setErrors(["Your session has expired for security reasons."]);
-    setShowTimeoutWarning(false);
-    setShowTimeoutDialog(false);
-
-    // Redirect to dashboard
-    setTimeout(() => {
-      router.push("/dashboard");
-    }, 3000);
-  }, [router]);
-
-  // Format seconds to mm:ss
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins.toString().padStart(2, "0")}:${secs
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
-  // Extend session
-  const extendSession = () => {
-    resetSessionTimer();
-    setShowTimeoutDialog(false);
-    setShowTimeoutWarning(false);
-  };
-
   // Logout function
   const handleLogout = () => {
-    if (sessionTimerRef.current) {
-      clearInterval(sessionTimerRef.current);
-    }
     setIsAuthorized(false);
     setActiveTab("current");
     router.push("/dashboard");
@@ -415,9 +372,6 @@ const MDSelectionPage: React.FC = () => {
 
   // Submit MD selection
   const submitMDSelection = (): void => {
-    // Reset session timer on user activity
-    resetSessionTimer();
-
     // Validation checks
     const newErrors: string[] = [];
 
@@ -440,9 +394,6 @@ const MDSelectionPage: React.FC = () => {
 
   // Confirm MD selection
   const confirmSelection = (): void => {
-    // Reset session timer on user activity
-    resetSessionTimer();
-
     // Get current date in YYYY-MM-DD format
     const today = new Date().toISOString().split("T")[0];
 
@@ -499,40 +450,36 @@ const MDSelectionPage: React.FC = () => {
     });
   };
 
+  // Check if lock has expired on component mount
+  useEffect(() => {
+    if (isLocked && lockTime > 0) {
+      const timeElapsed = Date.now() - lockTime;
+      if (timeElapsed >= LOCK_DURATION) {
+        // Lock has expired, reset the lock
+        updateIsLocked(false);
+        updateLoginAttempts(0);
+        updateLockTime(0); // Reset lockTime when lock expires
+        // Also clear localStorage if needed
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('isLocked');
+          localStorage.removeItem('lockTime');
+          localStorage.removeItem('loginAttempts');
+        }
+      }
+    }
+  }, []);
+
   // Clean up intervals on unmount
   useEffect(() => {
     return () => {
-      if (sessionTimerRef.current) clearInterval(sessionTimerRef.current);
       if (lockTimerRef.current) clearInterval(lockTimerRef.current);
     };
   }, []);
 
-  // User activity detection to reset timer
-  useEffect(() => {
-    const handleActivity = () => {
-      if (isAuthorized) {
-        resetSessionTimer();
-      }
-    };
-
-    // Add event listeners for user activity
-    window.addEventListener("click", handleActivity);
-    window.addEventListener("keypress", handleActivity);
-    window.addEventListener("scroll", handleActivity);
-    window.addEventListener("mousemove", handleActivity);
-
-    return () => {
-      window.removeEventListener("click", handleActivity);
-      window.removeEventListener("keypress", handleActivity);
-      window.removeEventListener("scroll", handleActivity);
-      window.removeEventListener("mousemove", handleActivity);
-    };
-  }, [isAuthorized, resetSessionTimer]);
-
   return (
     <div className="flex flex-col min-h-screen bg-slate-50 p-6">
       <div className="container mx-auto max-w-5xl">
-        {/* Header with session info */}
+        {/* Header with admin info */}
         {isAuthorized && (
           <div className="mb-4 flex justify-between items-center p-3 bg-white rounded-lg shadow-sm border">
             <div className="flex items-center">
@@ -542,26 +489,9 @@ const MDSelectionPage: React.FC = () => {
                   Logged in as:{" "}
                   <span className="text-blue-600">{adminName}</span>
                 </p>
-                <div className="flex items-center gap-1">
-                  <Clock className="h-3 w-3 text-slate-500" />
-                  <p className="text-xs text-slate-500">
-                    Session expires in:{" "}
-                    <span
-                      className={
-                        sessionTimeLeft <= 60 ? "text-red-500 font-bold" : ""
-                      }
-                    >
-                      {formatTime(sessionTimeLeft)}
-                    </span>
-                  </p>
-                </div>
               </div>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline" onClick={resetSessionTimer}>
-                <RefreshCw className="h-3 w-3 mr-1" />
-                Extend Session
-              </Button>
               <Button size="sm" variant="destructive" onClick={handleLogout}>
                 <LogOut className="h-3 w-3 mr-1" />
                 Logout
@@ -595,19 +525,7 @@ const MDSelectionPage: React.FC = () => {
             </div>
           )}
 
-          {errors.length > 0 && (
-            <div className="mx-6 mt-4">
-              <Alert variant="destructive">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Error</AlertTitle>
-                <AlertDescription>
-                  {errors.map((error, index) => (
-                    <p key={index}>{error}</p>
-                  ))}
-                </AlertDescription>
-              </Alert>
-            </div>
-          )}
+          
 
           <CardContent className="p-6">
             <Tabs
@@ -985,79 +903,93 @@ const MDSelectionPage: React.FC = () => {
             </DialogDescription>
           </DialogHeader>
 
-          {/* <form> */}
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-right">
-                  Admin Name
-                </Label>
-                <Input
-                  id="name"
-                  placeholder="Enter your admin name"
-                  value={adminName}
-                  onChange={(e) => setAdminName(e.target.value)}
-                  disabled={isLocked}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password" className="text-right">
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLocked}
-                />
-              </div>
+          {errors.length > 0 && (
+            <div className="mx-6 mt-4">
+              <Alert variant="destructive">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  {errors.map((error, index) => (
+                    <p key={index}>{error}</p>
+                  ))}
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
 
-              {isLocked && (
-                <Alert variant="destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Account Locked</AlertTitle>
-                  <AlertDescription className="space-y-2">
-                    <p>
-                      Too many failed attempts. Please wait before trying again.
-                    </p>
-                    <div className="w-full bg-red-200 rounded-full h-2.5">
-                      <div
-                        className="bg-red-600 h-2.5 rounded-full"
-                        style={{
-                          width: `${
-                            (lockTimeLeft / (LOCK_DURATION / 1000)) * 100
-                          }%`,
-                        }}
-                      ></div>
-                    </div>
-                    <p className="text-xs text-center">
-                      Unlocks in: {Math.floor(lockTimeLeft / 60)}:
-                      {(lockTimeLeft % 60).toString().padStart(2, "0")}
-                    </p>
-                  </AlertDescription>
-                </Alert>
-              )}
+          {/* <form> */}
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-right">
+                Admin Name
+              </Label>
+              <Input
+                id="name"
+                placeholder="Enter your admin name"
+                value={adminName}
+                onChange={(e) => setAdminName(e.target.value)}
+                disabled={isLocked}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password" className="text-right">
+                Password
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                disabled={isLocked}
+              />
             </div>
 
-            <DialogFooter className="sm:justify-between">
-              <Button
-                variant="ghost"
-                onClick={() => {
-                  setShowAuthDialog(false);
-                  setIsEditMode(false);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={checkAuthorization}
-                disabled={isLocked || !adminName.trim() || !password.trim()}
-              >
-                <KeyRound className="mr-2 h-4 w-4" />
-                Authenticate
-              </Button>
-            </DialogFooter>
+            {isLocked && (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Account Locked</AlertTitle>
+                <AlertDescription className="space-y-2">
+                  <p>
+                    Too many failed attempts. Please wait before trying again.
+                  </p>
+                  <div className="w-full bg-red-200 rounded-full h-2.5">
+                    <div
+                      className="bg-red-600 h-2.5 rounded-full"
+                      style={{
+                        width: `${
+                          (lockTimeLeft / (LOCK_DURATION / 1000)) * 100
+                        }%`,
+                      }}
+                    ></div>
+                  </div>
+                  <p className="text-xs text-center">
+                    Unlocks in: {Math.floor(lockTimeLeft / 60)}:
+                    {(lockTimeLeft % 60).toString().padStart(2, "0")}
+                  </p>
+                </AlertDescription>
+              </Alert>
+            )}
+          </div>
+
+          <DialogFooter className="sm:justify-between">
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setShowAuthDialog(false);
+                setIsEditMode(false);
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={checkAuthorization}
+              disabled={isLocked || !adminName.trim() || !password.trim()}
+            >
+              <KeyRound className="mr-2 h-4 w-4" />
+              Authenticate
+            </Button>
+          </DialogFooter>
           {/* </form> */}
         </DialogContent>
       </Dialog>
@@ -1111,51 +1043,6 @@ const MDSelectionPage: React.FC = () => {
               Cancel
             </Button>
             <Button onClick={confirmSelection}>Confirm</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Session Timeout Warning Dialog */}
-      <Dialog
-        open={showTimeoutDialog}
-        onOpenChange={(open) => setShowTimeoutDialog(open)}
-      >
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center text-warning">
-              <Clock className="mr-2 h-5 w-5" />
-              Session Timeout Warning
-            </DialogTitle>
-            <DialogDescription>
-              Your session is about to expire due to inactivity
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-4">
-            <Alert variant="default" className="bg-yellow-50 border-yellow-200">
-              <AlertTitle className="text-yellow-800 flex items-center">
-                <AlertCircle className="h-4 w-4 mr-2" />
-                Session Expiring
-              </AlertTitle>
-              <AlertDescription className="text-yellow-700">
-                <p>Your session will expire in {sessionTimeLeft} seconds.</p>
-                <Progress
-                  value={(sessionTimeLeft / SESSION_WARNING_THRESHOLD) * 100}
-                  className="h-2 mt-2"
-                />
-              </AlertDescription>
-            </Alert>
-          </div>
-
-          <DialogFooter className="sm:justify-between">
-            <Button variant="ghost" onClick={handleLogout}>
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-            </Button>
-            <Button onClick={extendSession}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Extend Session
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

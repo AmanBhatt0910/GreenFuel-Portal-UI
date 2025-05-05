@@ -16,7 +16,7 @@ export interface FormData {
   department: number;
   designation: number;
   assets: AssetItem[];
-  assetAmount: string;
+  assetAmount: string ;
   reason: string;
   policyAgreement: boolean;
   initiateDept: number;

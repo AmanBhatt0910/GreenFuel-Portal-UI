@@ -20,6 +20,7 @@ export interface Credential {
   is_staff: boolean;
   is_superuser: boolean;
   is_budget_requester?: boolean;
+  role?: string | null;
 }
 
 export interface BusinessUnit {
@@ -65,6 +66,7 @@ export interface CredentialFormData {
   is_staff: boolean;
   is_superuser: boolean;
   is_budget_requester: boolean;
+  role?: string | null;
 }
 
 export interface CredentialFormProps {

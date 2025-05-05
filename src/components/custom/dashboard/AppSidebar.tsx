@@ -59,13 +59,13 @@ const DashboardItems: MenuItem[] = [
     title: "Overview",
     url: "/dashboard",
     icon: LayoutDashboard,
-    roles: ["all"],
+    roles: ["all"], // Dashboard is for all roles
   },
   {
     title: "Approval Dashboard",
     url: "/dashboard/approvals",
     icon: CheckCircle,
-    roles: ["user", "approver", "staff"],
+    roles: ["approver", "admin"], // Only for approver role and admin
     excludeUsernames: ["Admin"],
     badge: "New",
   },
@@ -76,24 +76,14 @@ const ApprovalItems: MenuItem[] = [
     title: "Budget Approvals",
     url: "/dashboard/form",
     icon: CreditCard,
-    roles: ["user", "approver"],
+    roles: ["all"], // We'll handle the visibility in isItemVisible function
     excludeUsernames: ["Admin"],
   },
   {
     title: "My Requests",
     url: "/dashboard/requests",
     icon: FileCheck,
-    roles: ["manager", "approver", "staff", "user"],
-    excludeUsernames: ["Admin"],
-  },
-];
-
-const RequestItems: MenuItem[] = [
-  {
-    title: "My Requests",
-    url: "/dashboard/requests",
-    icon: FileCheck,
-    roles: ["manager", "approver", "staff", "user"],
+    roles: ["admin", "approver", "MD"], // For admin, approver, and budget requesters
     excludeUsernames: ["Admin"],
   },
 ];
@@ -128,6 +118,15 @@ const BusinessUnits: MenuItem[] = [
   },
 ];
 
+const CompanyManagement: MenuItem[] = [
+  {
+    title: "Manage MD",
+    url: "/dashboard/manage-md",
+    icon: User,
+    roles: ["admin", "MD"],
+  },
+];
+
 const AppSidebar = () => {
   const pathname = usePathname();
   const [approvalOpen, setApprovalOpen] = useState(false);
@@ -145,14 +144,21 @@ const AppSidebar = () => {
           setDesignation(response.data.level);
           fetchedRef.current = String(userInfo.designation);
 
+          // Set user role based on staff status, role field, or designation level
           if (userInfo.is_staff) {
             setUserRole("admin");
+          } else if (userInfo.role === "MD") {
+            setUserRole("MD");
+          } else if (userInfo.role === "APPROVER") {
+            setUserRole("approver");
           } else if (parseInt(response.data.level) > 2) {
             setUserRole("manager");
           } else if (parseInt(response.data.level) > 1) {
             setUserRole("approver");
           } else if (parseInt(response.data.level) === 1) {
             setUserRole("staff");
+          } else if (userInfo.role === "EMPLOYEE") {
+            setUserRole("user");
           }
         } catch (error) {
           console.error("Error fetching designation:", error);
@@ -170,6 +176,7 @@ const AppSidebar = () => {
   };
 
   const isItemVisible = (item: MenuItem): boolean => {
+    // Check username exclusions
     if (
       item.excludeUsernames &&
       userInfo?.username &&
@@ -177,9 +184,33 @@ const AppSidebar = () => {
     ) {
       return false;
     }
-    if (item.title === "Budget Approvals" && !userInfo?.is_budget_requester) {
+    
+    // Special case for Budget Approvals - only visible for admin or budget requesters
+    if (item.title === "Budget Approvals") {
+      return userRole === "admin" || !!userInfo?.is_budget_requester;
+    }
+    
+    // Special case for Approval Dashboard - only visible for approvers
+    if (item.title === "Approval Dashboard" && userRole !== "approver" && userRole !== "admin") {
       return false;
     }
+    
+    // Special case for My Requests - visible for admin, approver, MD, and budget requesters
+    if (item.title === "My Requests") {
+      return userRole === "admin" || userRole === "approver" || userRole === "MD" || !!userInfo?.is_budget_requester;
+    }
+    
+    // Special case for Credentials, Business Units, Category, and Approval Access - only for admin
+    if (["Credentials", "Business Units", "Category", "Approval Access"].includes(item.title)) {
+      return userRole === "admin" || userInfo?.is_staff === true;
+    }
+    
+    // Special case for Manage MD - only for MD and admin
+    if (item.title === "Manage MD") {
+      return userRole === "MD" || userRole === "admin" || userInfo?.is_staff === true;
+    }
+    
+    // Default visibility check
     return (
       item.roles.includes("all") ||
       item.roles.includes(userRole) ||
@@ -189,9 +220,14 @@ const AppSidebar = () => {
 
   const filteredDashboardItems = DashboardItems.filter(isItemVisible);
   const filteredApprovalItems = ApprovalItems.filter(isItemVisible);
-  const filteredRequestItems = RequestItems.filter(isItemVisible);
+  const filteredCredentialsItems = Credentials.filter(isItemVisible);
+  const filteredBusinessUnitsItems = BusinessUnits.filter(isItemVisible);
+  const filteredCompanyManagementItems = CompanyManagement.filter(isItemVisible);
+  
   const showApprovalsSection = filteredApprovalItems.length > 0;
-  const showRequestsSection = filteredRequestItems.length > 0 && designation && parseInt(designation) > 1;
+  const showCredentialsSection = filteredCredentialsItems.length > 0;
+  const showBusinessUnitsSection = filteredBusinessUnitsItems.length > 0;
+  const showCompanyManagementSection = filteredCompanyManagementItems.length > 0;
 
   const MenuItemComponent = ({ item, isActive }: { item: MenuItem, isActive: boolean }) => (
     <div className="flex items-center justify-between w-full">
@@ -351,44 +387,6 @@ const AppSidebar = () => {
             </div>
           )}
 
-          {showRequestsSection && (
-            <div className="mb-6">
-              <SectionHeader title="Requests" />
-              <SidebarGroup>
-                <SidebarGroupContent>
-                  <SidebarMenu className="space-y-2">
-                    {filteredRequestItems.map((item, index) => {
-                      const isActive = pathname === item.url;
-                      return (
-                        <SidebarMenuItem key={index}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <SidebarMenuButton asChild className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group">
-                                <Link
-                                  href={item.url}
-                                  className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
-                                    ${
-                                      isActive
-                                        ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500"
-                                        : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
-                                    }`}
-                                >
-                                  <MenuItemComponent item={item} isActive={isActive} />
-                                </Link>
-                              </SidebarMenuButton>
-                            </TooltipTrigger>
-                            <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
-                              {item.title}
-                            </TooltipContent>
-                          </Tooltip>
-                        </SidebarMenuItem>
-                      );
-                    })}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </SidebarGroup>
-            </div>
-          )}
 
           {userInfo?.is_staff && (
             <>
@@ -471,6 +469,48 @@ const AppSidebar = () => {
                   </SidebarGroupContent>
                 </SidebarGroup>
               </div>
+
+              {showCompanyManagementSection && (
+                <div className="mb-6">
+                  <SectionHeader title="Company Management" />
+                  <SidebarGroup>
+                    <SidebarGroupContent>
+                      <SidebarMenu className="space-y-2">
+                        {filteredCompanyManagementItems.map((item, index) => {
+                          const isActive = pathname === item.url;
+                          return (
+                            <SidebarMenuItem key={index}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <SidebarMenuButton
+                                    asChild
+                                    className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group"
+                                  >
+                                    <Link
+                                      href={item.url}
+                                      className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
+                                        ${
+                                          isActive
+                                            ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500"
+                                            : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
+                                        }`}
+                                    >
+                                      <MenuItemComponent item={item} isActive={isActive} />
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
+                                  {item.title}
+                                </TooltipContent>
+                              </Tooltip>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                </div>
+              )}
             </>
           )}
         </SidebarContent>

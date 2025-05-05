@@ -20,7 +20,7 @@ interface UserInfoType {
   designation: number | string | null;
   groups?: any[];
   user_permissions?: any[];
-
+  role?: string | null;
   contact?: string;
   address?: string;
   city?: string;
