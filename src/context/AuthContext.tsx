@@ -102,6 +102,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ email, password }),
+        credentials: 'include'
       });
 
       if(response.status === 400){

@@ -1,13 +1,12 @@
 "use client";
-import React, { useState, useEffect, useContext } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useContext } from "react";
 import { motion } from "framer-motion";
 import { GreenFuelLogo } from "@/components/custom/ui/Logo.custom";
 import { GreenFuelTitle } from "@/components/custom/ui/Title.custom";
 import { LoginForm } from "@/components/custom/LoginComponents/LoginForm.custom";
 import { FooterLinks } from "@/components/custom/LoginComponents/Footer.custom";
 import { GFContext } from "@/context/AuthContext";
-import { LoaderCircle, LucideShield, LucideZap, LucideUsers } from "lucide-react";
+import { LucideShield, LucideZap, LucideUsers } from "lucide-react";
 
 export default function LoginPage() {
   const {login } = useContext(GFContext);

@@ -16,6 +16,7 @@ import {
   LogOut,
   RefreshCw,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -52,11 +53,27 @@ import {
 // Define types
 interface User {
   id: number;
-  name: string;
+  username: string;
   email: string;
-  department: string;
-  role: string;
-  avatarUrl?: string;
+  name?: string;
+  first_name: string;
+  last_name: string;
+  employee_code?: string;
+  department: number | null;
+  designation: number | null;
+  business_unit: number | null;
+  status?: boolean;
+  dob?: string | null;
+  contact?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  is_active: boolean;
+  is_staff: boolean;
+  is_superuser: boolean;
+  is_budget_requester?: boolean;
+  role?: string | null;
 }
 
 interface CurrentMD extends User {
@@ -71,114 +88,24 @@ interface AuthAttempt {
   username?: string;
 }
 
-// Import security constants
+// Import security constants, roles, and auth utilities
 import { MAX_LOGIN_ATTEMPTS, LOCK_DURATION } from "@/lib/security-constants";
+import useAxios from "@/app/hooks/use-axios";
+import { ROLES } from "@/lib/roles";
 
-// Mock data - replace with your API call
-const mockUsers: User[] = [
+// Initial empty arrays for data that will be fetched from API
+const initialAuthAttempts: AuthAttempt[] = [
   {
-    id: 1,
-    name: "John Doe",
-    email: "john@example.com",
-    department: "Finance",
-    role: "Senior Analyst",
-    avatarUrl: "",
-  },
-  {
-    id: 2,
-    name: "Jane Smith",
-    email: "jane@example.com",
-    department: "Operations",
-    role: "Team Lead",
-    avatarUrl: "",
-  },
-  {
-    id: 3,
-    name: "Robert Johnson",
-    email: "robert@example.com",
-    department: "Technology",
-    role: "Director",
-    avatarUrl: "",
-  },
-  {
-    id: 4,
-    name: "Lisa Wong",
-    email: "lisa@example.com",
-    department: "Marketing",
-    role: "VP",
-    avatarUrl: "",
-  },
-  {
-    id: 5,
-    name: "Michael Brown",
-    email: "michael@example.com",
-    department: "Sales",
-    role: "Director",
-    avatarUrl: "",
-  },
-  {
-    id: 6,
-    name: "Sarah Davis",
-    email: "sarah@example.com",
-    department: "Human Resources",
-    role: "Manager",
-    avatarUrl: "",
-  },
-  {
-    id: 7,
-    name: "David Wilson",
-    email: "david@example.com",
-    department: "Legal",
-    role: "Counsel",
-    avatarUrl: "",
-  },
-  {
-    id: 8,
-    name: "Emily Taylor",
-    email: "emily@example.com",
-    department: "Research",
-    role: "Lead Scientist",
-    avatarUrl: "",
-  },
-];
-
-// Mock current MDs
-const mockCurrentMDs: CurrentMD[] = [
-  {
-    id: 3,
-    name: "Robert Johnson",
-    email: "robert@example.com",
-    department: "Technology",
-    role: "Director",
-    avatarUrl: "",
-    assignedDate: "2025-03-15",
-    assignedBy: "Admin User",
-  },
-];
-
-// Using fixed timestamps to avoid hydration errors
-const mockAuthAttempts: AuthAttempt[] = [
-  {
-    timestamp: 1672531200000, // Jan 1, 2023
+    timestamp: Date.now(),
     success: true,
-    ipAddress: "192.168.1.1",
-  },
-  {
-    timestamp: 1672617600000, // Jan 2, 2023
-    success: false,
-    ipAddress: "10.0.0.5",
-  },
-  {
-    timestamp: 1672704000000, // Jan 3, 2023
-    success: true,
-    ipAddress: "192.168.1.1",
-  },
+    ipAddress: "127.0.0.1",
+  }
 ];
 
 const MDSelectionPage: React.FC = () => {
   const router = useRouter();
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [currentMDs, setCurrentMDs] = useState<CurrentMD[]>(mockCurrentMDs);
+  const [users, setUsers] = useState<User[]>([]);
+  const [currentMDs, setCurrentMDs] = useState<CurrentMD[]>([]);
   const [selectedUsers, setSelectedUsers] = useState<User[]>([]);
   const [maxSelections, setMaxSelections] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -191,6 +118,12 @@ const MDSelectionPage: React.FC = () => {
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [showAuthDialog, setShowAuthDialog] = useState<boolean>(false);
   const [adminName, setAdminName] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [departments, setDepartments] = useState<{id: number, name: string}[]>([]);
+  const [businessUnits, setBusinessUnits] = useState<{id: number, name: string}[]>([]);
+  const [designations, setDesignations] = useState<{id: number, name: string}[]>([]);
+  const [loggedInUser, setLoggedInUser] = useState<any>(null);
+  
   // Initialize state from localStorage if available, otherwise use defaults
   const [lockTime, setLockTime] = useState<number>(() => {
     if (typeof window !== 'undefined') {
@@ -206,6 +139,8 @@ const MDSelectionPage: React.FC = () => {
     }
     return false;
   });
+
+  const api = useAxios();
   
   const [loginAttempts, setLoginAttempts] = useState<number>(() => {
     if (typeof window !== 'undefined') {
@@ -215,24 +150,99 @@ const MDSelectionPage: React.FC = () => {
     return 0;
   });
   
-  const [authAttempts, setAuthAttempts] = useState<AuthAttempt[]>(mockAuthAttempts);
+  const [authAttempts, setAuthAttempts] = useState<AuthAttempt[]>(initialAuthAttempts);
   const [lockTimeLeft, setLockTimeLeft] = useState<number>(0);
 
   // Ref for lock timer interval
   const lockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Get logged in user from localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userInfoStr = localStorage.getItem('userInfo');
+      if (userInfoStr) {
+        try {
+          const userInfo = JSON.parse(userInfoStr);
+          setLoggedInUser(userInfo);
+          setAdminName(userInfo.name || `${userInfo.first_name} ${userInfo.last_name}` || userInfo.username);
+        } catch (error) {
+          console.error("Error parsing user info from localStorage:", error);
+        }
+      }
+    }
+  }, []);
+
+  // Fetch master data (departments, business units, designations)
+  useEffect(() => {
+    const fetchMasterData = async () => {
+      try {
+        const [businessUnitsRes, departmentsRes, designationsRes] = await Promise.all([
+          api.get("/business-units/"),
+          api.get("/departments/"),
+          api.get("/designations/"),
+        ]);
+
+        setBusinessUnits(businessUnitsRes.data || []);
+        setDepartments(departmentsRes.data || []);
+        setDesignations(designationsRes.data || []);
+      } catch (error) {
+        console.error("Error fetching master data:", error);
+      }
+    };
+
+    fetchMasterData();
+    // Don't include api in the dependency array to avoid infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Fetch users from API
+  useEffect(() => {
+    const fetchUsers = async () => {
+      try {
+        setIsLoading(true);
+        const response = await api.get(`/userInfo/`);
+        if (response.data) {
+          setUsers(response.data);
+          
+          // Filter out users who are already MDs
+          const mdRole = ROLES.find(role => role.id === "MD")?.id || "MD";
+          const mds = response.data.filter((user: User) => user.role === mdRole);
+          
+          // Convert to CurrentMD format
+          const formattedMDs: CurrentMD[] = mds.map((md: User) => ({
+            ...md,
+            assignedDate: new Date().toISOString().split("T")[0], // Use current date as we don't have the actual assignment date
+            assignedBy: loggedInUser ? (loggedInUser.name || `${loggedInUser.first_name} ${loggedInUser.last_name}` || loggedInUser.username) : "System",
+          }));
+          
+          setCurrentMDs(formattedMDs);
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error("Error fetching users:", error);
+        setErrors(["Failed to fetch users. Please try again later."]);
+        setIsLoading(false);
+      }
+    };
+
+    fetchUsers();
+    // Don't include api in the dependency array to avoid infinite loop
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loggedInUser]);
+
   // Filter users based on search term
   const filteredUsers = users.filter(
     (user) =>
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.first_name + " " + user.last_name).toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.department.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+      (user.username && user.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (user.employee_code && user.employee_code.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   // Filter out current MDs from available selection
+  const mdRole = ROLES.find(role => role.id === "MD")?.id || "MD";
   const availableUsers = filteredUsers.filter(
-    (user) => !currentMDs.some((md) => md.id === user.id)
+    (user) => !currentMDs.some((md) => md.id === user.id) && user.role !== mdRole
   );
 
   // Handle user selection
@@ -326,14 +336,16 @@ const MDSelectionPage: React.FC = () => {
     // Record this attempt
     const newAttempt = {
       timestamp: Date.now(),
-      success: password === "admin123" && adminName.trim() !== "",
-      ipAddress: "192.168.1.1", // In a real app, this would be the actual IP
-      username: adminName.trim(),
+      success: password === "admin123" && (adminName.trim() !== "" || loggedInUser),
+      ipAddress: "127.0.0.1", // In a real app, this would be the actual IP
+      username: loggedInUser ? 
+        (loggedInUser.name || `${loggedInUser.first_name || ''} ${loggedInUser.last_name || ''}`.trim() || loggedInUser.username) : 
+        adminName.trim(),
     };
 
     setAuthAttempts([...authAttempts, newAttempt]);
 
-    if (password === "admin123" && adminName.trim() !== "") {
+    if (password === "admin123" && (adminName.trim() !== "" || loggedInUser)) {
       setIsAuthorized(true);
       setShowAuthDialog(false);
       setErrors([]);
@@ -393,33 +405,67 @@ const MDSelectionPage: React.FC = () => {
   };
 
   // Confirm MD selection
-  const confirmSelection = (): void => {
-    // Get current date in YYYY-MM-DD format
-    const today = new Date().toISOString().split("T")[0];
-
-    // Create new current MDs from selected users
-    const newMDs: CurrentMD[] = selectedUsers.map((user) => ({
-      ...user,
-      assignedDate: today,
-      assignedBy: adminName,
-    }));
-
-    // In a real app, call your API here
-    console.log("Selected MDs:", newMDs);
-
-    // Update current MDs
-    setCurrentMDs(newMDs);
-
-    // Reset form and show success message
-    setSelectedUsers([]);
-    setShowConfirmation(false);
-    setActiveTab("current");
-    setIsEditMode(false);
-    setSuccessMessage("Managing Director(s) successfully assigned!");
-
-    setTimeout(() => {
-      setSuccessMessage("");
-    }, 5000);
+  const confirmSelection = async (): Promise<void> => {
+    try {
+      setIsLoading(true);
+      
+      // Get current date in YYYY-MM-DD format
+      const today = new Date().toISOString().split("T")[0];
+      
+      // Process each selected user
+      for (const selectedUser of selectedUsers) {
+        // Prepare form data for API call
+        const formData = {
+          ...selectedUser,
+          role: ROLES.find(role => role.id === "MD")?.id || "MD" // Set role to MD from roles.ts
+        };
+        
+        // Make API call to update user
+        const response = await api.put(
+          `/userInfo/${selectedUser.id}/`,
+          formData
+        );
+        
+        if (!response.data) {
+          throw new Error(`Failed to update user ${selectedUser.id}`);
+        }
+      }
+      
+      // Create new current MDs from selected users for UI update
+      const newMDs: CurrentMD[] = selectedUsers.map((user) => ({
+        ...user,
+        role: ROLES.find(role => role.id === "MD")?.id || "MD",
+        assignedDate: today,
+        assignedBy: loggedInUser ? 
+          (loggedInUser.name || `${loggedInUser.first_name || ''} ${loggedInUser.last_name || ''}`.trim() || loggedInUser.username) : 
+          adminName,
+      }));
+      
+      // Update current MDs list with both existing and new MDs
+      setCurrentMDs([...currentMDs, ...newMDs]);
+      
+      // Reset form and show success message
+      setSelectedUsers([]);
+      setShowConfirmation(false);
+      setActiveTab("current");
+      setIsEditMode(false);
+      setSuccessMessage("Managing Director(s) successfully assigned!");
+      
+      // Refresh user list
+      const refreshResponse = await api.get(`/userInfo/`);
+      if (refreshResponse.data) {
+        setUsers(refreshResponse.data);
+      }
+      
+      setTimeout(() => {
+        setSuccessMessage("");
+      }, 5000);
+    } catch (error) {
+      console.error("Error assigning MD:", error);
+      setErrors(["Failed to assign Managing Director. Please try again."]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Start edit mode - requires authentication
@@ -432,12 +478,52 @@ const MDSelectionPage: React.FC = () => {
   };
 
   // Get user initials for avatar fallback
-  const getInitials = (name: string): string => {
-    return name
-      .split(" ")
-      .map((part) => part[0])
-      .join("")
-      .toUpperCase();
+  const getInitials = (user: User): string => {
+    if (user.first_name && user.last_name) {
+      return (user.first_name[0] + user.last_name[0]).toUpperCase();
+    } else if (user.name) {
+      return user.name
+        .split(" ")
+        .map((part) => part[0])
+        .join("")
+        .toUpperCase();
+    } else if (user.username) {
+      return user.username.substring(0, 2).toUpperCase();
+    }
+    return "U";
+  };
+  
+  // Get full name from user
+  const getFullName = (user: User): string => {
+    if (user.first_name && user.last_name) {
+      return `${user.first_name} ${user.last_name}`;
+    } else if (user.name) {
+      return user.name;
+    } else if (user.username) {
+      return user.username;
+    }
+    return "Unknown User";
+  };
+  
+  // Get department name from ID
+  const getDepartmentName = (departmentId: number | null): string => {
+    if (departmentId === null) return "Not Assigned";
+    const department = departments.find(dept => dept.id === departmentId);
+    return department ? department.name : `Dept ID: ${departmentId}`;
+  };
+  
+  // Get business unit name from ID
+  const getBusinessUnitName = (businessUnitId: number | null): string => {
+    if (businessUnitId === null) return "Not Assigned";
+    const businessUnit = businessUnits.find(bu => bu.id === businessUnitId);
+    return businessUnit ? businessUnit.name : `BU ID: ${businessUnitId}`;
+  };
+  
+  // Get designation name from ID
+  const getDesignationName = (designationId: number | null): string => {
+    if (designationId === null) return "Not Assigned";
+    const designation = designations.find(desig => desig.id === designationId);
+    return designation ? designation.name : `Designation ID: ${designationId}`;
   };
 
   // Format date to be more readable
@@ -487,7 +573,16 @@ const MDSelectionPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium">
                   Logged in as:{" "}
-                  <span className="text-blue-600">{adminName}</span>
+                  <span className="text-blue-600">
+                    {loggedInUser ? 
+                      (loggedInUser.name || `${loggedInUser.first_name || ''} ${loggedInUser.last_name || ''}`.trim() || loggedInUser.username) : 
+                      adminName}
+                  </span>
+                  {loggedInUser && loggedInUser.role && (
+                    <Badge variant="outline" className="ml-2 text-xs">
+                      {loggedInUser.role}
+                    </Badge>
+                  )}
                 </p>
               </div>
             </div>
@@ -571,7 +666,12 @@ const MDSelectionPage: React.FC = () => {
                     </TooltipProvider>
                   </div>
 
-                  {currentMDs.length > 0 ? (
+                  {isLoading ? (
+                    <div className="flex justify-center items-center py-12">
+                      <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+                      <p className="ml-2 text-blue-500">Loading users...</p>
+                    </div>
+                  ) : currentMDs.length > 0 ? (
                     <div className="grid gap-6 md:grid-cols-2">
                       {currentMDs.map((md) => (
                         <Card
@@ -581,16 +681,20 @@ const MDSelectionPage: React.FC = () => {
                           <CardHeader className="bg-slate-50 pb-4">
                             <div className="flex items-center gap-4">
                               <Avatar className="h-16 w-16 border-2 border-white shadow">
-                                <AvatarImage src={md.avatarUrl || ""} />
                                 <AvatarFallback className="bg-blue-600 text-white text-xl">
-                                  {getInitials(md.name)}
+                                  {getInitials(md)}
                                 </AvatarFallback>
                               </Avatar>
                               <div>
-                                <CardTitle>{md.name}</CardTitle>
+                                <CardTitle>{getFullName(md)}</CardTitle>
                                 <CardDescription className="mt-1">
                                   {md.email}
                                 </CardDescription>
+                                {md.employee_code && (
+                                  <Badge variant="outline" className="mt-1">
+                                    ID: {md.employee_code}
+                                  </Badge>
+                                )}
                               </div>
                             </div>
                           </CardHeader>
@@ -601,7 +705,23 @@ const MDSelectionPage: React.FC = () => {
                                   Department:
                                 </span>
                                 <span className="font-medium">
-                                  {md.department}
+                                  {getDepartmentName(md.department)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                  Business Unit:
+                                </span>
+                                <span className="font-medium">
+                                  {getBusinessUnitName(md.business_unit)}
+                                </span>
+                              </div>
+                              <div className="flex justify-between text-sm">
+                                <span className="text-muted-foreground">
+                                  Designation:
+                                </span>
+                                <span className="font-medium">
+                                  {getDesignationName(md.designation)}
                                 </span>
                               </div>
                               <div className="flex justify-between text-sm">
@@ -711,12 +831,12 @@ const MDSelectionPage: React.FC = () => {
                                     <div className="flex items-center">
                                       <Avatar className="h-8 w-8 mr-2">
                                         <AvatarFallback className="bg-blue-600 text-white text-xs">
-                                          {getInitials(user.name)}
+                                          {getInitials(user)}
                                         </AvatarFallback>
                                       </Avatar>
                                       <div>
                                         <p className="font-medium text-sm">
-                                          {user.name}
+                                          {getFullName(user)}
                                         </p>
                                         <p className="text-xs text-muted-foreground">
                                           {user.email}
@@ -744,10 +864,19 @@ const MDSelectionPage: React.FC = () => {
                         <Button
                           onClick={submitMDSelection}
                           className="w-full"
-                          disabled={selectedUsers.length === 0}
+                          disabled={selectedUsers.length === 0 || isLoading}
                         >
-                          <CheckCircle className="mr-2 h-4 w-4" />
-                          Assign as Managing Director(s)
+                          {isLoading ? (
+                            <>
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                              Processing...
+                            </>
+                          ) : (
+                            <>
+                              <CheckCircle className="mr-2 h-4 w-4" />
+                              Assign as Managing Director(s)
+                            </>
+                          )}
                         </Button>
                       </div>
                     </div>
@@ -765,7 +894,12 @@ const MDSelectionPage: React.FC = () => {
                         <CardContent className="p-0">
                           <ScrollArea className="h-96 border-t">
                             <div className="p-4 space-y-2">
-                              {availableUsers.length > 0 ? (
+                              {isLoading ? (
+                                <div className="flex justify-center items-center py-12">
+                                  <Loader2 className="h-6 w-6 animate-spin text-blue-500" />
+                                  <p className="ml-2 text-blue-500">Loading users...</p>
+                                </div>
+                              ) : availableUsers.length > 0 ? (
                                 availableUsers.map((user) => (
                                   <div
                                     key={user.id}
@@ -782,12 +916,12 @@ const MDSelectionPage: React.FC = () => {
                                       <div className="flex items-center">
                                         <Avatar className="h-10 w-10 mr-3">
                                           <AvatarFallback className="bg-slate-200 text-slate-800">
-                                            {getInitials(user.name)}
+                                            {getInitials(user)}
                                           </AvatarFallback>
                                         </Avatar>
                                         <div>
                                           <h4 className="font-medium">
-                                            {user.name}
+                                            {getFullName(user)}
                                           </h4>
                                           <p className="text-sm text-muted-foreground">
                                             {user.email}
@@ -805,11 +939,21 @@ const MDSelectionPage: React.FC = () => {
                                     </div>
                                     <div className="mt-2 flex flex-wrap gap-2">
                                       <Badge variant="outline">
-                                        {user.department}
+                                        {user.department !== null ? getDepartmentName(user.department) : "No Department"}
                                       </Badge>
                                       <Badge variant="secondary">
-                                        {user.role}
+                                        {user.designation !== null ? getDesignationName(user.designation) : "No Designation"}
                                       </Badge>
+                                      {user.business_unit !== null && (
+                                        <Badge variant="outline" className="bg-slate-100">
+                                          {getBusinessUnitName(user.business_unit)}
+                                        </Badge>
+                                      )}
+                                      {user.role && (
+                                        <Badge variant="default" className="bg-blue-500">
+                                          {user.role}
+                                        </Badge>
+                                      )}
                                     </div>
                                   </div>
                                 ))
@@ -925,7 +1069,9 @@ const MDSelectionPage: React.FC = () => {
               </Label>
               <Input
                 id="name"
-                placeholder="Enter your admin name"
+                placeholder={loggedInUser ? 
+                  (loggedInUser.name || `${loggedInUser.first_name || ''} ${loggedInUser.last_name || ''}`.trim() || loggedInUser.username) : 
+                  "Enter your admin name"}
                 value={adminName}
                 onChange={(e) => setAdminName(e.target.value)}
                 disabled={isLocked}
@@ -1019,14 +1165,34 @@ const MDSelectionPage: React.FC = () => {
                     <div className="flex items-center">
                       <Avatar className="h-8 w-8 mr-2">
                         <AvatarFallback className="bg-blue-600 text-white text-xs">
-                          {getInitials(user.name)}
+                          {getInitials(user)}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="font-medium">{user.name}</p>
+                        <p className="font-medium">{getFullName(user)}</p>
                         <p className="text-sm text-muted-foreground">
-                          {user.department} - {user.role}
+                          {user.email}
                         </p>
+                        <div className="flex flex-wrap gap-2 mt-1">
+                          <Badge variant="outline" className="text-xs">
+                            {user.department !== null ? getDepartmentName(user.department) : "No Department"}
+                          </Badge>
+                          {user.business_unit !== null && (
+                            <Badge variant="outline" className="text-xs bg-slate-100">
+                              {getBusinessUnitName(user.business_unit)}
+                            </Badge>
+                          )}
+                          {user.designation !== null && (
+                            <Badge variant="secondary" className="text-xs">
+                              {getDesignationName(user.designation)}
+                            </Badge>
+                          )}
+                          {user.role && (
+                            <Badge variant="default" className="text-xs bg-blue-500">
+                              Current Role: {user.role}
+                            </Badge>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>

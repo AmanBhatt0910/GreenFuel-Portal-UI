@@ -45,29 +45,9 @@ export const roleProtectedRoutes: { [key: string]: RoleType[] } = {
   "/dashboard/business-units": ["ADMIN", "MD"],
   "/dashboard/category-management": ["ADMIN", "MD"],
   "/dashboard/approval-access": ["ADMIN", "MD"],
+  "/dashboard/manage-md": ["ADMIN"], 
 };
 
-// Helper function to get user data from localStorage
-export const getUserFromLocalStorage = (): UserData | null => {
-  if (typeof window !== 'undefined') {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      try {
-        return JSON.parse(userData) as UserData;
-      } catch (error) {
-        console.error('Error parsing user data from localStorage:', error);
-        return null;
-      }
-    }
-  }
-  return null;
-};
-
-// Helper function to get user role from localStorage
-export const getUserRoleFromLocalStorage = (): RoleType => {
-  const userData = getUserFromLocalStorage();
-  return userData?.role || "all";
-};
 
 // Helper function to check if a user has access to a specific route
 export const hasRouteAccess = (pathname: string, userRole: RoleType): boolean => {
