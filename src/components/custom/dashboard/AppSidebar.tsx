@@ -1,5 +1,5 @@
 "use client";
-import React, { useContext, useEffect, useState, useRef } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -20,7 +20,6 @@ import {
   LogOut,
   User,
   Mail,
-  Home,
   PanelRight,
   Key,
   Building,
@@ -43,7 +42,6 @@ import {
 } from "@/components/ui/collapsible";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { GFContext } from "@/context/AuthContext";
-import useAxios from "@/app/hooks/use-axios";
 
 interface MenuItem {
   title: string;
@@ -65,7 +63,7 @@ const DashboardItems: MenuItem[] = [
     title: "Approval Dashboard",
     url: "/dashboard/approvals",
     icon: CheckCircle,
-    roles: ["approver", "admin"], // Only for approver role and admin
+    roles: ["APPROVER", "ADMIN"], // Only for approver role and admin
     excludeUsernames: ["Admin"],
     badge: "New",
   },
@@ -83,7 +81,7 @@ const ApprovalItems: MenuItem[] = [
     title: "My Requests",
     url: "/dashboard/requests",
     icon: FileCheck,
-    roles: ["admin", "approver", "MD"], // For admin, approver, and budget requesters
+    roles: ["ADMIN", "APPROVER", "MD"], // For admin, approver, and budget requesters
     excludeUsernames: ["Admin"],
   },
 ];
@@ -93,7 +91,7 @@ const Credentials: MenuItem[] = [
     title: "Credentials",
     url: "/dashboard/credentials",
     icon: Key,
-    roles: ["admin", "superadmin"],
+    roles: ["ADMIN"],
   },
 ];
 
@@ -102,19 +100,19 @@ const BusinessUnits: MenuItem[] = [
     title: "Business Units",
     url: "/dashboard/business-units",
     icon: Building,
-    roles: ["admin", "superadmin"],
+    roles: ["ADMIN"],
   },
   {
     title: "Category",
     url: "/dashboard/category-management",
     icon: List,
-    roles: ["admin", "superadmin"],
+    roles: ["ADMIN"],
   },
   {
     title: "Approval Access",
     url: "/dashboard/approval-access",
     icon: Key,
-    roles: ["admin", "superadmin"],
+    roles: ["ADMIN"],
   },
 ];
 
@@ -123,7 +121,7 @@ const CompanyManagement: MenuItem[] = [
     title: "Manage MD",
     url: "/dashboard/manage-md",
     icon: User,
-    roles: ["admin", "MD"],
+    roles: ["ADMIN", "MD"],
   },
 ];
 
@@ -131,42 +129,14 @@ const AppSidebar = () => {
   const pathname = usePathname();
   const [approvalOpen, setApprovalOpen] = useState(false);
   const { userInfo } = useContext(GFContext);
-  const api = useAxios();
-  const [designation, setDesignation] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState("user");
-  const fetchedRef = useRef<string | null>(null);
+  const [userRole, setUserRole] = useState("EMPLOYEE");
 
   useEffect(() => {
-    if (userInfo && userInfo.designation && fetchedRef.current !== userInfo.designation) {
-      const fetchDesignation = async () => {
-        try {
-          const response = await api.get(`/designations/${userInfo.designation}/`);
-          setDesignation(response.data.level);
-          fetchedRef.current = String(userInfo.designation);
-
-          // Set user role based on staff status, role field, or designation level
-          if (userInfo.is_staff) {
-            setUserRole("admin");
-          } else if (userInfo.role === "MD") {
-            setUserRole("MD");
-          } else if (userInfo.role === "APPROVER") {
-            setUserRole("approver");
-          } else if (parseInt(response.data.level) > 2) {
-            setUserRole("manager");
-          } else if (parseInt(response.data.level) > 1) {
-            setUserRole("approver");
-          } else if (parseInt(response.data.level) === 1) {
-            setUserRole("staff");
-          } else if (userInfo.role === "EMPLOYEE") {
-            setUserRole("user");
-          }
-        } catch (error) {
-          console.error("Error fetching designation:", error);
-        }
-      };
-      fetchDesignation();
+    if (userInfo && userInfo.role) {
+      // Set user role directly from userInfo.role
+      setUserRole(userInfo.role);
     }
-  }, [userInfo, api]);
+  }, [userInfo]);
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
@@ -187,34 +157,34 @@ const AppSidebar = () => {
     
     // Special case for Budget Approvals - only visible for admin or budget requesters
     if (item.title === "Budget Approvals") {
-      return userRole === "admin" || !!userInfo?.is_budget_requester;
+      return userRole === "ADMIN" || !!userInfo?.is_budget_requester;
     }
     
     // Special case for Approval Dashboard - only visible for approvers
-    if (item.title === "Approval Dashboard" && userRole !== "approver" && userRole !== "admin") {
+    if (item.title === "Approval Dashboard" && userRole !== "APPROVER" && userRole !== "ADMIN") {
       return false;
     }
     
     // Special case for My Requests - visible for admin, approver, MD, and budget requesters
     if (item.title === "My Requests") {
-      return userRole === "admin" || userRole === "approver" || userRole === "MD" || !!userInfo?.is_budget_requester;
+      return userRole === "ADMIN" || userRole === "APPROVER" || userRole === "MD" || !!userInfo?.is_budget_requester;
     }
     
-    // Special case for Credentials, Business Units, Category, and Approval Access - only for admin
+    // For admin-only items
     if (["Credentials", "Business Units", "Category", "Approval Access"].includes(item.title)) {
-      return userRole === "admin" || userInfo?.is_staff === true;
+      return userRole === "ADMIN" || userInfo?.is_staff === true;
     }
     
     // Special case for Manage MD - only for MD and admin
     if (item.title === "Manage MD") {
-      return userRole === "MD" || userRole === "admin" || userInfo?.is_staff === true;
+      return userRole === "MD" || userRole === "ADMIN" || userInfo?.is_staff === true;
     }
     
     // Default visibility check
     return (
       item.roles.includes("all") ||
       item.roles.includes(userRole) ||
-      (!!userInfo?.is_staff && item.roles.includes("admin"))
+      (userInfo?.is_staff === true && item.roles.includes("ADMIN"))
     );
   };
 
@@ -387,88 +357,91 @@ const AppSidebar = () => {
             </div>
           )}
 
-
-          {userInfo?.is_staff && (
+          {(userRole === "ADMIN" || userInfo?.is_staff) && (
             <>
-              <div className="mb-6">
-                <SectionHeader title="Credentials" />
-                <SidebarGroup>
-                  <SidebarGroupContent>
-                    <SidebarMenu className="space-y-2">
-                      {Credentials.map((item, index) => {
-                        const isActive = pathname === item.url;
-                        return (
-                          <SidebarMenuItem key={index}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <SidebarMenuButton
-                                  asChild
-                                  className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group"
-                                >
-                                  <Link
-                                    href={item.url}
-                                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
-                                      ${
-                                        isActive
-                                          ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500"
-                                          : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
-                                      }`}
+              {showCredentialsSection && (
+                <div className="mb-6">
+                  <SectionHeader title="Credentials" />
+                  <SidebarGroup>
+                    <SidebarGroupContent>
+                      <SidebarMenu className="space-y-2">
+                        {filteredCredentialsItems.map((item, index) => {
+                          const isActive = pathname === item.url;
+                          return (
+                            <SidebarMenuItem key={index}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <SidebarMenuButton
+                                    asChild
+                                    className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group"
                                   >
-                                    <MenuItemComponent item={item} isActive={isActive} />
-                                  </Link>
-                                </SidebarMenuButton>
-                              </TooltipTrigger>
-                              <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
-                                {item.title}
-                              </TooltipContent>
-                            </Tooltip>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              </div>
+                                    <Link
+                                      href={item.url}
+                                      className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
+                                        ${
+                                          isActive
+                                            ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500"
+                                            : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
+                                        }`}
+                                    >
+                                      <MenuItemComponent item={item} isActive={isActive} />
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
+                                  {item.title}
+                                </TooltipContent>
+                              </Tooltip>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                </div>
+              )}
 
-              <div className="mb-6">
-                <SectionHeader title="Business Units" />
-                <SidebarGroup>
-                  <SidebarGroupContent>
-                    <SidebarMenu className="space-y-2">
-                      {BusinessUnits.map((item, index) => {
-                        const isActive = pathname === item.url;
-                        return (
-                          <SidebarMenuItem key={index}>
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <SidebarMenuButton
-                                  asChild
-                                  className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group"
-                                >
-                                  <Link
-                                    href={item.url}
-                                    className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
-                                      ${
-                                        isActive
-                                          ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500" 
-                                          : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
-                                      }`}
+              {showBusinessUnitsSection && (
+                <div className="mb-6">
+                  <SectionHeader title="Business Units" />
+                  <SidebarGroup>
+                    <SidebarGroupContent>
+                      <SidebarMenu className="space-y-2">
+                        {filteredBusinessUnitsItems.map((item, index) => {
+                          const isActive = pathname === item.url;
+                          return (
+                            <SidebarMenuItem key={index}>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <SidebarMenuButton
+                                    asChild
+                                    className="w-full hover:bg-gray-100 dark:hover:bg-gray-700/30 group"
                                   >
-                                    <MenuItemComponent item={item} isActive={isActive} />
-                                  </Link>
-                                </SidebarMenuButton>
-                              </TooltipTrigger>
-                              <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
-                                {item.title}
-                              </TooltipContent>
-                            </Tooltip>
-                          </SidebarMenuItem>
-                        );
-                      })}
-                    </SidebarMenu>
-                  </SidebarGroupContent>
-                </SidebarGroup>
-              </div>
+                                    <Link
+                                      href={item.url}
+                                      className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
+                                        ${
+                                          isActive
+                                            ? "bg-white dark:bg-gray-800 shadow-sm border-l-4 border-green-500" 
+                                            : "hover:bg-gray-100/50 dark:hover:bg-gray-700/30"
+                                        }`}
+                                    >
+                                      <MenuItemComponent item={item} isActive={isActive} />
+                                    </Link>
+                                  </SidebarMenuButton>
+                                </TooltipTrigger>
+                                <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
+                                  {item.title}
+                                </TooltipContent>
+                              </Tooltip>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                </div>
+              )}
 
               {showCompanyManagementSection && (
                 <div className="mb-6">

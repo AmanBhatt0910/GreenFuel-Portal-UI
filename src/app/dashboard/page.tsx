@@ -77,7 +77,9 @@ const DashboardPage: React.FC = () => {
   const [designation, setDesignation] = useState<DesignationType | null>(null);
   const api = useAxios();
 
-
+  useEffect(()=>{
+    document.cookie = `user_role=${userInfo?.role}; path=/`;
+  },[userInfo]);
 
   const getUserDashboardData = async (): Promise<void> => {
     try {
