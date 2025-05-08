@@ -77,6 +77,7 @@ const ApprovalItems: MenuItem[] = [
     icon: CreditCard,
     roles: ["all"], // We'll handle the visibility in isItemVisible function
     excludeUsernames: ["Admin"],
+    badge: "New",
   },
   {
     title: "My Requests",
@@ -93,8 +94,9 @@ const Credentials: MenuItem[] = [
     url: "/dashboard/credentials",
     icon: Key,
     roles: ["ADMIN"],
+    badge: "New",
   },
-];
+]
 
 const BusinessUnits: MenuItem[] = [
   {

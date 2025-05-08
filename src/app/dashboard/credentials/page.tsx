@@ -79,18 +79,6 @@ export default function CredentialsPage() {
     return () => clearTimeout(debounceTimer);
   }, [filter.searchValue, filter.business_unit]);
 
-  const fetchCredentialById = useCallback(async (id: number) => {
-    // We don't need to set global loading state for individual user fetches
-    try {
-      const response = await api.get(`/userInfo/${id}/`);
-      return response.data;
-    } catch (error) {
-      console.error(`Error fetching credential with ID ${id}:`, error);
-      // Only show error toast for critical operations
-      return null;
-    }
-  }, []);
-
   const handleAddNew = useCallback(() => {
     setSelectedUser(null);
     setIsFormOpen(true);
@@ -161,23 +149,21 @@ export default function CredentialsPage() {
   const handleDeleteConfirm = async () => {
     if (userIdToDelete) {
       try {
-        // Optimistically update UI first for better user experience
+        const toastId = toast.loading("Deleting employee...");
+
+        // Don't update UI until API succeeds
+        await api.put(`/userInfo/${userIdToDelete}/`, { is_deleted: true });
+
+        // Update UI after successful API call
         setCredentials((prev) =>
           prev.filter((user) => user.id !== userIdToDelete)
         );
 
         setIsDeleteDialogOpen(false);
-
-        const toastId = toast.loading("Deleting employee...");
-
-        await api.put(`/userInfo/${userIdToDelete}/`, { is_deleted: true });
-
         toast.success("Employee deleted successfully", { id: toastId });
       } catch (error) {
         console.error("Error deleting employee:", error);
-
         toast.error("Failed to delete employee");
-        fetchCredentials();
       } finally {
         setUserIdToDelete(null);
       }
@@ -207,10 +193,18 @@ export default function CredentialsPage() {
     const toastId = toast.loading("Sending password reset link...");
 
     try {
-      await api.post(`forgot-password/`, { email: email });
-      toast.success("Password reset link sent to user's email", {
-        id: toastId,
-      });
+      // Wait for the API call to complete before showing success
+      const response = await api.post(`forgot-password/`, { email: email });
+      
+      // Check if the response indicates success
+      if (response.status >= 200 && response.status < 300) {
+        toast.success("Password reset link sent to user's email", {
+          id: toastId,
+        });
+      } else {
+        // Even with a "successful" HTTP status, the response might indicate failure
+        toast.error("Failed to send password reset link", { id: toastId });
+      }
     } catch (error) {
       console.error("Error resetting password:", error);
       toast.error("Failed to send password reset link", { id: toastId });
@@ -219,10 +213,14 @@ export default function CredentialsPage() {
 
   const handleFormSubmit = useCallback(
     async (formData: CredentialFormData) => {
+      const toastId = toast.loading(
+        selectedUser?.id 
+          ? "Updating employee..." 
+          : "Creating new employee..."
+      );
+
       try {
         setIsLoading(true);
-
-        console.log(formData);
 
         if (selectedUser?.id) {
           // Update existing user
@@ -237,54 +235,35 @@ export default function CredentialsPage() {
               user.id === selectedUser.id ? updatedUser : user
             )
           );
-          toast.success("Employee updated successfully");
+          toast.success("Employee updated successfully", { id: toastId });
+          setIsFormOpen(false);
         } else {
-          // Create new user
-          await api.post("/register/", formData);
+          // Create new user - wait for API success before updating UI
+          const response = await api.post("/register/", formData);
           
-          // Create a new credential object from the form data
-          // This allows us to show the new user in the table immediately without a page refresh
-          const newCredential: Credential = {
-            id: Date.now(),
-            username: formData.username || formData.email,
-            email: formData.email,
-            name: formData.name,
-            employee_code: formData.employee_code || "",
-            department: formData.department,
-            designation: formData.designation,
-            business_unit: formData.business_unit,
-            status: formData.status,
-            dob: formData.dob,
-            contact: formData.contact,
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            country: formData.country,
-            first_name: formData.first_name,
-            last_name: formData.last_name,
-            is_active: formData.is_active,
-            is_staff: formData.is_staff,
-            is_superuser: formData.is_superuser,
-            is_budget_requester: formData.is_budget_requester || false
-          };
-          
-          // Add the new user to the credentials list
-          setCredentials((prev) => [...prev, newCredential]);
-          
-          // Fetch all credentials in the background to ensure we have the latest data
-          // This will update the temporary entry with the real one from the server
-          fetchCredentials();
-          
-          toast.success("Employee added successfully");
+          // Only proceed if we get a successful response
+          if (response.data) {
+            // If API returns the new user data, use it directly
+            if (response.data.id) {
+              setCredentials((prev) => [...prev, response.data]);
+            } else {
+              // Otherwise fetch fresh data to ensure we have accurate information
+              fetchCredentials();
+            }
+            
+            toast.success("Employee added successfully", { id: toastId });
+            setIsFormOpen(false);
+          } else {
+            toast.error("Failed to create employee", { id: toastId });
+          }
         }
-
-        setIsFormOpen(false);
       } catch (error) {
         console.error("Error submitting form:", error);
         toast.error(
           selectedUser
             ? "Failed to update employee"
-            : "Failed to create employee"
+            : "Failed to create employee", 
+          { id: toastId }
         );
       } finally {
         setIsLoading(false);
