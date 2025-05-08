@@ -58,6 +58,7 @@ const DashboardItems: MenuItem[] = [
     url: "/dashboard",
     icon: LayoutDashboard,
     roles: ["all"], // Dashboard is for all roles
+    badge: "New",
   },
   {
     title: "Approval Dashboard",
@@ -65,7 +66,7 @@ const DashboardItems: MenuItem[] = [
     icon: CheckCircle,
     roles: ["APPROVER", "ADMIN"], // Only for approver role and admin
     excludeUsernames: ["Admin"],
-    badge: "New",
+    // badge: "New",
   },
 ];
 
