@@ -290,7 +290,7 @@ export default function CredentialsPage() {
         setIsLoading(false);
       }
     },
-    [selectedUser, fetchCredentials, api, setCredentials, setIsFormOpen, setIsLoading]
+    [selectedUser, fetchCredentials, setCredentials, setIsFormOpen, setIsLoading]
   );
 
   return (

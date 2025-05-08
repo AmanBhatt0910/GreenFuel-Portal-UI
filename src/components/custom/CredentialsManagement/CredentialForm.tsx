@@ -443,7 +443,7 @@ function CredentialFormContent({
       // If we already have all data, just set formLoading to false
       setFormLoading(false);
     }
-  }, [isOpen, designations, businessUnits, departments, loadedDesignations.length, loadedBusinessUnits.length, loadedDepartments.length, api]);
+  }, [isOpen, designations, businessUnits, departments, loadedDesignations.length, loadedBusinessUnits.length, loadedDepartments.length]);
 
   
   useEffect(() => {

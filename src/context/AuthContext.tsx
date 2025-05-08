@@ -129,9 +129,14 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           const userData = await userResponse.json();
           setUserInfo(userData);
           localStorage.setItem("userInfo", JSON.stringify(userData));
+
+          if (userData.role) {
+            document.cookie = `user_role=${encodeURIComponent(userData.role)}; path=/`;
+          }
         }
 
         router.push("/dashboard");
+        // alert("Login successful");
         return { success: true, message: "Login successful" };
       } else {
         if (response.status === 401) {

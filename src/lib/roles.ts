@@ -37,7 +37,7 @@ export const ROLES: Role[] = [
 ];
 
 export const roleProtectedRoutes: { [key: string]: RoleType[] } = {
-  "/dashboard": ["ADMIN", "APPROVER", "MD", "EMPLOYEE"],
+  // "/dashboard": ["ADMIN", "APPROVER", "MD", "EMPLOYEE"],
   "/dashboard/approvals": ["APPROVER", "ADMIN"],
   "/dashboard/form": ["APPROVER"],
   "/dashboard/requests": ["APPROVER", "ADMIN"],
