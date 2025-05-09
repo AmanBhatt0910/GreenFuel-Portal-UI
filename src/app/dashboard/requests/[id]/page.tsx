@@ -44,39 +44,6 @@ import RequestDetailsSection from "./components/RequestDetails/Detail";
 import BasicInfoSection from "./components/RequestDetails/BasicDetail";
 import OrganizationalSection from "./components/RequestDetails/Organization";
 
-const COLORS = {
-  primary: {
-    light: "#e0f2fe", // Light blue
-    medium: "#38bdf8", // Medium blue
-    default: "#0284c7", // Default blue
-    dark: "#0369a1", // Dark blue
-  },
-  secondary: {
-    light: "#f0fdf4", // Light green
-    medium: "#4ade80", // Medium green
-    default: "#16a34a", // Default green
-    dark: "#166534", // Dark green
-  },
-  tertiary: {
-    light: "#fef3c7", // Light amber
-    medium: "#fbbf24", // Medium amber
-    default: "#d97706", // Default amber
-    dark: "#b45309", // Dark amber
-  },
-  quaternary: {
-    light: "#e0e7ff", // Light indigo
-    medium: "#818cf8", // Medium indigo
-    default: "#4f46e5", // Default indigo
-    dark: "#4338ca", // Dark indigo
-  },
-  status: {
-    pending: { bg: "#fef3c7", text: "#d97706", icon: "#f59e0b" },
-    approved: { bg: "#dcfce7", text: "#16a34a", icon: "#22c55e" },
-    rejected: { bg: "#fee2e2", text: "#dc2626", icon: "#ef4444" },
-    neutral: { bg: "#f3f4f6", text: "#4b5563", icon: "#6b7280" },
-  },
-};
-
 const LoadingIndicator: React.FC = () => (
   <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-sky-50">
     <div className="text-center">

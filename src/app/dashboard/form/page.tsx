@@ -7,15 +7,10 @@ import {
   ArrowRight,
   FileCheck,
   ArrowLeft,
-  Building,
-  Clock,
-  AlertCircle,
   Leaf,
   FileText,
   Home,
   Download,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
 import Link from "next/link";
 import { jsPDF } from "jspdf";
@@ -29,10 +24,8 @@ import {
   AssetSelectionStep,
   AssetDetailsStep,
   ConfirmationStep,
-  FormNavigation,
   SidebarItem,
   SubmittingFormData,
-  SubmittingAssetItem,
 } from "@/components/custom/AssetRequestForm";
 import { Button } from "@/components/ui/button";
 import { CustomBreadcrumb } from "@/components/custom/ui/Breadcrumb.custom";
@@ -175,7 +168,7 @@ export default function AssetRequestForm() {
   ) => {
     const { name, value } = e.target;
     
-    // Convert numeric field values to numbers
+    
     if (["plant", "department", "designation", "notifyTo", "category", "concerned_department", "initiateDept"].includes(name)) {
       const numValue = value === "" ? 0 : parseInt(value, 10);
       setFormData((prev) => ({

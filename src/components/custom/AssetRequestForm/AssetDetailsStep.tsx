@@ -7,6 +7,13 @@ import { slideVariants } from "./animations";
 import { AssetDetailsProps } from "./types";
 import { ChevronDown, Search, X, Check, FileIcon, Upload } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // Dummy data for dropdowns
 const approvalCategories = [
@@ -251,6 +258,19 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
     handleChange(event);
   };
 
+  const paybackPeriodOptions = [
+    { value: "1 Year", label: "1 Year" },
+    { value: "2 Year", label: "2 Years" },
+    { value: "3 Year", label: "3 Years" },
+    { value: "4 Year", label: "4 Years" },
+    { value: "5 Year", label: "5 Years" },
+    { value: "6 Year", label: "6 Years" },
+    { value: "7 Year", label: "7 Years" },
+    { value: "8 Year", label: "8 Years" },
+    { value: "9 Year", label: "9 Years" },
+    { value: "10 Year", label: "10 Years" },
+  ];
+
   // Dropdown item renderer
   const renderDropdownItem = (
     item: any,
@@ -261,7 +281,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
     checkColorClass: string
   ) => (
     <div
-    key={item?.id}
+      key={item?.id}
       className={`px-3 py-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
         selected ? `${bgColorClass} dark:bg-gray-600` : ""
       }`}
@@ -995,10 +1015,10 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
       </motion.div>
 
       <div>
-      <div className="space-y-2">
-          <Label htmlFor="benefitToOrg" className="text-sm font-medium">
-            Benefit to Organization <span className="text-red-500">*</span>
-          </Label>
+        <div className="space-y-2">
+          <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">
+            5. Benefit to Organization
+          </h4>
           <Textarea
             id="benefitToOrg"
             name="benefitToOrg"
@@ -1010,7 +1030,57 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
         </div>
       </div>
 
-      
+<motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.2 }}
+        className="mb-8"
+      >
+        <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">
+          6. Additional Information
+        </h4>
+
+        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {/* Payback Month Select */}
+            <div className="space-y-2">
+              <Label htmlFor="paybackmonth" className="text-sm font-medium">
+                Payback Month
+              </Label>
+              <select
+                id="paybackmonth"
+                name="paybackmonth"
+                value={formData.paybackmonth || ""}
+                onChange={handleChange}
+                className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option value="">Select Payback Month</option>
+                {paybackPeriodOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Document Enclosed Summary Textarea */}
+            <div className="space-y-2">
+              <Label htmlFor="documentsSummary" className="text-sm font-medium">
+                Document Enclosed Summary
+              </Label>
+              <Textarea
+                id="documentsSummary"
+                name="documentsSummary"
+                value={formData.documentsSummary || ""}
+                onChange={handleChange}
+                placeholder="Enter document enclosed summary"
+                rows={4}
+                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
+          </div>
+        </div>
+      </motion.div>
     </motion.div>
   );
 };
