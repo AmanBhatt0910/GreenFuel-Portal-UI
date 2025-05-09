@@ -4,8 +4,6 @@ import React from "react";
 const RequestDetailsSection: React.FC<{ request: any }> = React.memo(
   ({ request }) => {
 
-    console.log("request" , request)
-
     return (
       <div className="bg-indigo-50 p-5 rounded-xl border border-indigo-100 shadow-sm hover:shadow-md transition-all duration-300">
         <h3 className="font-medium text-indigo-800 mb-4 text-lg flex items-center">

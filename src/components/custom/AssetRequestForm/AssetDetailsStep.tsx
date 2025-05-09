@@ -7,13 +7,6 @@ import { slideVariants } from "./animations";
 import { AssetDetailsProps } from "./types";
 import { ChevronDown, Search, X, Check, FileIcon, Upload } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 
 // Dummy data for dropdowns
 const approvalCategories = [
@@ -38,7 +31,6 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   handleChange,
   direction,
   navigateToStep,
-  handleCheckboxChange,
   user,
   formAttachments,
   setFormAttachments,

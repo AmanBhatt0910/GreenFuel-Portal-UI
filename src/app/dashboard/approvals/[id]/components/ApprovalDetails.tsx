@@ -1,8 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import { numberToWords } from '@/app/dashboard/approvals/components/utils';
-import { InfoIcon, DollarSign, BarChart2, Package, IndianRupee, Calendar, FileText, Activity, Target } from 'lucide-react';
+import { InfoIcon, BarChart2, Package, IndianRupee, Calendar, FileText, Activity, Target } from 'lucide-react';
 import AssetDetailsTable from '@/app/dashboard/approvals/components/AssetDetailsTable';
 
 interface ApprovalDetailsProps {
@@ -38,16 +37,6 @@ export default function ApprovalDetails({ enrichedForm, loading, assestDetail}: 
     maximumFractionDigits: 0
   }).format(Number(enrichedForm.total));
   
-  // Format date
-  const formatDate = (dateString: string | number | Date) => {
-    if (!dateString) return "Not specified";
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-IN', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-    });
-  };
 
   return (
     <>

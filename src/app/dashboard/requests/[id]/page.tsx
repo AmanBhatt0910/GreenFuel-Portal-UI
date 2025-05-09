@@ -2,18 +2,10 @@
 import React, { useState, useCallback, useContext, useMemo } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import {
-  CheckCircle,
-  XCircle,
-  Clock,
   FileText,
-  CalendarDays,
   AlertCircle,
   MessageSquare,
-  Info,
-  DollarSign,
   Paperclip,
-  Building,
-  Bookmark,
   BarChart,
 } from "lucide-react";
 import {
@@ -24,12 +16,10 @@ import {
   CardDescription,
   CardFooter,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { motion, AnimatePresence } from "framer-motion";
 
 import { GFContext } from "@/context/AuthContext";
 import AssetDetailsTable from "./components/AssetDetailsTable";
@@ -38,7 +28,6 @@ import CommentInput from "./components/chat/CommentInput";
 import { formatDate } from "../../approvals/components/utils";
 import { useApprovalRequest } from "./components/hooks/useApprovalRequest";
 import DocumentsList from "./components/Documents/DocumentList";
-import { StatusBadge } from "./type";
 import RequestHeader from "./components/Header/RequestHeader";
 import RequestDetailsSection from "./components/RequestDetails/Detail";
 import BasicInfoSection from "./components/RequestDetails/BasicDetail";
@@ -92,16 +81,9 @@ const RequestDetailsPage: React.FC = () => {
 
   const {
     request,
-    userInfos,
-    users,
     comments,
     documents,
     assestDetails,
-    departments,
-    designations,
-    businessUnits,
-    approvalLevels,
-    chatMessages,
     loading,
     error,
     getEntityName,
@@ -109,7 +91,6 @@ const RequestDetailsPage: React.FC = () => {
     handleAddComment,
     businessUnitMap,
     departmentMap,
-    designationMap,
   } = useApprovalRequest(requestId, userIdParam);
 
   if (loading && !request) {

@@ -6,7 +6,6 @@ import {
   Designation,
   Document,
   EntityInfo,
-  StatusBadge,
 } from "../../type";
 import useAxios from "@/app/hooks/use-axios";
 import { formatDate } from "../AssetDetailsTable/AssetDetailsTable";
