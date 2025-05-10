@@ -59,7 +59,7 @@ export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
       </div>
 
       <div className={`mt-1 font-extrabold ${sizes[size].textSize} ${selectedColors.text}`}>
-        Green Fuel
+        GreenFuel
       </div>
     </motion.div>
   );
