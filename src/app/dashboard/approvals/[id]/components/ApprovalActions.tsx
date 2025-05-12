@@ -2,7 +2,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
 import { isPending } from '@/app/dashboard/approvals/components/utils';
 
 /**
@@ -38,6 +38,8 @@ interface ApprovalActionsProps {
   handleApprove: () => Promise<void>;
   handleReject: () => Promise<void>;
   loading: boolean;
+  isApproving?: boolean;
+  isRejecting?: boolean;
 }
 
 export default function ApprovalActions({
@@ -48,7 +50,9 @@ export default function ApprovalActions({
   setRejectionDialogOpen,
   handleApprove,
   handleReject,
-  loading
+  loading,
+  isApproving = false,
+  isRejecting = false
 }: ApprovalActionsProps) {
   // Don't render anything if data is still loading
   if (loading || !form) {
@@ -58,6 +62,7 @@ export default function ApprovalActions({
   // Conditionally render based on the approval status
   // Only show actions if the form is pending
   if (!isPending(form.status)) {
+    console.log(form.status);
     // Show a banner indicating the request has already been processed
     return (
       <div className="sticky bottom-0 p-4 shadow-lg z-10 rounded-md mt-4">
@@ -111,8 +116,13 @@ export default function ApprovalActions({
               size="lg"
               className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20 sm:w-auto w-full"
               onClick={() => setRejectionDialogOpen(true)}
+              disabled={isApproving || isRejecting}
             >
-              <XCircle className="mr-2 h-5 w-5" />
+              {isRejecting ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <XCircle className="mr-2 h-5 w-5" />
+              )}
               Reject Request
             </Button>
             {/* Approve button - immediately approves */}
@@ -121,8 +131,13 @@ export default function ApprovalActions({
               size="lg"
               className="bg-green-600 hover:bg-green-700 sm:w-auto w-full"
               onClick={handleApprove}
+              disabled={isApproving || isRejecting}
             >
-              <CheckCircle className="mr-2 h-5 w-5" />
+              {isApproving ? (
+                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              ) : (
+                <CheckCircle className="mr-2 h-5 w-5" />
+              )}
               Approve Request
             </Button>
           </div>
@@ -162,9 +177,16 @@ export default function ApprovalActions({
               type="button" 
               variant="destructive" 
               onClick={handleReject}
-              disabled={!rejectionReason.trim()}
+              disabled={!rejectionReason.trim() || isRejecting}
             >
-              Confirm Rejection
+              {isRejecting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                "Confirm Rejection"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -35,6 +35,8 @@ function ApprovalDetailsPage() {
     handleReject,
     handleAddComment,
     isChatLoading,
+    isApproving,
+    isRejecting,
     assestDetails
   } = useApprovalDetails({ id });
 
@@ -150,6 +152,8 @@ function ApprovalDetailsPage() {
         handleApprove={handleApprove}
         handleReject={handleReject}
         loading={loading}
+        isApproving={isApproving}
+        isRejecting={isRejecting}
       />
     </div>
   );

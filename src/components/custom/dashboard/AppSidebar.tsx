@@ -64,7 +64,7 @@ const DashboardItems: MenuItem[] = [
     title: "Approval Dashboard",
     url: "/dashboard/approvals",
     icon: CheckCircle,
-    roles: ["APPROVER", "ADMIN"], // Only for approver role and admin
+    roles: ["APPROVER", "ADMIN" , "MD"], // Only for approver role and admin
     excludeUsernames: ["Admin"],
     // badge: "New",
   },
@@ -164,7 +164,7 @@ const AppSidebar = () => {
     }
     
     // Special case for Approval Dashboard - only visible for approvers
-    if (item.title === "Approval Dashboard" && userRole !== "APPROVER" && userRole !== "ADMIN") {
+    if (item.title === "Approval Dashboard" && userRole !== "APPROVER" && userRole !== "ADMIN" && userRole !== "MD") {
       return false;
     }
     

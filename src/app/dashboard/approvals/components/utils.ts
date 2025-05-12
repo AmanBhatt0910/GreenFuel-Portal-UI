@@ -119,5 +119,10 @@ export function getStatusIcon(status: string) {
  * Check if a status is pending (case insensitive)
  */
 export function isPending(status: string): boolean {
-  return status?.toLowerCase() === 'pending';
+  if (!status) return false;
+  const statusLower = status.toLowerCase();
+  return statusLower === 'pending' || 
+         statusLower.includes('pending for') || 
+         statusLower.includes('pending approval') ||
+         statusLower === 'current';
 } 

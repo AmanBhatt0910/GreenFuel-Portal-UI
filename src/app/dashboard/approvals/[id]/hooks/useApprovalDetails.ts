@@ -38,6 +38,8 @@ interface UseApprovalDetailsReturn {
   handleReject: () => Promise<void>;
   handleAddComment: () => Promise<void>;
   isChatLoading: boolean;
+  isApproving: boolean;
+  isRejecting: boolean;
   assestDetails: any;
 }
 
@@ -82,6 +84,8 @@ export default function useApprovalDetails({
   const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("details");
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const [isApproving, setIsApproving] = useState(false);
+  const [isRejecting, setIsRejecting] = useState(false);
   const { userInfo, setUserInfo } = useContext(GFContext);
 
   const [currentUserId, setCurrentUserId] = useState<number>(userInfo?.id || 0);
@@ -358,113 +362,119 @@ export default function useApprovalDetails({
   // Handle approve action
   const handleApprove = async () => {
     try {
+      setIsApproving(true);
 
-      // In a real app, you would call the API
+      // Call the API to approve the request
       const res = await api.post(`/approval-requests/${id}/approve/`);
       
-      // window.location.href = "/dashboard/approvals";
-
-      // if (res.status === 200) {
-      //   toast.success("Request approved successfully!");
-      // } else {
-      //   toast.error("Something went wrong");
-      // }
-
-      // Update local state
-      if (form) {
-        setForm({
-          ...form,
-          status: "Approved",
-          rejected: false,
-        });
-
-        if (enrichedForm) {
-          setEnrichedForm({
-            ...enrichedForm,
+      // Check if the API call was successful
+      if (res.status === 200) {
+        toast.success("Request approved successfully!");
+        
+        // Only update the local state if the API call was successful
+        if (form) {
+          setForm({
+            ...form,
             status: "Approved",
             rejected: false,
           });
+
+          if (enrichedForm) {
+            setEnrichedForm({
+              ...enrichedForm,
+              status: "Approved",
+              rejected: false,
+            });
+          }
         }
+
+        // Add a system comment
+        const systemComment: Comment = {
+          id: Date.now(), // Use timestamp as numeric ID
+          user: "You",
+          userRole: "Approver",
+          userInitials: "YO",
+          text: "Request approved.",
+          timestamp: new Date().toISOString(),
+          read: ""
+        };
+
+        setComments([...comments, systemComment]);
+      } else {
+        toast.error("Failed to approve request");
       }
-
-      // Add a system comment
-      const systemComment: Comment = {
-        id: Date.now(), // Use timestamp as numeric ID
-        user: "You",
-        userRole: "Approver",
-        userInitials: "YO",
-        text: "Request approved.",
-        timestamp: new Date().toISOString(),
-        read: ""
-      };
-
-      setComments([...comments, systemComment]);
-      // alert("Request approved successfully!");
     } catch (err) {
       console.error("Error approving request:", err);
-      alert("An error occurred while approving the request.");
+      toast.error("An error occurred while approving the request.");
+    } finally {
+      setIsApproving(false);
     }
   };
 
   // Handle reject action
   const handleReject = async () => {
-    // Close the dialog
-    setRejectionDialogOpen(false);
-
     // Check if rejection reason is provided
     if (!rejectionReason.trim()) {
-      alert("Please provide a reason for rejection");
+      toast.error("Please provide a reason for rejection");
       return;
     }
 
     try {
+      setIsRejecting(true);
 
-      // In a real app, you would call the API
+      // Call the API to reject the request
       const res = await api.post(`/approval-requests/${id}/reject/`, {
         comments: rejectionReason,
       });
+      
+      // Close the dialog only after API call is initiated
+      setRejectionDialogOpen(false);
+      
       if (res.status === 200) {
         toast.success("Request rejected successfully!");
-      } else {
-        toast.error("Something went wrong");
-      }
-
-      // Update local state
-      if (form) {
-        setForm({
-          ...form,
-          status: "Rejected",
-          rejected: true,
-          rejection_reason: rejectionReason,
-        });
-
-        if (enrichedForm) {
-          setEnrichedForm({
-            ...enrichedForm,
+        
+        // Only update local state if the API call was successful
+        if (form) {
+          setForm({
+            ...form,
             status: "Rejected",
             rejected: true,
             rejection_reason: rejectionReason,
           });
+
+          if (enrichedForm) {
+            setEnrichedForm({
+              ...enrichedForm,
+              status: "Rejected",
+              rejected: true,
+              rejection_reason: rejectionReason,
+            });
+          }
         }
+
+        // Add a system comment
+        const systemComment: Comment = {
+          id: Date.now(), // Use timestamp as numeric ID
+          user: "You",
+          userRole: "Approver",
+          userInitials: "YO",
+          text: `Request rejected. Reason: ${rejectionReason}`,
+          timestamp: new Date().toISOString(),
+          read: ""
+        };
+
+        setComments([...comments, systemComment]);
+        setRejectionReason("");
+      } else {
+        toast.error("Failed to reject request");
       }
-
-      // Add a system comment
-      const systemComment: Comment = {
-        id: Date.now(), // Use timestamp as numeric ID
-        user: "You",
-        userRole: "Approver",
-        userInitials: "YO",
-        text: `Request rejected. Reason: ${rejectionReason}`,
-        timestamp: new Date().toISOString(),
-        read: ""
-      };
-
-      setComments([...comments, systemComment]);
-      setRejectionReason("");
-      // alert("Request rejected successfully.");
     } catch (err) {
       console.error("Error rejecting request:", err);
-      alert("An error occurred while rejecting the request.");
+      toast.error("An error occurred while rejecting the request.");
+      // Reopen the dialog if there was an error
+      setRejectionDialogOpen(true);
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -520,6 +530,8 @@ export default function useApprovalDetails({
     handleReject,
     handleAddComment,
     isChatLoading,
+    isApproving,
+    isRejecting,
     assestDetails
   };
 }

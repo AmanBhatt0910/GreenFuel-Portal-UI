@@ -38,8 +38,8 @@ interface BudgetRequest {
   benefit_to_organisation: string;
   approval_category: string;
   approval_type: string;
-  current_level: number;
-  max_level: number;
+  current_form_level: number;
+  form_max_level: number;
   rejected: boolean;
   rejection_reason: string | null;
   user: number;
@@ -71,6 +71,7 @@ const BudgetRequestsList = () => {
       try {
         setLoading(true);
         const response = await api.get(`/approval-requests/`);
+        console.log(response)
         setRequests(response.data);
         setFilteredRequests(response.data);
 
@@ -225,7 +226,7 @@ const BudgetRequestsList = () => {
             className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800 flex items-center"
           >
             <Clock className="h-3 w-3 mr-1" />
-            Pending (Level {request.current_level}/{request.max_level})
+            Pending (Level {request.current_form_level}/{request.form_max_level})
           </Badge>
         );
       default:
