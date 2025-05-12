@@ -119,14 +119,14 @@ const BusinessUnits: MenuItem[] = [
   },
 ];
 
-const CompanyManagement: MenuItem[] = [
-  {
-    title: "Manage MD",
-    url: "/dashboard/manage-md",
-    icon: User,
-    roles: ["ADMIN", "MD"],
-  },
-];
+// const CompanyManagement: MenuItem[] = [
+//   {
+//     title: "Manage MD",
+//     url: "/dashboard/manage-md",
+//     icon: User,
+//     roles: ["ADMIN", "MD"],
+//   },
+// ];
 
 const AppSidebar = () => {
   const pathname = usePathname();
@@ -195,12 +195,12 @@ const AppSidebar = () => {
   const filteredApprovalItems = ApprovalItems.filter(isItemVisible);
   const filteredCredentialsItems = Credentials.filter(isItemVisible);
   const filteredBusinessUnitsItems = BusinessUnits.filter(isItemVisible);
-  const filteredCompanyManagementItems = CompanyManagement.filter(isItemVisible);
+  // const filteredCompanyManagementItems = CompanyManagement.filter(isItemVisible);
   
   const showApprovalsSection = filteredApprovalItems.length > 0;
   const showCredentialsSection = filteredCredentialsItems.length > 0;
   const showBusinessUnitsSection = filteredBusinessUnitsItems.length > 0;
-  const showCompanyManagementSection = filteredCompanyManagementItems.length > 0;
+  // const showCompanyManagementSection = filteredCompanyManagementItems.length > 0;
 
   const MenuItemComponent = ({ item, isActive }: { item: MenuItem, isActive: boolean }) => (
     <div className="flex items-center justify-between w-full">
@@ -446,7 +446,7 @@ const AppSidebar = () => {
                 </div>
               )}
 
-              {showCompanyManagementSection && (
+              {/* {showCompanyManagementSection && (
                 <div className="mb-6">
                   <SectionHeader title="Company Management" />
                   <SidebarGroup>
@@ -486,7 +486,7 @@ const AppSidebar = () => {
                     </SidebarGroupContent>
                   </SidebarGroup>
                 </div>
-              )}
+              )} */}
             </>
           )}
         </SidebarContent>
