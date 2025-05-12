@@ -518,10 +518,10 @@ const AppSidebar = () => {
               align="start"
             >
               <div className="space-y-1.5">
-                <button className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <Link href="/dashboard/profile" className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                   Profile
-                </button>
+                </Link>
                 <button className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <Mail className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                   Messages

@@ -59,6 +59,7 @@ export default function CredentialsPage() {
 
       const queryString = params.toString() ? `?${params.toString()}` : "";
       const response = await api.get(`/userInfo/${queryString}`);
+      console.log(response)
       setCredentials(response.data);
     } catch (error) {
       console.error("Error fetching credentials:", error);

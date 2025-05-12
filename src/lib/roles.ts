@@ -1,5 +1,4 @@
-export type RoleType = "ADMIN" | "APPROVER" | "MD" | "EMPLOYEE" | "all";
-
+export type RoleType = "ADMIN" | "APPROVER" | "MD" | "EMPLOYEE" | "ALL" | "NONE";
 export interface Role {
   id: string;
   name: string;
@@ -45,7 +44,7 @@ export const roleProtectedRoutes: { [key: string]: RoleType[] } = {
   "/dashboard/business-units": ["ADMIN", "MD"],
   "/dashboard/category-management": ["ADMIN", "MD"],
   "/dashboard/approval-access": ["ADMIN", "MD"],
-  "/dashboard/manage-md": ["ADMIN"], 
+  "/dashboard/manage-md": ["NONE"],
 };
 
 
