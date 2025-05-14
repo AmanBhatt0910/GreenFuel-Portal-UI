@@ -523,10 +523,6 @@ const AppSidebar = () => {
                   Profile
                 </Link>
                 <button className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                  <Mail className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-                  Messages
-                </button>
-                <button className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <Settings className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                   Settings
                 </button>

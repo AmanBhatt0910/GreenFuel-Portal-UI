@@ -133,6 +133,7 @@ export const useApprovalRequest = (
         }
 
         if (requestData.documents) {
+          console.log("requestData.documents" , requestData.documents)
           setDocuments(requestData.documents);
         }
 
@@ -212,6 +213,8 @@ export const useApprovalRequest = (
           size: formatDate(doc.uploaded_at),
           url: doc.file,
         }));
+
+        console.log("response for doc" , response.data);
 
         // Only update state if documents have changed
         if (JSON.stringify(mappedDocuments) !== JSON.stringify(documents)) {

@@ -381,7 +381,6 @@ export default function AssetRequestForm() {
         })),
       };
 
-      console.log(submittingFormData)
 
       formDataToSubmit.append("user", String(submittingFormData.user || 0));
       formDataToSubmit.append("business_unit", String(submittingFormData.business_unit));
@@ -417,7 +416,7 @@ export default function AssetRequestForm() {
       
       if (assetAttachments && assetAttachments.length > 0) {
         assetAttachments.forEach((file, index) => {
-          formDataToSubmit.append(`asset_attachment`, file);
+          formDataToSubmit.append(`asset_attachments`, file);
         });
       }
 
