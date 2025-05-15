@@ -78,6 +78,15 @@ const ProfilePage: React.FC = () => {
   
   const api = useAxios();
 
+useEffect(() => {
+  const timeout = setTimeout(() => {
+    window.scrollTo(0, 0);
+  }, 100);
+
+  return () => clearTimeout(timeout);
+}, []);
+
+
   // Fetch user data
   const fetchUserData = async () => {
     try {
