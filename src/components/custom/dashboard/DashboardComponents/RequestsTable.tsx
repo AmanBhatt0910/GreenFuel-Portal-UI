@@ -171,55 +171,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, formatDate }) =
         >
           Recent Requests
         </motion.h3>
-        <motion.div 
-          className="flex items-center space-x-2"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ 
-            opacity: 1, 
-            x: 0,
-            transition: { 
-              delay: 0.4,
-              type: "spring",
-              stiffness: 100
-            }
-          }}
-        >
-          <motion.button 
-            className="flex items-center px-3 py-1.5 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300"
-            whileHover={{ 
-              scale: 1.05,
-              backgroundColor: "rgba(243, 244, 246, 1)",
-              transition: { duration: 0.2 }
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              variants={iconVariants}
-              whileHover="hover"
-            >
-              <Filter className="h-4 w-4 mr-2" />
-            </motion.div>
-            Filter
-          </motion.button>
-          <motion.button 
-            className="flex items-center px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg"
-            whileHover={{ 
-              scale: 1.05,
-              backgroundColor: "rgba(37, 99, 235, 1)",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              transition: { duration: 0.2 }
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <motion.div
-              variants={iconVariants}
-              whileHover="hover"
-            >
-              <Download className="h-4 w-4 mr-2" />
-            </motion.div>
-            Export
-          </motion.button>
-        </motion.div>
+        
       </motion.div>
 
       <motion.div 
@@ -377,9 +329,9 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, formatDate }) =
                   </motion.span>
                 </td>
                 <td className="py-4 px-4 text-sm text-right">
-                  <div className="flex items-center justify-end space-x-2">
+                  <div className="flex items-center justify-center space-x-2">
                     <motion.button 
-                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300"
+                      className="text-blue-600 dark:text-blue-400 hover:text-blue-800 hover:cursor-pointer dark:hover:text-blue-300"
                       whileHover={{ 
                         scale: 1.2,
                         transition: { duration: 0.2 }
@@ -387,16 +339,6 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, formatDate }) =
                       whileTap={{ scale: 0.9 }}
                     >
                       <Eye className="h-4 w-4" />
-                    </motion.button>
-                    <motion.button 
-                      className="text-gray-600 dark:text-gray-400 hover:text-gray-800 dark:hover:text-gray-300"
-                      whileHover={{ 
-                        scale: 1.2,
-                        transition: { duration: 0.2 }
-                      }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <MoreHorizontal className="h-4 w-4" />
                     </motion.button>
                   </div>
                 </td>
@@ -419,109 +361,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, formatDate }) =
           }
         }}
       >
-        <motion.p 
-          className="text-sm text-gray-600 dark:text-gray-400"
-          whileHover={{ 
-            color: "rgba(79, 70, 229, 1)",
-            transition: { duration: 0.2 }
-          }}
-        >
-          Showing <motion.span 
-            className="font-medium"
-            initial={{ fontWeight: 500 }}
-            whileHover={{ 
-              scale: 1.1,
-              fontWeight: 700,
-              transition: { duration: 0.2 }
-            }}
-          >1</motion.span> to{" "}
-          <motion.span 
-            className="font-medium"
-            initial={{ fontWeight: 500 }}
-            whileHover={{ 
-              scale: 1.1,
-              fontWeight: 700,
-              transition: { duration: 0.2 }
-            }}
-          >7</motion.span> of{" "}
-          <motion.span 
-            className="font-medium"
-            initial={{ fontWeight: 500 }}
-            whileHover={{ 
-              scale: 1.1,
-              fontWeight: 700,
-              transition: { duration: 0.2 }
-            }}
-          >42</motion.span> results
-        </motion.p>
-        <motion.div 
-          className="flex items-center space-x-2"
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-        >
-          <motion.button 
-            className="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300 disabled:opacity-50"
-            variants={buttonVariants}
-            whileHover={{ 
-              scale: 1.05,
-              backgroundColor: "rgba(243, 244, 246, 1)",
-              transition: { duration: 0.2 }
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Previous
-          </motion.button>
-          <motion.button 
-            className="px-3 py-1 text-sm bg-blue-600 text-white rounded-lg"
-            variants={buttonVariants}
-            whileHover={{ 
-              scale: 1.1,
-              backgroundColor: "rgba(37, 99, 235, 1)",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-              transition: { duration: 0.2 }
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            1
-          </motion.button>
-          <motion.button 
-            className="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300"
-            variants={buttonVariants}
-            whileHover={{ 
-              scale: 1.05,
-              backgroundColor: "rgba(243, 244, 246, 1)",
-              transition: { duration: 0.2 }
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            2
-          </motion.button>
-          <motion.button 
-            className="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300"
-            variants={buttonVariants}
-            whileHover={{ 
-              scale: 1.05,
-              backgroundColor: "rgba(243, 244, 246, 1)",
-              transition: { duration: 0.2 }
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            3
-          </motion.button>
-          <motion.button 
-            className="px-3 py-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-700 dark:text-gray-300"
-            variants={buttonVariants}
-            whileHover={{ 
-              scale: 1.05,
-              backgroundColor: "rgba(243, 244, 246, 1)",
-              transition: { duration: 0.2 }
-            }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Next
-          </motion.button>
-        </motion.div>
+       
       </motion.div>
     </motion.div>
   );

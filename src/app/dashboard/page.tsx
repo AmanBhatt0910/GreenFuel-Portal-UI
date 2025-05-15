@@ -278,7 +278,7 @@ const DashboardPage: React.FC = () => {
         <WelcomeBanner userInfo={userInfo ? { ...userInfo, role: userInfo.role ?? undefined } : null} />
 
         {/* Stats Cards Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {statsData.map((stat, index) => (
             <StatsCard
               key={index}
@@ -290,7 +290,7 @@ const DashboardPage: React.FC = () => {
               color={stat.color}
             />
           ))}
-        </div>
+        </div> */}
 
         {/* Approval Status Cards */}
         <ApprovalStatusCards />
