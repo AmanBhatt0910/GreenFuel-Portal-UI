@@ -105,10 +105,10 @@ const FormStatisticsChart = () => {
       // Set column widths
       const wscols = [
         { wch: 15 }, // Day/Month/Year
-        { wch: 15 }, // Forms Created
+        { wch: 15 }, // Forms Created 
         { wch: 15 }, // Forms Approved
         { wch: 15 }, // Forms Rejected
-        { wch: 18 }, // Approval Rate
+        { wch: 18 }, // Approval Rate 
         { wch: 18 }  // Rejection Rate
       ];
       ws['!cols'] = wscols;

@@ -1,6 +1,6 @@
 "use client";
-import React, { useContext, useEffect, useState, Suspense } from "react";
-import { motion } from "framer-motion";
+import React, { useContext, useEffect, useState, Suspense, useRef } from "react";
+import { motion, useInView, useAnimation } from "framer-motion";
 import useAxios from "../hooks/use-axios";
 import { GFContext } from "@/context/AuthContext";
 import Loading from "./loading";
@@ -49,16 +49,87 @@ const pageVariants = {
   },
 };
 
-// Mock data for charts and statistics
-// const formData: FormDataType[] = [
-//   { name: "Jan", created: 65, approved: 45, rejected: 20 },
-//   { name: "Feb", created: 59, approved: 40, rejected: 19 },
-//   { name: "Mar", created: 80, approved: 55, rejected: 25 },
-//   { name: "Apr", created: 81, approved: 60, rejected: 21 },
-//   { name: "May", created: 56, approved: 45, rejected: 11 },
-//   { name: "Jun", created: 55, approved: 48, rejected: 7 },
-//   { name: "Jul", created: 72, approved: 62, rejected: 10 },
-// ];
+// Animation variants for components that come into view
+const fadeInUpVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.6,
+      ease: "easeOut"
+    } 
+  }
+};
+
+const fadeInLeftVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { 
+    opacity: 1, 
+    x: 0, 
+    transition: { 
+      duration: 0.6,
+      ease: "easeOut"
+    } 
+  }
+};
+
+const fadeInRightVariants = {
+  hidden: { opacity: 0, x: 20 },
+  visible: { 
+    opacity: 1, 
+    x: 0, 
+    transition: { 
+      duration: 0.6,
+      ease: "easeOut"
+    } 
+  }
+};
+
+const scaleInVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    transition: { 
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  }
+};
+
+// Custom component for animations when scrolling into view
+type AnimateInViewProps = {
+  children: React.ReactNode;
+  variants?: any; // Accept any variant shape
+  className?: string;
+  delay?: number;
+};
+
+const AnimateInView: React.FC<AnimateInViewProps> = ({ children, variants = fadeInUpVariants, className = "", delay = 0 }) => {
+  const controls = useAnimation();
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, amount: 0.2 });
+  
+  useEffect(() => {
+    if (isInView) {
+      controls.start("visible");
+    }
+  }, [controls, isInView]);
+  
+  return (
+    <motion.div
+      ref={ref}
+      initial="hidden"
+      animate={controls}
+      variants={variants}
+      className={className}
+      custom={delay}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 const DashboardPage: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
@@ -211,61 +282,59 @@ const DashboardPage: React.FC = () => {
       variants={pageVariants}
     >
       <div className="p-6">
-        {/* Welcome Banner */}
-        <WelcomeBanner
-          userInfo={
-            userInfo ? { ...userInfo, role: userInfo.role ?? undefined } : null
-          }
-        />
-
-        {/* Stats Cards Row */}
-        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {statsData.map((stat, index) => (
-            <StatsCard
-              key={index}
-              title={stat.title}
-              value={stat.value}
-              change={stat.change}
-              changeType={stat.changeType}
-              icon={stat.icon}
-              color={stat.color}
-            />
-          ))}
-        </div> */}
-
-        {/* Approval Status Cards */}
-        <ApprovalStatusCards />
-
-        {/* Charts and Profile Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Chart */}
-          <FormStatisticsChart
-          // data={formData}
+        {/* Welcome Banner with slide-in animation */}
+        <AnimateInView variants={fadeInLeftVariants}>
+          <WelcomeBanner
+            userInfo={
+              userInfo ? { ...userInfo, role: userInfo.role ?? undefined } : null
+            }
           />
-          {/* Profile Card */}
+        </AnimateInView>
+
+        {/* Approval Status Cards with staggered fade-in animation */}
+        <AnimateInView variants={fadeInUpVariants} delay={0.1}>
+          <ApprovalStatusCards />
+        </AnimateInView>
+
+        {/* Charts and Profile Section with different animations */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Chart with scale-in animation */}
+          <AnimateInView variants={scaleInVariants} className="lg:col-span-2">
+            <FormStatisticsChart />
+          </AnimateInView>
+          
+          {/* Profile Card with slide-in from right animation */}
           {userInfo && (
-            <ProfileCard
-              userInfo={{
-                ...userInfo,
-                role: userInfo.role || undefined // Convert null to undefined
-              }}
-              department={department}
-              designation={designation}
-              businessUnit={businessUnit}
-            />
+            <AnimateInView variants={fadeInRightVariants}>
+              <ProfileCard
+                userInfo={{
+                  ...userInfo,
+                  role: userInfo.role || undefined // Convert null to undefined
+                }}
+                department={department}
+                designation={designation}
+                businessUnit={businessUnit}
+              />
+            </AnimateInView>
           )}
         </div>
 
-        {/* Request Table */}
-        <RequestsTable 
-          requests={requestsData} 
-          formatDate={formatDate} 
-        />
+        {/* Request Table with fade-up animation */}
+        <AnimateInView variants={fadeInUpVariants} delay={0.2}>
+          <RequestsTable 
+            requests={requestsData} 
+            formatDate={formatDate} 
+          />
+        </AnimateInView>
 
-        {/* Additional Info Cards */}
+        {/* Uncomment if you want to add these components back with animations */}
         {/* <div className="grid grid-cols-1 gap-6">
-          <ActivityTimeline  />
-          <QuickActions />
+          <AnimateInView variants={fadeInUpVariants} delay={0.3}>
+            <ActivityTimeline />
+          </AnimateInView>
+          <AnimateInView variants={fadeInUpVariants} delay={0.4}>
+            <QuickActions />
+          </AnimateInView>
         </div> */}
       </div>
     </motion.div>

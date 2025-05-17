@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Briefcase, Building, Fingerprint, DollarSign, Check, X } from "lucide-react";
+import { User, Mail, Phone, Briefcase, Building, IndianRupee,Check, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { UserInfoType } from "@/context/AuthContext";
 
@@ -227,7 +227,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designa
                 ease: "easeInOut"
               }}
             >
-              <DollarSign className="h-3 w-3" />
+              <IndianRupee className="h-3 w-3" />
               <span>Budget Requestor</span>
             </motion.div>
           </motion.div>
@@ -455,7 +455,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designa
               { scale: 1 }
             }
           >
-            <DollarSign className={`h-6 w-6 ${isBudgetRequestor ? 'text-indigo-600 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'}`} />
+            <IndianRupee className={`h-6 w-6 ${isBudgetRequestor ? 'text-indigo-600 dark:text-indigo-300' : 'text-gray-500 dark:text-gray-400'}`} />
           </motion.div>
           <div>
             <p className="text-sm text-gray-500 dark:text-gray-400 mb-1">
