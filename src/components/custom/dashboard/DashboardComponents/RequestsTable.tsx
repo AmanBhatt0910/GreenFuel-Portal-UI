@@ -10,6 +10,7 @@ import {
   MoreHorizontal 
 } from "lucide-react";
 import Link from "next/link";
+import { buttonVariants, cardVariants, iconVariants, staggerContainer, tableRowVariants } from "./types";
 
 // Define global status configuration object
 const STATUS_CONFIG = {
@@ -84,113 +85,6 @@ interface RequestsTableProps {
   requests: RequestType[];
   formatDate: (date: string) => string;
 }
-
-// Animation variants
-const cardVariants = {
-  hidden: { y: 30, opacity: 0, scale: 0.95 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 80,
-      damping: 12,
-    },
-  },
-  hover: {
-    y: -8,
-    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-    transition: { 
-      type: "spring", 
-      stiffness: 300, 
-      damping: 15 
-    }
-  },
-  tap: {
-    scale: 0.98,
-    transition: { duration: 0.1 }
-  }
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.2
-    },
-  },
-};
-
-const tableRowVariants = {
-  hidden: { opacity: 0, x: -30, height: 0 },
-  visible: {
-    opacity: 1,
-    x: 0,
-    height: "auto",
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-      mass: 0.8
-    },
-  },
-  hover: {
-    backgroundColor: "rgba(243, 244, 246, 0.7)",
-    transition: { duration: 0.2 }
-  }
-};
-
-const buttonVariants = {
-  hidden: { opacity: 0, scale: 0.9 },
-  visible: {
-    opacity: 1,
-    scale: 1,
-    transition: { 
-      type: "spring", 
-      stiffness: 200, 
-      damping: 15 
-    }
-  },
-  hover: { 
-    scale: 1.05,
-    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-    transition: { 
-      type: "spring", 
-      stiffness: 400, 
-      damping: 10 
-    }
-  },
-  tap: { 
-    scale: 0.95,
-    transition: { duration: 0.1 } 
-  }
-};
-
-const iconVariants = {
-  hidden: { opacity: 0, rotate: -10, scale: 0.8 },
-  visible: {
-    opacity: 1,
-    rotate: 0,
-    scale: 1,
-    transition: { 
-      type: "spring", 
-      stiffness: 200, 
-      damping: 10 
-    }
-  },
-  hover: { 
-    rotate: 15, 
-    scale: 1.2,
-    transition: { 
-      type: "spring", 
-      stiffness: 300, 
-      damping: 10 
-    }
-  }
-};
 
 const isHighAmount = (totalStr: string): boolean => {
   const amount = parseFloat(totalStr);

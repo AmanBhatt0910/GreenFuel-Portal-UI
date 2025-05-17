@@ -11,22 +11,10 @@ import {
 } from "recharts";
 import { Calendar, BarChart2, DownloadCloud, RefreshCw } from "lucide-react";
 import * as XLSX from 'xlsx';
+import { SampleDataType, TabType } from "./types";
 
 // Define types for the data structure
-type TabType = "weekly" | "monthly" | "yearly";
 
-interface DataItem {
-  name: string;
-  created: number;
-  approved: number;
-  rejected: number;
-}
-
-interface SampleDataType {
-  weekly: DataItem[];
-  monthly: DataItem[];
-  yearly: DataItem[];
-}
 
 const FormStatisticsChart = () => {
   const [activeTab, setActiveTab] = useState<TabType>("monthly");
