@@ -99,6 +99,10 @@ const BudgetRequestsList = () => {
     fetchRequestsData();
   }, []);
 
+  useEffect(()=>{
+    window.scrollTo(0, 0);
+  },[])
+
   const fetchRelatedData = async () => {
     try {
       // Fetch business units
