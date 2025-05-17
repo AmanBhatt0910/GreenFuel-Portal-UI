@@ -44,7 +44,7 @@ const staggerContainer = {
 const QuickActions: React.FC = () => {
   return (
     <motion.div 
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6"
+      className="bg-white  dark:bg-gray-800 rounded-xl shadow-sm p-6"
       variants={cardVariants}
       whileHover={{
         boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
@@ -204,7 +204,7 @@ const QuickActions: React.FC = () => {
         </motion.button>
       </motion.div>
 
-      <motion.div 
+      {/* <motion.div 
         className="mt-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ 
@@ -331,7 +331,8 @@ const QuickActions: React.FC = () => {
             </span>
           </motion.div>
         </motion.div>
-      </motion.div>
+      </motion.div> */}
+      
     </motion.div>
   );
 };

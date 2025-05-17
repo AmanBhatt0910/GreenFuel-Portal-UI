@@ -53,12 +53,29 @@ export interface DesignationType {
 }
 
 export interface RequestType {
-  id: string;
-  requester: string;
-  department: string;
-  category: string;
+  id: number;
+  budget_id: string;
   date: string;
+  total: string;
+  reason: string;
+  policy_agreement: boolean;
   status: "pending" | "approved" | "rejected";
+  benefit_to_organisation: string;
+  approval_category: string;
+  approval_type: string;
+  current_form_level: number;
+  form_max_level: number;
+  rejected: boolean;
+  rejection_reason: string;
+  payback_period: string;
+  document_enclosed_summary: string;
+  current_status: string;
+  user: number;
+  business_unit: number;
+  department: number;
+  designation: number;
+  concerned_department: number;
+  notify_to: number;
 }
 
 export interface FormDataType {

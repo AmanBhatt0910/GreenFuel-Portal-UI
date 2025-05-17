@@ -78,16 +78,6 @@ const ApprovalStatusCards: React.FC = () => {
           </motion.span>
           <span className="text-sm text-gray-500 dark:text-gray-400">Requests awaiting review</span>
         </div>
-        <div className="mt-4">
-          <motion.button 
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center"
-            whileHover={{ x: 5 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            View all pending
-            <ChevronDown className="h-4 w-4 ml-1" />
-          </motion.button>
-        </div>
       </motion.div>
 
       <motion.div 
@@ -119,16 +109,6 @@ const ApprovalStatusCards: React.FC = () => {
           </motion.span>
           <span className="text-sm text-gray-500 dark:text-gray-400">Requests approved this month</span>
         </div>
-        <div className="mt-4">
-          <motion.button 
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center"
-            whileHover={{ x: 5 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            View all approved
-            <ChevronDown className="h-4 w-4 ml-1" />
-          </motion.button>
-        </div>
       </motion.div>
 
       <motion.div 
@@ -159,16 +139,6 @@ const ApprovalStatusCards: React.FC = () => {
             7
           </motion.span>
           <span className="text-sm text-gray-500 dark:text-gray-400">Requests rejected this month</span>
-        </div>
-        <div className="mt-4">
-          <motion.button 
-            className="text-sm text-blue-600 dark:text-blue-400 hover:underline flex items-center"
-            whileHover={{ x: 5 }}
-            transition={{ type: "spring", stiffness: 400, damping: 10 }}
-          >
-            View all rejected
-            <ChevronDown className="h-4 w-4 ml-1" />
-          </motion.button>
         </div>
       </motion.div>
     </motion.div>

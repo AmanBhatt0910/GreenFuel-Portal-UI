@@ -16,7 +16,7 @@ import {
   ProfileCard,
   RequestsTable,
   ActivityTimeline,
-  QuickActions
+  QuickActions,
 } from "@/components/custom/dashboard/DashboardComponents";
 
 // Import icons
@@ -29,24 +29,24 @@ import {
   DepartmentType,
   DesignationType,
   RequestType,
-  FormDataType
+  FormDataType,
 } from "@/components/custom/dashboard/types";
 
 // Page transition animations
 const pageVariants = {
   initial: { opacity: 0 },
-  animate: { 
+  animate: {
     opacity: 1,
-    transition: { 
+    transition: {
       duration: 0.6,
       when: "beforeChildren",
-      staggerChildren: 0.15
-    }
+      staggerChildren: 0.15,
+    },
   },
-  exit: { 
+  exit: {
     opacity: 0,
-    transition: { duration: 0.3 }
-  }
+    transition: { duration: 0.3 },
+  },
 };
 
 // Mock data for charts and statistics
@@ -60,73 +60,16 @@ const pageVariants = {
 //   { name: "Jul", created: 72, approved: 62, rejected: 10 },
 // ];
 
-const requestsData: RequestType[] = [
-  {
-    id: "REQ-2023-001",
-    requester: "John Smith",
-    department: "Finance",
-    category: "Budget",
-    date: "2023-05-10",
-    status: "approved",
-  },
-  {
-    id: "REQ-2023-002",
-    requester: "Sarah Johnson",
-    department: "Marketing",
-    category: "Purchase",
-    date: "2023-05-11",
-    status: "pending",
-  },
-  {
-    id: "REQ-2023-003",
-    requester: "Michael Brown",
-    department: "HR",
-    category: "Hiring",
-    date: "2023-05-11",
-    status: "rejected",
-  },
-  {
-    id: "REQ-2023-004",
-    requester: "Emily Davis",
-    department: "IT",
-    category: "Software",
-    date: "2023-05-12",
-    status: "pending",
-  },
-  {
-    id: "REQ-2023-005",
-    requester: "Daniel Wilson",
-    department: "Operations",
-    category: "Equipment",
-    date: "2023-05-12",
-    status: "approved",
-  },
-  {
-    id: "REQ-2023-006",
-    requester: "Jessica Moore",
-    department: "Finance",
-    category: "Travel",
-    date: "2023-05-13",
-    status: "pending",
-  },
-  {
-    id: "REQ-2023-007",
-    requester: "David Taylor",
-    department: "Marketing",
-    category: "Event",
-    date: "2023-05-14",
-    status: "approved",
-  },
-];
-
-
 const DashboardPage: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const { userInfo, setUserInfo } = useContext(GFContext);
-  const [businessUnit, setBusinessUnit] = useState<BusinessUnitType | null>(null);
+  const [businessUnit, setBusinessUnit] = useState<BusinessUnitType | null>(
+    null
+  );
   const [department, setDepartment] = useState<DepartmentType | null>(null);
   const [designation, setDesignation] = useState<DesignationType | null>(null);
   const api = useAxios();
+  const [requestsData, setRequestsData] = useState<RequestType[]>([]);
   const router = useRouter();
 
   useEffect(() => {
@@ -136,7 +79,7 @@ const DashboardPage: React.FC = () => {
   // Scroll to top on page load
   useEffect(() => {
     // Force scroll to top with a slight delay to ensure it works after page transition
-    const cleanup = scrollToTop({ behavior: 'auto', delay: 100, position: 0 });
+    const cleanup = scrollToTop({ behavior: "auto", delay: 100, position: 0 });
     return cleanup;
   }, []);
 
@@ -164,6 +107,37 @@ const DashboardPage: React.FC = () => {
       }
     } catch (error) {
       console.error("Error fetching user data:", error);
+    }
+  };
+
+  const getRequestData = async (): Promise<void> => {
+    try {
+      const response = await api.get(`/approval-requests/`);
+      console.log("Request data:", response.data);
+
+      // Ensure we're handling the data as an array
+      const requestsArray = Array.isArray(response.data) ? response.data : [response.data];
+      
+      // Map the data to ensure all required fields are present
+      const mappedRequests = requestsArray.map(request => ({
+        ...request,
+        // Ensure these fields exist with default values if they don't
+        current_status: request.current_status || request.status || "Pending",
+        budget_id: request.budget_id || `BUD-${request.id}`,
+        approval_category: request.approval_category || "N/A",
+        approval_type: request.approval_type || "N/A",
+        current_form_level: request.current_form_level || 1,
+        form_max_level: request.form_max_level || 3
+      }));
+      
+      // Sort by date (newest first) before setting state
+      const sortedRequests = mappedRequests.sort((a, b) => 
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+      
+      setRequestsData(sortedRequests);
+    } catch (error: any) {
+      console.error("Error fetching request data:", error);
     }
   };
 
@@ -199,6 +173,7 @@ const DashboardPage: React.FC = () => {
       setIsLoaded(false);
       try {
         await getUserDashboardData();
+        await getRequestData();
       } catch (error) {
         console.error("Error fetching user data:", error);
       } finally {
@@ -210,14 +185,18 @@ const DashboardPage: React.FC = () => {
   }, []);
 
   const formatDate = (dateString: string): string => {
-  const date = new Date(dateString);
-  return new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric'
-  }).format(date);
-};
-
+    try {
+      const date = new Date(dateString);
+      return new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(date);
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Invalid Date";
+    }
+  };
 
   if (!isLoaded) {
     return <Loading />;
@@ -233,7 +212,11 @@ const DashboardPage: React.FC = () => {
     >
       <div className="p-6">
         {/* Welcome Banner */}
-        <WelcomeBanner userInfo={userInfo ? { ...userInfo, role: userInfo.role ?? undefined } : null} />
+        <WelcomeBanner
+          userInfo={
+            userInfo ? { ...userInfo, role: userInfo.role ?? undefined } : null
+          }
+        />
 
         {/* Stats Cards Row */}
         {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -256,13 +239,16 @@ const DashboardPage: React.FC = () => {
         {/* Charts and Profile Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Chart */}
-          <FormStatisticsChart 
-            // data={formData}
+          <FormStatisticsChart
+          // data={formData}
           />
           {/* Profile Card */}
           {userInfo && (
             <ProfileCard
-              userInfo={userInfo}
+              userInfo={{
+                ...userInfo,
+                role: userInfo.role || undefined // Convert null to undefined
+              }}
               department={department}
               designation={designation}
               businessUnit={businessUnit}
@@ -271,16 +257,16 @@ const DashboardPage: React.FC = () => {
         </div>
 
         {/* Request Table */}
-        <RequestsTable
-          requests={requestsData}
-          formatDate={formatDate}
+        <RequestsTable 
+          requests={requestsData} 
+          formatDate={formatDate} 
         />
 
         {/* Additional Info Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* <ActivityTimeline  /> */}
+        {/* <div className="grid grid-cols-1 gap-6">
+          <ActivityTimeline  />
           <QuickActions />
-        </div>
+        </div> */}
       </div>
     </motion.div>
   );

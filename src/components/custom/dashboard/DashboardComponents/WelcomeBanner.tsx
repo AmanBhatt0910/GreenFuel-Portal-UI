@@ -2,6 +2,7 @@ import React from "react";
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import { UserInfoType } from "../types";
+import { useRouter } from "next/navigation";
 
 interface WelcomeBannerProps {
   userInfo: UserInfoType | null;
@@ -72,6 +73,9 @@ const iconVariants = {
 };
 
 const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userInfo }) => {
+
+  const router = useRouter();
+
   return (
     <motion.div
       variants={slideUp}
@@ -135,7 +139,9 @@ const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userInfo }) => {
           whileTap="tap"
           className="mt-4 md:mt-0"
         >
-          <button className="bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-indigo-50 transition-colors flex items-center">
+          <button className="bg-white text-indigo-600 px-4 py-2 rounded-lg font-medium hover:bg-indigo-50 transition-colors flex items-center"
+          onClick={()=>router.push("/dashboard/form")}
+          >
             <motion.div
               variants={iconVariants}
               whileHover="hover"

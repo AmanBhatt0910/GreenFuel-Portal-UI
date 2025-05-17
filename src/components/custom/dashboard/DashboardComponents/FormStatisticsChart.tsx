@@ -10,6 +10,7 @@ import {
   ResponsiveContainer
 } from "recharts";
 import { Calendar, BarChart2, DownloadCloud, RefreshCw } from "lucide-react";
+import * as XLSX from 'xlsx';
 
 // Define types for the data structure
 type TabType = "weekly" | "monthly" | "yearly";
@@ -30,6 +31,7 @@ interface SampleDataType {
 const FormStatisticsChart = () => {
   const [activeTab, setActiveTab] = useState<TabType>("monthly");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [exporting, setExporting] = useState<boolean>(false);
   
   // Sample data for different time periods
   const sampleData: SampleDataType = {
@@ -73,6 +75,82 @@ const FormStatisticsChart = () => {
     return activeTab === tab
       ? "px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg shadow-md transform scale-105"
       : "px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all";
+  };
+
+  // Function to export data to Excel
+  const exportToExcel = () => {
+    setExporting(true);
+    
+    try {
+      // Create workbook and worksheet
+      const wb = XLSX.utils.book_new();
+      
+      // Format the current date for the filename
+      const date = new Date();
+      const formattedDate = date.toISOString().split('T')[0];
+      
+      // Format the data for Excel
+      const formattedData = currentData.map(item => ({
+        [activeTab === "weekly" ? "Day" : activeTab === "monthly" ? "Month" : "Year"]: item.name,
+        "Forms Created": item.created,
+        "Forms Approved": item.approved,
+        "Forms Rejected": item.rejected,
+        "Approval Rate (%)": ((item.approved / item.created) * 100).toFixed(2),
+        "Rejection Rate (%)": ((item.rejected / item.created) * 100).toFixed(2)
+      }));
+      
+      // Create the main data worksheet
+      const ws = XLSX.utils.json_to_sheet(formattedData);
+      
+      // Set column widths
+      const wscols = [
+        { wch: 15 }, // Day/Month/Year
+        { wch: 15 }, // Forms Created
+        { wch: 15 }, // Forms Approved
+        { wch: 15 }, // Forms Rejected
+        { wch: 18 }, // Approval Rate
+        { wch: 18 }  // Rejection Rate
+      ];
+      ws['!cols'] = wscols;
+      
+      // Add the main data worksheet to the workbook
+      XLSX.utils.book_append_sheet(wb, ws, "Form Statistics");
+      
+      // Create summary worksheet
+      const totalCreated = currentData.reduce((sum, item) => sum + item.created, 0);
+      const totalApproved = currentData.reduce((sum, item) => sum + item.approved, 0);
+      const totalRejected = currentData.reduce((sum, item) => sum + item.rejected, 0);
+      
+      const summaryData = [
+        { Metric: "Total Forms Created", Value: totalCreated },
+        { Metric: "Total Forms Approved", Value: totalApproved },
+        { Metric: "Total Forms Rejected", Value: totalRejected },
+        { Metric: "Overall Approval Rate (%)", Value: ((totalApproved / totalCreated) * 100).toFixed(2) },
+        { Metric: "Overall Rejection Rate (%)", Value: ((totalRejected / totalCreated) * 100).toFixed(2) }
+      ];
+      
+      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
+      
+      // Set column widths for summary
+      const wsSummaryCols = [
+        { wch: 25 }, // Metric
+        { wch: 15 }  // Value
+      ];
+      wsSummary['!cols'] = wsSummaryCols;
+      
+      // Add the summary worksheet to the workbook
+      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
+      
+      // Generate title for the Excel file
+      const title = `Form_Statistics_${activeTab}_${formattedDate}`;
+      
+      // Export the workbook
+      XLSX.writeFile(wb, `${title}.xlsx`);
+    } catch (error) {
+      console.error("Export failed:", error);
+    } finally {
+      setExporting(false);
+    }
   };
 
   return (
@@ -129,18 +207,22 @@ const FormStatisticsChart = () => {
             
             <div className="flex items-center space-x-3">
               <button 
-                className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                className="flex cursor-pointer items-center space-x-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 onClick={() => {
                   setIsLoading(true);
                   setTimeout(() => setIsLoading(false), 800);
                 }}
               >
-                <RefreshCw className="w-4 h-4" />
+                <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
               </button>
-              <button className="flex items-center space-x-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
-                <DownloadCloud className="w-4 h-4" />
-                <span>Export</span>
+              <button 
+                className="flex cursor-pointer items-center space-x-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+                onClick={exportToExcel}
+                disabled={exporting}
+              >
+                <DownloadCloud className={`w-4 h-4 ${exporting ? 'animate-bounce' : ''}`} />
+                <span>{exporting ? "Exporting..." : "Export"}</span>
               </button>
             </div>
           </div>
@@ -201,7 +283,7 @@ const FormStatisticsChart = () => {
                     paddingTop: "20px"
                   }}
                   iconType="circle"
-                  formatter={(value: string) => <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{value}</span>}
+                  formatter={(value) => <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{value}</span>}
                 />
                 <Bar
                   dataKey="created"

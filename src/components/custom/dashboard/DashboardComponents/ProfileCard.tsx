@@ -75,7 +75,6 @@ const iconVariants = {
 };
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designation , businessUnit }) => {
-  console.log(userInfo)
 
   const router = useRouter();
 
