@@ -26,6 +26,7 @@ import {
   CheckCircle,
   List,
   LayoutDashboard,
+  LockIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -521,6 +522,10 @@ const AppSidebar = () => {
                 <Link href="/dashboard/profile" className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <User className="h-5 w-5 text-gray-500 dark:text-gray-400" />
                   Profile
+                </Link>
+                <Link href="/dashboard/change-password" className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <LockIcon className="h-5 w-5 text-gray-500 dark:text-gray-400" />
+                  Change Password
                 </Link>
                 <button className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <Settings className="h-5 w-5 text-gray-500 dark:text-gray-400" />

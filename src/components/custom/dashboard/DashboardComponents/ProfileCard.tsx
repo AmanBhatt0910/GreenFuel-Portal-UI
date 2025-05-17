@@ -1,11 +1,15 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Phone, Briefcase } from "lucide-react";
+import { User, Mail, Phone, Briefcase, Building, Fingerprint } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { UserInfoType } from "@/context/AuthContext";
+
 
 interface ProfileCardProps {
-  userInfo: any;
+  userInfo: UserInfoType;
   department: any;
   designation: any;
+  businessUnit: any;
 }
 
 // Animation variants
@@ -70,7 +74,11 @@ const iconVariants = {
   }
 };
 
-const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designation }) => {
+const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designation , businessUnit }) => {
+  console.log(userInfo)
+
+  const router = useRouter();
+
   return (
     <motion.div 
       className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 relative overflow-hidden"
@@ -178,6 +186,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designa
         >
           {designation?.name || "Employee"}
         </motion.p>
+
         
         <motion.div 
           className="mt-2 px-3 py-1 bg-green-100 dark:bg-green-900 rounded-full"
@@ -281,6 +290,54 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designa
         </motion.div>
 
         <motion.div 
+          className="flex items-center"
+          variants={cardVariants}
+          whileHover={{ 
+            x: 5,
+            transition: { duration: 0.2 }
+          }}
+        >
+          <motion.div
+            variants={iconVariants}
+            whileHover="hover"
+          >
+            <Building className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
+          </motion.div>
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Business Unit
+            </p>
+            <p className="text-gray-900 dark:text-white">
+              {businessUnit?.name || "Not assigned"}
+            </p>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          className="flex items-center"
+          variants={cardVariants}
+          whileHover={{ 
+            x: 5,
+            transition: { duration: 0.2 }
+          }}
+        >
+          <motion.div
+            variants={iconVariants}
+            whileHover="hover"
+          >
+            <Fingerprint className="h-5 w-5 text-indigo-500 dark:text-indigo-400 mr-3" />
+          </motion.div>
+          <div>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              Employee Code
+            </p>
+            <p className="text-gray-900 dark:text-white">
+              {userInfo?.employee_code || "Not assigned"}
+            </p>
+          </div>
+        </motion.div>
+
+        <motion.div 
           className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700"
           variants={cardVariants}
         >
@@ -292,6 +349,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designa
               transition: { duration: 0.2 }
             }}
             whileTap={{ scale: 0.97 }}
+            onClick={() => router.push("/dashboard/profile")}
           >
             View Full Profile
           </motion.button>

@@ -50,15 +50,15 @@ const pageVariants = {
 };
 
 // Mock data for charts and statistics
-const formData: FormDataType[] = [
-  { name: "Jan", created: 65, approved: 45, rejected: 20 },
-  { name: "Feb", created: 59, approved: 40, rejected: 19 },
-  { name: "Mar", created: 80, approved: 55, rejected: 25 },
-  { name: "Apr", created: 81, approved: 60, rejected: 21 },
-  { name: "May", created: 56, approved: 45, rejected: 11 },
-  { name: "Jun", created: 55, approved: 48, rejected: 7 },
-  { name: "Jul", created: 72, approved: 62, rejected: 10 },
-];
+// const formData: FormDataType[] = [
+//   { name: "Jan", created: 65, approved: 45, rejected: 20 },
+//   { name: "Feb", created: 59, approved: 40, rejected: 19 },
+//   { name: "Mar", created: 80, approved: 55, rejected: 25 },
+//   { name: "Apr", created: 81, approved: 60, rejected: 21 },
+//   { name: "May", created: 56, approved: 45, rejected: 11 },
+//   { name: "Jun", created: 55, approved: 48, rejected: 7 },
+//   { name: "Jul", created: 72, approved: 62, rejected: 10 },
+// ];
 
 const requestsData: RequestType[] = [
   {
@@ -119,48 +119,6 @@ const requestsData: RequestType[] = [
   },
 ];
 
-// Stats data
-const statsData = [
-  { 
-    title: "Total Requests", 
-    value: "120", 
-    change: "12% increase",
-    changeType: "increase" as const,
-    icon: <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />, 
-    color: "blue" as const
-  },
-  { 
-    title: "Active Users", 
-    value: "42", 
-    change: "8% increase",
-    changeType: "increase" as const,
-    icon: <Users className="h-5 w-5 text-green-600 dark:text-green-400" />, 
-    color: "green" as const
-  },
-  { 
-    title: "Approval Rate", 
-    value: "68%", 
-    change: "5% increase",
-    changeType: "increase" as const,
-    icon: <CheckCircle className="h-5 w-5 text-purple-600 dark:text-purple-400" />, 
-    color: "purple" as const
-  },
-  { 
-    title: "Error Rate", 
-    value: "0.8%", 
-    change: "2% decrease",
-    changeType: "decrease" as const,
-    icon: <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />, 
-    color: "red" as const
-  }
-];
-
-// Approval status data
-const approvalStatusData = [
-  { status: "Pending", count: 35 },
-  { status: "Approved", count: 70 },
-  { status: "Rejected", count: 15 }
-];
 
 const DashboardPage: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
@@ -299,14 +257,17 @@ const DashboardPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Chart */}
           <FormStatisticsChart 
-            data={formData}
+            // data={formData}
           />
           {/* Profile Card */}
-          <ProfileCard
-            userInfo={userInfo}
-            department={department}
-            designation={designation}
-          />
+          {userInfo && (
+            <ProfileCard
+              userInfo={userInfo}
+              department={department}
+              designation={designation}
+              businessUnit={businessUnit}
+            />
+          )}
         </div>
 
         {/* Request Table */}
@@ -317,7 +278,7 @@ const DashboardPage: React.FC = () => {
 
         {/* Additional Info Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <ActivityTimeline  />
+          {/* <ActivityTimeline  /> */}
           <QuickActions />
         </div>
       </div>
