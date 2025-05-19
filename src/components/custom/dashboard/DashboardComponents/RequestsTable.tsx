@@ -1,85 +1,27 @@
-import React from "react";
-import { motion } from "framer-motion";
-import { 
-  Filter, 
-  Download, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  Eye, 
-  MoreHorizontal 
+"use client"
+
+import React, { useState, useMemo } from "react";
+import {
+  CheckCircle,
+  XCircle,
+  Clock,
+  Eye,
+  ArrowUpDown,
+  ChevronDown,
+  Download,
+  Filter,
+  Calendar,
 } from "lucide-react";
-import Link from "next/link";
-import { buttonVariants, cardVariants, iconVariants, staggerContainer, tableRowVariants } from "./types";
 
-// Define global status configuration object
-const STATUS_CONFIG = {
-  approved: {
-    bgColor: "from-green-500 to-green-600 dark:from-green-600 dark:to-green-700",
-    textColor: "text-white",
-    icon: CheckCircle,
-    animation: {
-      scale: [1, 1.2, 1],
-      transition: { 
-        repeat: Infinity, 
-        repeatDelay: 3,
-        duration: 0.5
-      }
-    }
-  },
-  rejected: {
-    bgColor: "from-red-500 to-red-600 dark:from-red-600 dark:to-red-700",
-    textColor: "text-white",
-    icon: XCircle,
-    animation: {
-      rotate: [0, 10, 0, -10, 0],
-      transition: { 
-        repeat: Infinity, 
-        repeatDelay: 3,
-        duration: 0.5
-      }
-    }
-  },
-  pending: {
-    bgColor: "from-amber-400 to-amber-500 dark:from-amber-500 dark:to-amber-600",
-    textColor: "text-white",
-    icon: Clock,
-    animation: {
-      rotate: 360,
-      transition: { 
-        repeat: Infinity, 
-        duration: 3,
-        ease: "linear"
-      }
-    }
-  }
-};
+import { RequestType } from "../types";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Table, TableHeader, TableBody, TableHead, TableRow, TableCell } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
-interface RequestType {
-  id: number;
-  budget_id: string;
-  date: string;
-  total: string;
-  reason: string;
-  policy_agreement: boolean;
-  status: "pending" | "approved" | "rejected";
-  benefit_to_organisation: string;
-  approval_category: string;
-  approval_type: string;
-  current_form_level: number;
-  form_max_level: number;
-  rejected: boolean;
-  rejection_reason: string;
-  payback_period: string;
-  document_enclosed_summary: string;
-  current_status: string;
-  user: number;
-  business_unit: number;
-  department: number;
-  designation: number;
-  concerned_department: number;
-  notify_to: number;
-}
 
 interface RequestsTableProps {
   requests: RequestType[];
@@ -91,263 +33,349 @@ const isHighAmount = (totalStr: string): boolean => {
   return amount >= 5000000; // 50 lakh (5,000,000)
 };
 
-// Function to determine the correct status configuration
-const getStatusConfig = (request: RequestType) => {
+const formatCurrency = (amount: string): string => {
+  const numAmount = parseFloat(amount);
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 0
+  }).format(numAmount);
+};
+
+const getRequestStatus = (request: RequestType): string => {
   if (request.status === "approved" || request.current_status === "Approved") {
-    return STATUS_CONFIG.approved;
-  } else if (request.status === "rejected" || request.rejected || request.current_status === "Rejected") {
-    return STATUS_CONFIG.rejected;
+    return "Approved";
+  } else if (
+    request.status === "rejected" ||
+    request.rejected ||
+    request.current_status === "Rejected"
+  ) {
+    return "Rejected";
   } else {
-    return STATUS_CONFIG.pending;
+    return "Pending";
   }
 };
 
-const RequestsTable: React.FC<RequestsTableProps> = ({ requests, formatDate }) => {
-  
-  const sortedRequests = [...requests].sort((a, b) => {
-    return new Date(b.date).getTime() - new Date(a.date).getTime();
+const RequestsTable: React.FC<RequestsTableProps> = ({
+  requests,
+  formatDate,
+}) => {
+  const [sortConfig, setSortConfig] = useState<{ key: keyof RequestType | 'level'; direction: 'asc' | 'desc' }>({ key: 'date', direction: 'desc' });
+  const [filters, setFilters] = useState({
+    budget_id: '',
+    date: '',
+    total: '',
+    approval_category: '',
+    approval_type: '',
+    level: '',
+    current_status: ''
   });
-  
-  const displayRequests = sortedRequests.slice(0, 5);
-  
-  return (
-    <motion.div 
-      className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6 mb-8 overflow-hidden"
-      variants={cardVariants}
-      initial="hidden"
-      animate="visible"
-      whileHover={{
-        boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-        transition: { duration: 0.3 }
-      }}
-    >
-      <motion.div 
-        className="flex justify-between items-center mb-6"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ 
-          opacity: 1, 
-          y: 0,
-          transition: { 
-            delay: 0.2,
-            type: "spring",
-            stiffness: 100
+
+  // Handle sorting
+  const handleSort = (key: keyof RequestType | 'level') => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // Handle filtering
+  const handleFilterChange = (key: keyof typeof filters, value: string): void => {
+    setFilters(prev => ({ ...prev, [key]: value }));
+  };
+
+  const filteredAndSortedData = useMemo(() => {
+    let result = [...requests];
+    
+    // Apply filters
+    if (filters.budget_id) {
+      result = result.filter(item => item.budget_id.toLowerCase().includes(filters.budget_id.toLowerCase()));
+    }
+    if (filters.date) {
+      result = result.filter(item => formatDate(item.date).toLowerCase().includes(filters.date.toLowerCase()));
+    }
+    if (filters.total) {
+      result = result.filter(item => item.total.toString().includes(filters.total));
+    }
+    if (filters.approval_category) {
+      result = result.filter(item => item.approval_category?.toLowerCase().includes(filters.approval_category.toLowerCase()));
+    }
+    if (filters.approval_type) {
+      result = result.filter(item => item.approval_type?.toLowerCase().includes(filters.approval_type.toLowerCase()));
+    }
+    if (filters.level) {
+      result = result.filter(item => `${item.current_form_level} of ${item.form_max_level}`.includes(filters.level));
+    }
+    if (filters.current_status) {
+      result = result.filter(item => getRequestStatus(item).toLowerCase().includes(filters.current_status.toLowerCase()));
+    }
+    
+    // Apply sorting
+    if (sortConfig.key) {
+      result.sort((a, b) => {
+        // Special handling for level which is a computed field
+        if (sortConfig.key === 'level') {
+          const levelA = `${a.current_form_level} of ${a.form_max_level}`;
+          const levelB = `${b.current_form_level} of ${b.form_max_level}`;
+          
+          if (levelA < levelB) {
+            return sortConfig.direction === 'asc' ? -1 : 1;
           }
-        }}
-      >
-        <motion.h3 
-          className="text-lg font-semibold text-gray-900 dark:text-white"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ 
-            opacity: 1, 
-            x: 0,
-            transition: { 
-              delay: 0.3,
-              type: "spring",
-              stiffness: 100
-            }
-          }}
-        >
-          Recent Budget Requests
-        </motion.h3>
+          if (levelA > levelB) {
+            return sortConfig.direction === 'asc' ? 1 : -1;
+          }
+          return 0;
+        }
         
-        <motion.a
-          href="/dashboard/requests"
-          className="text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 flex items-center"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ 
-            opacity: 1, 
-            x: 0,
-            transition: { 
-              delay: 0.4,
-              type: "spring",
-              stiffness: 100
-            }
-          }}
-          whileHover={{ 
-            x: 5,
-            transition: { duration: 0.2 }
-          }}
-        >
-          See All
-          <svg className="ml-1 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-          </svg>
-        </motion.a>
+        let valueA = a[sortConfig.key as keyof RequestType];
+        let valueB = b[sortConfig.key as keyof RequestType];
         
-      </motion.div>
+        // Special handling for date
+        if (sortConfig.key === 'date') {
+          valueA = new Date(valueA as string).getTime();
+          valueB = new Date(valueB as string).getTime();
+        }
+        // Special handling for total (as it's a string)
+        else if (sortConfig.key === 'total') {
+          valueA = parseFloat(valueA as string);
+          valueB = parseFloat(valueB as string);
+        }
+        
+        if (valueA < valueB) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (valueA > valueB) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    
+    // Limit to 10 items
+    return result.slice(0, 10);
+  }, [requests, sortConfig, filters, formatDate]);
 
-      <motion.div 
-        className="overflow-x-auto"
-        initial={{ opacity: 0 }}
-        animate={{ 
-          opacity: 1,
-          transition: { delay: 0.5 }
-        }}
-      >
-        <table className="w-full">
-          <motion.thead
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ 
-              opacity: 1, 
-              y: 0,
-              transition: { 
-                delay: 0.6,
-                type: "spring",
-                stiffness: 100
-              }
-            }}
-          >
-            <tr className="bg-gray-50 dark:bg-gray-800/50">
-              <th className="w-[130px] py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Budget ID
-              </th>
-              <th className="w-[150px] py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Date
-              </th>
-              <th className="w-[150px] py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Amount
-              </th>
-              <th className="w-[150px] py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Category
-              </th>
-              <th className="w-[150px] py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Type
-              </th>
-              <th className="w-[110px] py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Level
-              </th>
-              <th className="w-[110px] py-3 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Status
-              </th>
-              <th className="w-[100px] py-3 px-4 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                Actions
-              </th>
-            </tr>
-          </motion.thead>
-          <motion.tbody 
-            className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
-            variants={staggerContainer}
-            initial="hidden"
-            animate="visible"
-          >
-            {displayRequests.length > 0 ? (
-              displayRequests.map((request, index) => {
-                const statusConfig = getStatusConfig(request);
-                const StatusIcon = statusConfig.icon;
-                
-                return (
-                  <motion.tr
-                    key={request.id}
-                    className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                    variants={tableRowVariants}
-                    custom={index}
-                    whileHover={{
-                      backgroundColor: "rgba(243, 244, 246, 0.7)",
-                      transition: { duration: 0.2 }
-                    }}
-                    initial="hidden"
-                    animate="visible"
-                    transition={{
-                      delay: 0.1 * index,
-                      duration: 0.5,
-                      ease: "easeInOut"
-                    }}
-                  >
-                    <td className="py-4 px-4 text-sm font-medium text-gray-900 dark:text-white">
-                      {request.budget_id}
-                    </td>
-                    <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">
-                      {formatDate(request.date)}
-                    </td>
-                    <td className="py-4 px-4 text-sm">
-                      <motion.span 
-                        className={`${
-                          isHighAmount(request.total) 
-                            ? "font-semibold text-amber-600 dark:text-amber-400" 
-                            : "text-gray-500 dark:text-gray-400"
-                        }`}
-                        whileHover={isHighAmount(request.total) ? {
-                          scale: 1.05,
-                          transition: { duration: 0.2 }
-                        } : {}}
-                      >
-                        {isHighAmount(request.total) && (
-                          <span className="inline-block h-2 w-2 mr-1 rounded-full bg-amber-500 animate-pulse"></span>
-                        )}
-                        ₹{parseFloat(request.total).toLocaleString()}
-                      </motion.span>
-                    </td>
-                    <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">
-                      {request.approval_category}
-                    </td>
-                    <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">
-                      {request.approval_type}
-                    </td>
-                    <td className="py-4 px-4 text-sm text-gray-500 dark:text-gray-400">
-                      {request.current_form_level} of {request.form_max_level}
-                    </td>
-                    <td className="py-4 px-4 text-sm">
-                      <motion.div
-                        className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${statusConfig.bgColor} ${statusConfig.textColor}`}
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ 
-                          opacity: 1, 
-                          scale: 1,
-                          transition: { 
-                            delay: 0.7 + (0.05 * index),
-                            type: "spring",
-                            stiffness: 200
-                          }
-                        }}
-                        whileHover={{ 
-                          scale: 1.05,
-                          boxShadow: "0 2px 10px 0 rgba(0,0,0,0.12)",
-                          transition: { duration: 0.2 }
-                        }}
-                      >
-                        <motion.div animate={statusConfig.animation}>
-                          <StatusIcon className="h-3 w-3 mr-1.5" />
-                        </motion.div>
-                        {request.current_status}
-                      </motion.div>
-                    </td>
-                    <td className="py-4 px-4 text-sm text-right">
-                      <div className="flex items-center justify-end space-x-2">
-                        {/* <Link href={`/dashboard/requests/${request.id}`}> */}
-                          <motion.button 
-                            className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40"
-                            variants={buttonVariants}
-                            initial="hidden"
-                            animate="visible"
-                            whileHover="hover"
-                            whileTap="tap"
-                            title="View Request Details"
-                            onClick={()=> window.location.href = `/dashboard/requests/${request.id}`}
-                          >
-                            <motion.div variants={iconVariants} whileHover="hover">
-                              <Eye className="h-4 w-4" />
-                            </motion.div>
-                          </motion.button>
-                        {/* </Link> */}
-                      </div>
-                    </td>
-                  </motion.tr>
-                );
-              })
-            ) : (
-              <tr>
-                <td colSpan={8} className="py-6 px-4 text-center text-sm text-gray-500 dark:text-gray-400">
-                  No recent budget requests found
-                </td>
-              </tr>
-            )}
-          </motion.tbody>
-        </table>
-      </motion.div>
+  const getStatusIcon = (request: RequestType) => {
+    const status = getRequestStatus(request);
+    switch(status.toLowerCase()) {
+      case 'approved':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'rejected':
+        return <XCircle className="h-4 w-4" />;
+      case 'pending':
+      default:
+        return <Clock className="h-4 w-4" />;
+    }
+  };
 
-      {/* No pagination needed for dashboard preview */}
-    </motion.div>
+  const getStatusStyles = (request: RequestType) => {
+    const status = getRequestStatus(request);
+    switch(status.toLowerCase()) {
+      case 'approved':
+        return "bg-green-100 text-green-800 hover:bg-green-200 border-green-200";
+      case 'rejected':
+        return "bg-red-100 text-red-800 hover:bg-red-200 border-red-200";
+      case 'pending':
+      default:
+        return "bg-amber-100 text-amber-800 hover:bg-amber-200 border-amber-200";
+    }
+  };
+
+  const getRowStyles = (request: RequestType) => {
+    const status = getRequestStatus(request);
+    switch(status.toLowerCase()) {
+      case 'approved':
+        return "bg-green-50 hover:bg-green-100";
+      case 'rejected':
+        return "bg-red-50 hover:bg-red-100";
+      default:
+        return "hover:bg-gray-100";
+    }
+  };
+
+  interface Column {
+    key: keyof typeof filters;
+    sortKey?: keyof RequestType | 'level';
+    label: string;
+    presetFilters?: string[];
+  }
+
+
+
+  const renderFilterMenu = (column: Column): JSX.Element => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="h-8 w-8 p-0">
+          <Filter className="h-4 w-4" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>Filter {column.label}</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <div className="p-2">
+          <Input
+            placeholder={`Filter ${column.label.toLowerCase()}...`}
+            value={filters[column.key]}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleFilterChange(column.key, e.target.value)}
+            className="h-8"
+          />
+        </div>
+        {column.presetFilters && (
+          <>
+            <DropdownMenuSeparator />
+            {column.presetFilters.map((filter: string, idx: number) => (
+              <DropdownMenuItem 
+                key={idx}
+                onClick={() => handleFilterChange(column.key, filter)}
+              >
+                {filter}
+              </DropdownMenuItem>
+            ))}
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
-};
+
+  const columns: Column[] = [
+    { key: 'budget_id', sortKey: 'budget_id', label: 'Budget ID' },
+    { key: 'date', sortKey: 'date', label: 'Date' },
+    { key: 'total', sortKey: 'total', label: 'Amount' },
+    { 
+      key: 'approval_category', 
+      sortKey: 'approval_category',
+      label: 'Category',
+      presetFilters: ['Opex', 'Capex', 'Service', 'Hardware']
+    },
+    { 
+      key: 'approval_type', 
+      sortKey: 'approval_type',
+      label: 'Type',
+      presetFilters: ['Opex', 'Capex']
+    },
+    { key: 'level', sortKey: 'level', label: 'Level' },
+    { 
+      key: 'current_status', 
+      sortKey: 'current_status',
+      label: 'Status',
+      presetFilters: ['Pending', 'Approved', 'Rejected']
+    }
+  ];
+
+  return (
+    <Card className="w-full">
+      <CardHeader className="flex flex-row items-center justify-between pb-2">
+        <CardTitle className="text-xl font-bold">Recent Budget Requests</CardTitle>
+        <div className="flex items-center space-x-2">
+          <Button variant="outline" size="sm" className="flex items-center gap-1">
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm" 
+            className="flex items-center gap-1"
+            onClick={() => window.location.href = "/dashboard/requests"}
+          >
+            See All
+            <ChevronDown className="h-4 w-4" />
+          </Button>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                {columns.map((column) => (
+                  <TableHead key={column.key} className="px-4 py-3 text-center">
+                    <div className="flex items-center justify-center">
+                      <Button
+                        variant="ghost"
+                        className="p-0 font-medium h-7 hover:bg-transparent"
+                        onClick={() => column.sortKey && handleSort(column.sortKey)}
+                      >
+                        {column.label}
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                      </Button>
+                      {renderFilterMenu(column)}
+                    </div>
+                  </TableHead>
+                ))}
+                <TableHead className="w-[100px] text-center">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredAndSortedData.length > 0 ? (
+                filteredAndSortedData.map((request) => (
+                  <TableRow 
+                    key={request.id}
+                    className={getRowStyles(request)}
+                  >
+                    <TableCell className="font-medium text-center">{request.budget_id}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        <Calendar className="h-4 w-4 mr-2 text-gray-500" />
+                        {formatDate(request.date)}
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center">
+                        {isHighAmount(request.total) && (
+                          <span className="inline-block h-2 w-2 mr-2 rounded-full bg-amber-500 animate-pulse"></span>
+                        )}
+                        <span className={isHighAmount(request.total) ? "font-semibold text-amber-600" : ""}>
+                          {formatCurrency(request.total)}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">{request.approval_category}</TableCell>
+                    <TableCell className="text-center">{request.approval_type}</TableCell>
+                    <TableCell className="text-center">{request.current_form_level} of {request.form_max_level}</TableCell>
+                    <TableCell className="text-center">
+                      <div className="flex justify-center">
+                        <Badge 
+                          variant="outline" 
+                          className={`flex items-center gap-1 ${getStatusStyles(request)}`}
+                        >
+                          {getStatusIcon(request)}
+                          {getRequestStatus(request)}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="h-8 w-8"
+                              onClick={() => window.location.href = `/dashboard/requests/${request.id}`}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>View Details</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={8} className="h-24 text-center">
+                    No requests found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default RequestsTable;
