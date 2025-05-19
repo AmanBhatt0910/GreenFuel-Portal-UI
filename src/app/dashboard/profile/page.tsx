@@ -121,6 +121,10 @@ useEffect(() => {
     }
   };
 
+  useEffect(() => {
+    window.scrollTo({ top: 0 , behavior: 'smooth' });
+  },[])
+
   // Fetch business unit details
   const fetchBusinessUnit = async (id: number | string): Promise<void> => {
     try {
@@ -232,11 +236,11 @@ useEffect(() => {
   }
 
   return (
-    <div className="container w-full py-6 space-y-8 p-4">
+    <div className="w-full py-6 p-4 max-w-full overflow-hidden">
       <ProfileHeader userData={userData} />
       
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="space-y-6">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="space-y-8">
           <PersonalInfoSection 
             userData={userData} 
             updateUserData={updateUserData} 
@@ -256,7 +260,7 @@ useEffect(() => {
           />
         </div>
         
-        <div className="space-y-6">
+        <div className="space-y-8">
           <AddressInfoSection 
             userData={userData} 
             updateUserData={updateUserData} 
