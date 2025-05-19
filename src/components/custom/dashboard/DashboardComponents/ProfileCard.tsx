@@ -306,7 +306,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designa
           </div>
         </motion.div>
 
-        <motion.div
+        {/* <motion.div
           className={`flex items-center p-3 rounded-lg ${isBudgetRequestor ? 'bg-indigo-50 dark:bg-indigo-900/30' : 'bg-gray-50 dark:bg-gray-800/50'}`}
           variants={cardVariants}
           initial={{ opacity: 0, y: 10 }}
@@ -363,7 +363,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ userInfo, department, designa
               )}
             </motion.div>
           </div>
-        </motion.div>
+        </motion.div> */}
 
         <motion.div 
           className="pt-4 mt-4 border-t border-gray-200 dark:border-gray-700"

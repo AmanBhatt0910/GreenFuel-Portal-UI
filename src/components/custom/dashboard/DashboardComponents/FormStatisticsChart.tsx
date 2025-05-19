@@ -169,7 +169,7 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({
           <div className="absolute -left-10 -top-20 w-40 h-40 bg-blue-500 rounded-full opacity-20 blur-3xl"></div>
           <div className="absolute -right-10 -bottom-20 w-40 h-40 bg-purple-500 rounded-full opacity-20 blur-3xl"></div>
 
-          <div className="relative p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="relative p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
                 <BarChart2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -208,8 +208,8 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({
         </div>
 
         {/* Chart area */}
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-6">
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center">
               <Calendar className="w-5 h-5 text-gray-500 dark:text-gray-400 mr-2" />
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -377,7 +377,7 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({
           </div>
 
           {/* Summary cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-2">
             <div className="bg-gray-50 dark:bg-gray-900/30 p-4 rounded-lg border border-gray-100 dark:border-gray-700 transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">

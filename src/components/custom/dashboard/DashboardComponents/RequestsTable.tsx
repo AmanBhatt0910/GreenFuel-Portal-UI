@@ -313,7 +313,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, formatDate }) =
                     </td>
                     <td className="py-4 px-4 text-sm text-right">
                       <div className="flex items-center justify-end space-x-2">
-                        <Link href={`/dashboard/requests/${request.id}`}>
+                        {/* <Link href={`/dashboard/requests/${request.id}`}> */}
                           <motion.button 
                             className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40"
                             variants={buttonVariants}
@@ -322,12 +322,13 @@ const RequestsTable: React.FC<RequestsTableProps> = ({ requests, formatDate }) =
                             whileHover="hover"
                             whileTap="tap"
                             title="View Request Details"
+                            onClick={()=> window.location.href = `/dashboard/requests/${request.id}`}
                           >
                             <motion.div variants={iconVariants} whileHover="hover">
                               <Eye className="h-4 w-4" />
                             </motion.div>
                           </motion.button>
-                        </Link>
+                        {/* </Link> */}
                       </div>
                     </td>
                   </motion.tr>

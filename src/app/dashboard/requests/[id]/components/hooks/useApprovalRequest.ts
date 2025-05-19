@@ -50,11 +50,6 @@ export const useApprovalRequest = (
     []
   );
 
-  
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  },[])
-
 
   const getUserName = useCallback(
     (userId: number): string => {
