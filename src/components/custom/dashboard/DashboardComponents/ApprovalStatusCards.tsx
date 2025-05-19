@@ -16,7 +16,7 @@ const ApprovalStatusCards: React.FC<ApprovalStatusChartProps> = ({statData}) => 
     >
 
       <motion.div
-        className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border-t-4 border-yellow-500"
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-4 border-t-4 border-purple-500"
         variants={cardVariants}
         whileHover={{
           y: -5,
