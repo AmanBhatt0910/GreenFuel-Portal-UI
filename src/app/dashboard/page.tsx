@@ -275,7 +275,7 @@ const DashboardPage: React.FC = () => {
         </AnimateInView>
 
         {/* Uncomment if you want to add these components back with animations */}
-        {/* <div className="grid grid-cols-1 gap-6">
+        {/* <div className="grid grid-cols-2 gap-6">
           <AnimateInView variants={fadeInUpVariants} delay={0.3}>
             <ActivityTimeline />
           </AnimateInView>

@@ -204,7 +204,7 @@ const QuickActions: React.FC = () => {
         </motion.button>
       </motion.div>
 
-      {/* <motion.div 
+      <motion.div 
         className="mt-6"
         initial={{ opacity: 0, y: 20 }}
         animate={{ 
@@ -331,7 +331,7 @@ const QuickActions: React.FC = () => {
             </span>
           </motion.div>
         </motion.div>
-      </motion.div> */}
+      </motion.div>
       
     </motion.div>
   );
