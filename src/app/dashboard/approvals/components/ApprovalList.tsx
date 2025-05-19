@@ -1,7 +1,7 @@
 import React from 'react';
 import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { ApprovalForm, EnrichedApprovalForm } from './interfaces';
+import { EnrichedApprovalForm } from './interfaces';
 import { getStatusColor, formatDate } from './utils';
 
 interface ApprovalListProps {

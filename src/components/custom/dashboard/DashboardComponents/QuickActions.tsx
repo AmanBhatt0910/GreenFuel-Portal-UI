@@ -1,45 +1,7 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { FileText, Users, BarChart3, Bell } from "lucide-react";
-
-// Animation variants
-const cardVariants = {
-  hidden: { y: 30, opacity: 0, scale: 0.95 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 80,
-      damping: 12,
-    },
-  },
-  hover: {
-    y: -8,
-    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-    transition: { 
-      type: "spring", 
-      stiffness: 300, 
-      damping: 15 
-    }
-  },
-  tap: {
-    scale: 0.98,
-    transition: { duration: 0.1 }
-  }
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.12,
-      delayChildren: 0.2
-    },
-  },
-};
+import { cardVariants, staggerContainer } from "./types";
 
 const QuickActions: React.FC = () => {
   return (

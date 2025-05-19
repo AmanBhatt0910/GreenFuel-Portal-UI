@@ -30,9 +30,6 @@ import { Input } from "@/components/ui/input";
 const CategoryManagementContent: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [approvers, setApprovers] = useState<Approver[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
-  const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalCategories: 0,
@@ -42,23 +39,11 @@ const CategoryManagementContent: React.FC = () => {
   });
   const api = useAxios();
 
-  const [showScrollToTop, setShowScrollToTop] = useState(false);
-
   const [categorySearchTerm, setCategorySearchTerm] = useState("");
 
   const filteredCategories = categories.filter((category) =>
     category.name.toLowerCase().includes(categorySearchTerm.toLowerCase())
   );
-
-  
-  useEffect(() => {
-    const checkScroll = () => {
-      setShowScrollToTop(window.scrollY > 300);
-    };
-
-    window.addEventListener("scroll", checkScroll);
-    return () => window.removeEventListener("scroll", checkScroll);
-  }, []);
 
   const scrollToTop = () => {
     window.scrollTo({
@@ -102,13 +87,9 @@ const CategoryManagementContent: React.FC = () => {
         email: user.email,
       }));
 
-      setUsers(formattedUsers);
-
       // Fetch business units
       const businessUnitsResponse = await api.get("/business-units/");
       const businessUnitsData: BusinessUnit[] = businessUnitsResponse.data;
-
-      setBusinessUnits(businessUnitsData);
 
       const allDepartmentsPromises = businessUnitsData.map(
         async (bu: BusinessUnit) => {
@@ -129,9 +110,6 @@ const CategoryManagementContent: React.FC = () => {
 
       const allDepartmentsArrays = await Promise.all(allDepartmentsPromises);
       const allDepartments: Department[] = allDepartmentsArrays.flat();
-
-      // Store all departments for reference
-      setDepartments(allDepartments);
 
       // Fetch approvers from API
       const approversRes = await api.get("/approver/", {

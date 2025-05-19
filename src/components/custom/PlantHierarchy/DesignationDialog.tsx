@@ -11,8 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { BriefcaseIcon, AlertCircle, CheckCircle } from 'lucide-react';
-import { BusinessUnit, Department, Designation, NewDesignation } from './types';
-import useAxios from '@/app/hooks/use-axios';
+import { BusinessUnit, Designation, NewDesignation } from './types';
 
 interface DesignationDialogProps {
   isOpen: boolean;

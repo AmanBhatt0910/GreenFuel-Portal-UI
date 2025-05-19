@@ -1,5 +1,5 @@
 import React, { useContext, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { slideVariants } from "./animations";
@@ -43,7 +43,6 @@ interface Designation {
 export const EmployeeInformationStep: React.FC<FormStepProps> = ({
   formData,
   handleChange,
-  handleCheckboxChange,
   direction,
 }) => {
   const api = useAxios();
@@ -250,41 +249,6 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
     }
   }, [formData.initiateDept]);
 
-  useEffect(() => {
-    const findAndLogSelectedItem = () => {
-      if (formData.plant && formData.plant !== 0 && businessUnits.length > 0) {
-        const selectedBusinessUnit = businessUnits.find(
-          (bu) => bu.id === Number(formData.plant)
-        );
-      }
-
-      if (
-        formData.initiateDept &&
-        formData.initiateDept !== 0 &&
-        departments.length > 0
-      ) {
-        const selectedDepartment = departments.find(
-          (dept) => dept.id === Number(formData.initiateDept)
-        );
-      }
-
-      if (
-        formData.designation &&
-        formData.designation !== 0 &&
-        designations.length > 0
-      ) {
-        const selectedDesignation = designations.find(
-          (desig) => desig.id === Number(formData.designation)
-        );
-      }
-    };
-
-    const timeoutId = setTimeout(() => {
-      findAndLogSelectedItem();
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [formData, businessUnits, departments, designations]);
 
   const containerVariants = {
     hidden: { opacity: 0 },

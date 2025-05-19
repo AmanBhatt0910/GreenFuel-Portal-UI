@@ -127,4 +127,6 @@ const DocumentsList: React.FC<DocumentsListProps> = React.memo(
   }
 );
 
+DocumentsList.displayName = "DocumentsList";
+
 export default DocumentsList;

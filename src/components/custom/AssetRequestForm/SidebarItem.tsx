@@ -20,7 +20,6 @@ export const SidebarItem: React.FC<SidebarItemProps> = ({
   index,
   currentStep,
   onClick,
-  completed,
   className = "",
 }) => {
   const isActive = currentStep === index;

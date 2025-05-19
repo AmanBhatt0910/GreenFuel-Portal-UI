@@ -1,6 +1,5 @@
 import React from 'react';
 import { Building2 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 
 import { BusinessUnit, BusinessUnitActionsProps } from './types';
 import { BusinessUnitForm } from './BusinessUnitForm';
@@ -20,10 +19,6 @@ export const PlantsTab: React.FC<PlantsTabProps> = ({
   setError,
   onAddBusinessUnit,
 }) => {
-  const handleBusinessUnitClick = (id: string | number) => {
-    setActiveBusinessUnitId(id);
-    setActiveTab('departments'); 
-  };
 
   return (
     <>

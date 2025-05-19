@@ -12,7 +12,6 @@ import {
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import {
   Tooltip,
   TooltipContent,
@@ -37,7 +36,6 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
 }) => {
   const [editingName, setEditingName] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [isHovered, setIsHovered] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const api = useAxios();
 
@@ -134,8 +132,6 @@ export const BusinessUnitCard: React.FC<BusinessUnitCardProps> = ({
         }
       `}
       onClick={selectBusinessUnit}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       {isActive && (
         <div className="absolute top-0 left-0 w-0.5 h-full bg-green-500 dark:bg-green-400"></div>

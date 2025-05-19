@@ -44,4 +44,6 @@ const CommentInput: React.FC<CommentInputProps> = React.memo(
   }
 );
 
+CommentInput.displayName = "CommentInput";
+
 export default CommentInput;

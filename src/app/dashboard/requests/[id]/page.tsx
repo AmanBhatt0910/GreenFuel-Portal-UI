@@ -1,6 +1,6 @@
 "use client";
-import React, { useState, useCallback, useContext, useMemo, useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import React, { useState, useContext } from "react";
+import { useParams } from "next/navigation";
 import {
   FileText,
   AlertCircle,
@@ -74,7 +74,7 @@ const RequestDetailsPage: React.FC = () => {
   const params = useParams();
   const requestId = params.id as string;
 
-  const [currentTab, setCurrentTab] = useState<string>("details");
+  const [currentTab , setCurrentTab] = useState<string>("details");
 
   const { userInfo } = useContext(GFContext);
   const userIdParam = userInfo?.id ? userInfo.id.toString() : undefined;

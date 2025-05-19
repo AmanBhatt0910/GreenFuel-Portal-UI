@@ -1,6 +1,5 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,8 +17,6 @@ export function DeleteDialog({
   isOpen,
   onClose,
   onConfirm,
-  userId,
-  isLoading,
 }: DeleteDialogProps) {
   return (
     <AlertDialog open={isOpen} onOpenChange={onClose}>

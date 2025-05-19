@@ -163,8 +163,12 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const userLogout = () => {
     setAuthToken(null);
     setUserInfo(null);
-    typeof window !== "undefined" && localStorage.removeItem("accessToken");
-    typeof window !== "undefined" && localStorage.removeItem("userInfo");
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("accessToken");
+    }
+    if (typeof window !== "undefined") {
+      localStorage.removeItem("userInfo");
+    }
     router.push("/auth/login");
   };
 

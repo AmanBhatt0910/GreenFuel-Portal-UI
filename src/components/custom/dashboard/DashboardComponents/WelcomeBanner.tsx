@@ -130,7 +130,7 @@ const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userInfo }) => {
               delay: 0.4
             }}
           >
-            Here's what's happening with your requests today.
+            Here&apos;s what&apos;s happening with your requests today.
           </motion.p>
         </div>
         <motion.div

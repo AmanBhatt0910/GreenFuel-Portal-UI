@@ -42,4 +42,6 @@ const CommentItem: React.FC<CommentItemProps> = React.memo(
   }
 );
 
+CommentItem.displayName = 'CommentItem';
+
 export default CommentItem;

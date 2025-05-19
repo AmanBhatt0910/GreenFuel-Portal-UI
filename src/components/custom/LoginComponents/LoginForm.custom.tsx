@@ -38,8 +38,10 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => 
 
     try {
       await onSubmit(email, password);
-    } catch (err) {
-      // Error handling is done in the parent component
+    } catch (err : unknown) {
+      if(err instanceof Error){
+        toast.error(err.message)
+      }
     }
   };
 
@@ -101,7 +103,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => 
             ariaDescribedBy="password-description"
             className="focus:border-green-500 dark:focus:border-green-400 transition-all duration-300"
           />
-          {/* <div className="text-right mt-2">
+          <div className="text-right mt-2">
             <Link
               href="/forgot-password"
               aria-label="Forgot password"
@@ -110,7 +112,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => 
             >
               Forgot password?
             </Link>
-          </div> */}
+          </div>
         </div>
 
         <div className="pt-4">

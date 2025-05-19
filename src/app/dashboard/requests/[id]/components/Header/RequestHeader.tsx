@@ -4,12 +4,9 @@ import {
   CalendarDays,
   CheckCircle,
   Clock,
-  DollarSign,
-  IndianRupee,
   Info,
   XCircle,
 } from "lucide-react";
-import { StatusBadge } from "../../type";
 import { Badge } from "@/components/ui/badge";
 import { formatDate } from "../AssetDetailsTable/AssetDetailsTable";
 

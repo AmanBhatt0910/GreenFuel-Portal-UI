@@ -42,7 +42,6 @@ const tableVariants = {
 };
 
 const TrackingTable: React.FC<TrackingTableProps> = ({
-  formStats,
   recentForms,
   isLoaded,
   searchTerm,

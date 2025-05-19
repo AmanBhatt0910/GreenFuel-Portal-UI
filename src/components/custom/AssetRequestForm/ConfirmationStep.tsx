@@ -278,7 +278,7 @@ export const ConfirmationStep: React.FC<FormStepProps> = ({
                 Review Complete
               </p>
               <p className="mt-1 text-sm text-green-600/90 dark:text-green-500/80">
-                Your request has been prepared and is ready to be submitted. Please confirm that you agree to the company's asset usage policy before proceeding.
+                Your request has been prepared and is ready to be submitted. Please confirm that you agree to the company&apos;s asset usage policy before proceeding.
               </p>
             </div>
           </div>

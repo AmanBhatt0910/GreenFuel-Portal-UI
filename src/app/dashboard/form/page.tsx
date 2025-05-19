@@ -99,8 +99,8 @@ export default function AssetRequestForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const { userInfo } = useContext(GFContext);
-  const [user, setUser] = useState<any>(null);
-  const [budgetId, setBudgetId] = useState<any>(null);
+  const [user, setUser] = useState(null);
+  const [budgetId, setBudgetId] = useState(null);
   const [formAttachments, setFormAttachments] = useState<File[]>([]);
   const [assetAttachments, setAssetAttachments] = useState<File[]>([]);
 
@@ -343,11 +343,9 @@ export default function AssetRequestForm() {
       const formDataToSubmit = new FormData();
       
       let currentCategoryLevel = 1; 
-      let currentFormLevel = 0; 
       
       if (!formData.category || formData.category === 0) {
         currentCategoryLevel = 0;
-        currentFormLevel = 1;
       }
 
       const submittingFormData: SubmittingFormData = {
@@ -409,25 +407,16 @@ export default function AssetRequestForm() {
       });
       
       if (formAttachments && formAttachments.length > 0) {
-        formAttachments.forEach((file, index) => {
+        formAttachments.forEach((file) => {
           formDataToSubmit.append(`form_attachments`, file);
         });
       }
       
       if (assetAttachments && assetAttachments.length > 0) {
-        assetAttachments.forEach((file, index) => {
+        assetAttachments.forEach((file) => {
           formDataToSubmit.append(`asset_attachments`, file);
         });
-      }
-
-      for (let [key, value] of formDataToSubmit.entries()) {
-        if (value instanceof File) {
-          console.log(`${key}: File name = ${value.name}, size = ${value.size} bytes`);
-        } else {
-          console.log(`${key}:`, value);
-        }
-      }
-      
+      }      
 
       const response = await api.post("approval-requests/", formDataToSubmit, {
         headers: {
@@ -664,7 +653,7 @@ const generatePDF = async (): Promise<void> => {
         5: { halign: "right" }
       },
       foot: [
-        ["", "", "", "", "Total:", formatCurrency(formData.assetAmount)]
+        ["", "", "", "", "Total:", formatCurrency(Number(formData.assetAmount))]
       ]
     });
 

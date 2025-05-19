@@ -1,11 +1,10 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Calendar, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DashboardHeaderProps } from "./types";
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({
-  currentDate,
   onRefresh,
 }) => {
   return (

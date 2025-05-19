@@ -171,7 +171,7 @@ export const PlantHierarchyManager: React.FC = () => {
               Department Management
             </h1>
             <p className="text-gray-500 mt-2">
-              Manage your organization's departments and designations
+              Manage your organization&apos;s departments and designations
             </p>
           </div>
         </div>

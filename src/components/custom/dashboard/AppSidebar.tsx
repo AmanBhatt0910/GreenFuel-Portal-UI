@@ -19,7 +19,6 @@ import {
   Settings,
   LogOut,
   User,
-  Mail,
   PanelRight,
   Key,
   Building,

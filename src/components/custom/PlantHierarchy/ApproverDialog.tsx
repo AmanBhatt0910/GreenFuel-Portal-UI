@@ -16,13 +16,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { BusinessUnit, User as UserType } from './types';
-import { User, X, Building, FolderIcon } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { User, Building, FolderIcon } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 
 // Define temporary interface for User while waiting for updated types
@@ -32,14 +29,6 @@ interface User {
   username?: string;
   email?: string;
   employee_code?: string;
-}
-
-// Define temporary interface for NewApprover
-interface NewApprover {
-  user: number;
-  business_unit: number | string;
-  department: number | string;
-  level: number;
 }
 
 interface ApproverDialogProps {

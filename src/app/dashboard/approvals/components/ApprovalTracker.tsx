@@ -1,9 +1,8 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EnrichedApprovalForm } from "./interfaces";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, XCircle, ArrowRight } from "lucide-react";
-import useAxios from "@/app/hooks/use-axios";
+import { CheckCircle, Clock, XCircle} from "lucide-react";
 
 /**
  * ApprovalTracker Component

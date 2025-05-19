@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { ArrowUpRight, FileText, LucideIcon } from "lucide-react";
+import { ArrowUpRight } from "lucide-react";
 
 interface StatsCardProps {
   title: string;

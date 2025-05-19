@@ -1,6 +1,5 @@
 import React from "react";
 import { AssetTableProps } from "./types";
-import { DeleteIcon, EditIcon } from "lucide-react";
 
 export const AssetTable: React.FC<AssetTableProps> = ({
   assets,

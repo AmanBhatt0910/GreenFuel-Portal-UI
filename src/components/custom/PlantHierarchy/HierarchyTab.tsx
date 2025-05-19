@@ -7,15 +7,12 @@ import {
   ChevronDown, 
   ChevronRight, 
   Search, 
-  PieChart, 
-  BarChart3,
   X
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { BusinessUnit } from './types';
 import { cn } from '@/lib/utils';
 
@@ -230,14 +227,14 @@ export const HierarchyTab: React.FC<HierarchyTabProps> = ({
             <div className="flex items-center">
               <Search className="h-4 w-4 mr-2 flex-shrink-0" />
               <span>
-                Showing results for "<strong>{searchTerm}</strong>" 
+                Showing results for &quot;<strong>{searchTerm}</strong>&quot; 
                 ({filteredBusinessUnits.length} business unit{filteredBusinessUnits.length > 1 ? 's' : ''} found)
               </span>
             </div>
           ) : (
             <div className="flex items-center">
               <Search className="h-4 w-4 mr-2 flex-shrink-0" />
-              <span>No results found for "<strong>{searchTerm}</strong>"</span>
+              <span>No results found for &quot;<strong>{searchTerm}</strong>&quot;</span>
             </div>
           )}
         </div>

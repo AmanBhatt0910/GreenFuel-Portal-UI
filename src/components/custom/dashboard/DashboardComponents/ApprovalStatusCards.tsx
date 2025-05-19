@@ -1,6 +1,6 @@
 import React from "react";
 import { motion } from "framer-motion";
-import { Clock, CheckCircle, XCircle, ChevronDown, FileText, Loader2Icon } from "lucide-react";
+import { Clock, CheckCircle, XCircle, FileText, Loader2Icon } from "lucide-react";
 import { ApprovalStatusChartProps, cardVariants, staggerContainer } from "./types";
 
 const ApprovalStatusCards: React.FC<ApprovalStatusChartProps> = ({statData}) => {

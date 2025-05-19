@@ -4,4 +4,3 @@ export * from './CredentialTable';
 export * from './CredentialDetails';
 export * from './DeleteDialog';
 export * from './CredentialFilter';
-export * from './CredentialStats';

@@ -65,7 +65,7 @@ interface UserInfoType {
 }
 
 const ProfilePage: React.FC = () => {
-  const { userInfo, setUserInfo } = useContext(GFContext);
+  const { setUserInfo } = useContext(GFContext);
   const [loading, setLoading] = useState<boolean>(true);
   const [updating, setUpdating] = useState<boolean>(false);
   const [userData, setUserData] = useState<UserInfoType | null>(null);

@@ -552,7 +552,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                         <div className="px-4 py-8 text-gray-500 dark:text-gray-400 text-center flex flex-col items-center">
                           <Search className="h-6 w-6 mb-2 text-gray-400 opacity-50" />
                           <p>
-                            No categories found matching "{categorySearchTerm}"
+                            No categories found matching &#39;{categorySearchTerm}&#39;
                           </p>
                           <button
                             className="mt-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
@@ -663,8 +663,8 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                         <div className="px-4 py-8 text-gray-500 dark:text-gray-400 text-center flex flex-col items-center">
                           <Search className="h-6 w-6 mb-2 text-gray-400 opacity-50" />
                           <p>
-                            No departments found matching "
-                            {departmentSearchTerm}"
+                            No departments found matching &quot;
+                            {departmentSearchTerm}&quot;
                           </p>
                           <button
                             className="mt-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
@@ -833,7 +833,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                       ) : (
                         <div className="px-4 py-8 text-gray-500 dark:text-gray-400 text-center flex flex-col items-center">
                           <Search className="h-6 w-6 mb-2 text-gray-400 opacity-50" />
-                          <p>No users found matching "{searchTerm}"</p>
+                          <p>No users found matching &quot;{searchTerm}&quot;</p>
                           <button
                             className="mt-2 text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300"
                             onClick={() => setSearchTerm("")}

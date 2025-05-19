@@ -1,13 +1,18 @@
-'use client'
-import React, { useState } from 'react';
-import { Edit, Trash2, Check, X } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Badge } from '@/components/ui/badge';
-import { BusinessUnit, Department, Designation } from './types';
-import { getLevelColor } from './utils';
+"use client";
+import React, { useState } from "react";
+import { Edit, Trash2, Check, X } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
+import { BusinessUnit, Department, Designation } from "./types";
+import { getLevelColor } from "./utils";
 
 interface DesignationCardProps {
   designation: Designation;
@@ -39,15 +44,15 @@ export const DesignationCard: React.FC<DesignationCardProps> = ({
   // Save edited designation
   const saveEditedDesignation = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
+
     if (!editingName.trim()) {
       return; // Don't save empty names
     }
-    
+
     if (editingLevel < 1) {
       return; // Don't save invalid levels
     }
-    
+
     setBusinessUnits(
       businessUnits.map((bu) =>
         bu.id === activeBusinessUnitId
@@ -69,7 +74,7 @@ export const DesignationCard: React.FC<DesignationCardProps> = ({
           : bu
       )
     );
-    
+
     setIsEditing(false);
   };
 
@@ -82,8 +87,8 @@ export const DesignationCard: React.FC<DesignationCardProps> = ({
   // Delete designation
   const deleteDesignation = (e: React.MouseEvent) => {
     e.stopPropagation();
-    
-    if (window.confirm('Are you sure you want to delete this designation?')) {
+
+    if (window.confirm("Are you sure you want to delete this designation?")) {
       setBusinessUnits(
         businessUnits.map((bu) =>
           bu.id === activeBusinessUnitId
@@ -107,7 +112,7 @@ export const DesignationCard: React.FC<DesignationCardProps> = ({
   };
 
   return (
-    <Card 
+    <Card
       className="border border-gray-100 dark:border-gray-800 bg-white dark:bg-gray-800 shadow-sm hover:shadow-md transition-shadow duration-200"
       onClick={(e) => e.stopPropagation()}
     >
@@ -170,7 +175,9 @@ export const DesignationCard: React.FC<DesignationCardProps> = ({
           <>
             <div className="flex items-center gap-2">
               <Badge
-                className={`${getLevelColor(designation.level)} text-sm flex items-center justify-center w-8 h-8 rounded-full`}
+                className={`${getLevelColor(
+                  designation.level
+                )} text-sm flex items-center justify-center w-8 h-8 rounded-full`}
               >
                 {designation.level}
               </Badge>
@@ -178,7 +185,7 @@ export const DesignationCard: React.FC<DesignationCardProps> = ({
                 {designation.name}
               </span>
             </div>
-            
+
             <div className="flex gap-1">
               <TooltipProvider>
                 <Tooltip>
@@ -197,7 +204,7 @@ export const DesignationCard: React.FC<DesignationCardProps> = ({
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              
+
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -221,4 +228,4 @@ export const DesignationCard: React.FC<DesignationCardProps> = ({
       </CardContent>
     </Card>
   );
-}; 
+};

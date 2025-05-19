@@ -10,18 +10,14 @@ import { motion, useInView, useAnimation } from "framer-motion";
 import useAxios from "../hooks/use-axios";
 import { GFContext } from "@/context/AuthContext";
 import Loading from "./loading";
-import { useRouter } from "next/navigation";
 import { scrollToTop } from "@/utils/scroll-utils";
 
 import {
   WelcomeBanner,
-  StatsCard,
   ApprovalStatusCards,
   FormStatisticsChart,
   ProfileCard,
   RequestsTable,
-  ActivityTimeline,
-  QuickActions,
   AnimateInViewProps,
   fadeInUpVariants,
   pageVariants,
@@ -80,7 +76,6 @@ const DashboardPage: React.FC = () => {
   const [statData, setStatData] = useState<StatType | null>(null);
   const api = useAxios();
   const [requestsData, setRequestsData] = useState<RequestType[]>([]);
-  const router = useRouter();
 
   useEffect(() => {
     document.cookie = `user_role=${userInfo?.role}; path=/`;
@@ -96,8 +91,9 @@ const DashboardPage: React.FC = () => {
       const response = await api.get("/userInfo/?self=true");
       const userData = response.data as UserInfoType;
 
-      typeof window !== "undefined" &&
+      if (typeof window !== "undefined") {
         localStorage.setItem("userInfo", JSON.stringify(userData));
+      }
 
       setUserInfo(userData);
 
@@ -144,8 +140,12 @@ const DashboardPage: React.FC = () => {
       );
 
       setRequestsData(sortedRequests);
-    } catch (error: any) {
-      console.error("Error fetching request data:", error);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(error.message);
+      } else {
+        console.error("unknown error");
+      }
     }
   };
 
@@ -154,8 +154,12 @@ const DashboardPage: React.FC = () => {
       const res = await api.get("approver-dashboard-stats/");
       // console.log(res);
       setStatData(res.data);
-    } catch (error: any) {
-      console.error("error", error?.messgae);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("error", error.message);
+      } else {
+        console.error("error", error);
+      }
     }
   };
 
@@ -243,14 +247,14 @@ const DashboardPage: React.FC = () => {
 
         {/* Approval Status Cards with staggered fade-in animation */}
         <AnimateInView variants={fadeInUpVariants} delay={0.1}>
-          <ApprovalStatusCards statData = {statData} />
+          <ApprovalStatusCards statData={statData} />
         </AnimateInView>
 
         {/* Charts and Profile Section with different animations */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
           {/* Chart with scale-in animation */}
           <AnimateInView variants={scaleInVariants} className="lg:col-span-2">
-            <FormStatisticsChart statData = {statData} />
+            <FormStatisticsChart statData={statData} />
           </AnimateInView>
 
           {/* Profile Card with slide-in from right animation */}

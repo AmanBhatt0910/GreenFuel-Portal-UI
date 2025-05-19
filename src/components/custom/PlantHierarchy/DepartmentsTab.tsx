@@ -1,14 +1,14 @@
 'use client'
 import React, { useState } from 'react';
-import { FolderOpen, Settings, BriefcaseIcon, Plus, AlertCircle, CheckCircle, Search, SlidersHorizontal } from 'lucide-react';
+import { FolderOpen, Plus, Search, SlidersHorizontal } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { BusinessUnit, BusinessUnitActionsProps, Department } from './types';
+import { BusinessUnit, BusinessUnitActionsProps } from './types';
 import { DepartmentItem } from './DepartmentItem';
-import { createDepartment, createDesignation, updateDepartment, deleteDepartment } from './api';
+import { createDepartment} from './api';
 import useAxios from '@/app/hooks/use-axios';
 import { toast } from '@/lib/toast-util';
 
@@ -22,7 +22,6 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
   businessUnits,
   setBusinessUnits,
   activeBusinessUnitId,
-  setActiveBusinessUnitId,
   setActiveTab,
   selectedDepartmentId,
   setSelectedDepartmentId,
@@ -32,8 +31,6 @@ export const DepartmentsTab: React.FC<DepartmentsTabProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [validationMessage, setValidationMessage] = useState<{ message: string; type: 'success' | 'error' | 'warning' } | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [newDesignationName, setNewDesignationName] = useState('');
-  const [isAddingDesignation, setIsAddingDesignation] = useState(false);
   const api = useAxios();
 
   const activeBusinessUnit = businessUnits.find(bu => bu.id === activeBusinessUnitId) || null;

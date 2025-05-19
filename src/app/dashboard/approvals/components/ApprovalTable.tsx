@@ -1,7 +1,7 @@
-import React from 'react';
-import { ExternalLink } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import React from "react";
+import { ExternalLink } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -9,23 +9,26 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { ApprovalForm, EnrichedApprovalForm } from './interfaces';
-import { getStatusColor, formatDate } from './utils';
+} from "@/components/ui/table";
+import { EnrichedApprovalForm } from "./interfaces";
+import { getStatusColor, formatDate } from "./utils";
 
 interface ApprovalTableProps {
   forms: EnrichedApprovalForm[];
   onViewDetails: (id: string) => void;
 }
 
-export default function ApprovalTable({ forms, onViewDetails }: ApprovalTableProps) {
+export default function ApprovalTable({
+  forms,
+  onViewDetails,
+}: ApprovalTableProps) {
   // Define a helper function to render the status icon
   const renderStatusIcon = (status: string) => {
-    if (status.toLowerCase() === 'approved') {
+    if (status.toLowerCase() === "approved") {
       return <span className="w-4 h-4 mr-1 text-green-600">✓</span>;
-    } else if (status.toLowerCase() === 'rejected') {
+    } else if (status.toLowerCase() === "rejected") {
       return <span className="w-4 h-4 mr-1 text-red-600">✗</span>;
-    } else if (status.toLowerCase() === 'pending') {
+    } else if (status.toLowerCase() === "pending") {
       return <span className="w-4 h-4 mr-1 text-yellow-600">⏱</span>;
     }
     return null;
@@ -56,13 +59,19 @@ export default function ApprovalTable({ forms, onViewDetails }: ApprovalTablePro
               </TableCell>
               <TableCell>
                 <div className="space-y-1">
-                  <div className="font-medium text-gray-900 dark:text-white">{form.user_name || form.user}</div>
-                  <div className="text-xs text-blue-600 dark:text-blue-400">{form.user_email || "No email available"}</div>
+                  <div className="font-medium text-gray-900 dark:text-white">
+                    {form.user_name || form.user}
+                  </div>
+                  <div className="text-xs text-blue-600 dark:text-blue-400">
+                    {form.user_email || "No email available"}
+                  </div>
                 </div>
               </TableCell>
               <TableCell>{form.department_name || form.department}</TableCell>
               <TableCell>{form.approval_category}</TableCell>
-              <TableCell>{form.formatted_date || formatDate(form.date)}</TableCell>
+              <TableCell>
+                {form.formatted_date || formatDate(form.date)}
+              </TableCell>
               <TableCell>
                 <Badge
                   className={`${getStatusColor(
@@ -90,4 +99,4 @@ export default function ApprovalTable({ forms, onViewDetails }: ApprovalTablePro
       </Table>
     </div>
   );
-} 
+}

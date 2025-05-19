@@ -1,10 +1,8 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Credential, CredentialDetailsProps } from "./types";
+import { CredentialDetailsProps } from "./types";
 import {
   Mail,
   Phone,
@@ -13,13 +11,13 @@ import {
   MapPin,
   Calendar,
 } from "lucide-react";
-import { useMemo } from "react";
+import {  } from "react";
 
 export function CredentialDetails({
   selectedUser,
   onClose,
-  onEdit,
   onReset,
+  onEdit,
   designations,
   departments,  
   businessUnits,
@@ -27,29 +25,29 @@ export function CredentialDetails({
   if (!selectedUser) return null;
 
 
-  const designationMap = useMemo(() => {
+  const designationMap = (() => {
     const map = new Map<number, string>();
     designations.forEach(designation => {
       map.set(designation.id, designation.name); 
     });
     return map;
-  }, [designations]);
+  });
 
-  const departmentMap = useMemo(() => {
+  const departmentMap = (() => {
     const map = new Map<number, string>();
     departments.forEach(department => {
       map.set(department.id, department.name);
     });
     return map;
-  }, [departments]);
+  });
 
-  const businessUnitMap = useMemo(() => {
+  const businessUnitMap = (() => {
     const map = new Map<number, string>();
     businessUnits.forEach(unit => {
       map.set(unit.id, unit.name);
     });
     return map;
-  }, [businessUnits]);
+  });
 
   const getDesignationName = (id: number | null) => {
     if (id === null) return '-';

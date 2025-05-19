@@ -8,10 +8,8 @@ export interface CredentialStatsProps {
   credentials: Credential[];
 }
 
-export function CredentialStats({ credentials }: CredentialStatsProps) {
-  // Calculate statistics
-
-
+export function CredentialStats() {
+  
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <StatsCard

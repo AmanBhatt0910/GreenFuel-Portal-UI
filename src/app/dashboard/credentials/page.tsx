@@ -8,7 +8,6 @@ import {
   CredentialFormData,
   Department,
   Designation,
-  Role,
 } from "@/components/custom/CredentialsManagement/types";
 import { CredentialTable } from "@/components/custom/CredentialsManagement/CredentialTable";
 import CredentialForm from "@/components/custom/CredentialsManagement/CredentialForm";
@@ -17,7 +16,7 @@ import { CredentialDetails } from "@/components/custom/CredentialsManagement/Cre
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { CustomBreadcrumb } from "@/components/custom/ui/Breadcrumb.custom";
 import { Button } from "@/components/ui/button";
-import { Plus, AlertTriangle, Info } from "lucide-react";
+import { Plus, AlertTriangle } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
 
 export default function CredentialsPage() {
@@ -33,15 +32,12 @@ export default function CredentialsPage() {
   const [userIdToDelete, setUserIdToDelete] = useState<number | null>(null);
   const [showDetails, setShowDetails] = useState(false);
   const [detailUser, setDetailUser] = useState<Credential | null>(null);
-  const [filter, setFilter] = useState({
-    searchValue: "",
-    business_unit: "",
-  });
+
   const [isLoading, setIsLoading] = useState(false);
   const api = useAxios();
 
   // Fetch employees with filters applied
-  const fetchCredentials = useCallback(async () => {
+  const fetchCredentials = (async () => {
     // Only show loading state if we don't have any data yet
     if (credentials.length === 0) {
       setIsLoading(true);
@@ -50,12 +46,7 @@ export default function CredentialsPage() {
     try {
       // Build query parameters based on filters
       const params = new URLSearchParams();
-      if (filter.searchValue) {
-        params.append("search", filter.searchValue);
-      }
-      if (filter.business_unit) {
-        params.append("business_unit", filter.business_unit);
-      }
+
 
       const queryString = params.toString() ? `?${params.toString()}` : "";
       const response = await api.get(`/userInfo/${queryString}`);
@@ -70,7 +61,7 @@ export default function CredentialsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filter.searchValue, filter.business_unit, credentials.length]);
+  });
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
@@ -78,7 +69,7 @@ export default function CredentialsPage() {
     }, 300);
 
     return () => clearTimeout(debounceTimer);
-  }, [filter.searchValue, filter.business_unit]);
+  }, []);
 
   const handleAddNew = useCallback(() => {
     setSelectedUser(null);

@@ -51,7 +51,7 @@ const DeleteCategoryDialog: React.FC<DeleteCategoryDialogProps> = ({
         <AlertDialogHeader>
           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This will permanently delete the category "{category.name}". 
+            This will permanently delete the category {category.name}. 
             This action cannot be undone.
           </AlertDialogDescription>
         </AlertDialogHeader>

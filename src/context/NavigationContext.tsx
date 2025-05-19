@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import {  usePathname } from "next/navigation";
 
 // Define the type for the navigation context
 type NavigationContextType = {
@@ -15,7 +15,6 @@ const NavigationContext = createContext<NavigationContextType | undefined>(undef
 
 export const NavigationProvider = ({ children }: { children: React.ReactNode }) => {
   const [isNavigating, setIsNavigating] = useState(false); // Track navigation state
-  const router = useRouter();
   const pathname = usePathname();
 
   // Function to start navigation (set isNavigating to true)

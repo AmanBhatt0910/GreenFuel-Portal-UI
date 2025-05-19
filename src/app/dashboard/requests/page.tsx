@@ -2,10 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import {
-  Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   CardFooter,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +22,6 @@ import {
 import useAxios from "@/app/hooks/use-axios";
 import CustomBreadcrumb from "@/components/custom/CustomBreadcrumb";
 import Link from "next/link";
-import { Input } from "@/components/ui/input";
 
 // Interface for budget request data
 interface BudgetRequest {
@@ -367,7 +363,7 @@ const BudgetRequestsList = () => {
             </div>
             <h3 className="text-lg font-medium mb-1 text-blue-700">No requests found</h3>
             <p className="text-sm text-blue-500/70 max-w-md mx-auto">
-              Try adjusting your search or filters to find what you're looking for
+              Try adjusting your search or filters to find what you&apos;re looking for
             </p>
           </div>
 
