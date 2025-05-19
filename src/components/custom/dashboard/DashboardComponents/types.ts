@@ -43,8 +43,11 @@ export interface WeeklyActivityChartProps {
 }
 
 export interface ApprovalStatusChartProps {
-  data: StatusLevel[];
-  isLoaded: boolean;
+  statData : StatType | null;
+}
+
+export interface FormStatisticsChartProps{
+  statData: StatType | null;
 }
 
 export interface StatCardProps {
@@ -77,6 +80,13 @@ export interface SampleDataType {
   weekly: DataItem[];
   monthly: DataItem[];
   yearly: DataItem[];
+}
+
+export interface StatType{
+  pending_count : number;
+  approved_count : number;
+  rejected_count : number;
+  form_count : number;
 }
 
 export const iconVariants = {
@@ -235,4 +245,75 @@ export const buttonVariants = {
     scale: 0.95,
     transition: { duration: 0.1 } 
   }
+};
+
+export const pageVariants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      duration: 0.6,
+      when: "beforeChildren",
+      staggerChildren: 0.15,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.3 },
+  },
+};
+
+export const fadeInUpVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.6,
+      ease: "easeOut"
+    } 
+  }
+};
+
+export const fadeInLeftVariants = {
+  hidden: { opacity: 0, x: -20 },
+  visible: { 
+    opacity: 1, 
+    x: 0, 
+    transition: { 
+      duration: 0.6,
+      ease: "easeOut"
+    } 
+  }
+};
+
+export const fadeInRightVariants = {
+  hidden: { opacity: 0, x: 20 },
+  visible: { 
+    opacity: 1, 
+    x: 0, 
+    transition: { 
+      duration: 0.6,
+      ease: "easeOut"
+    } 
+  }
+};
+
+export const scaleInVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    transition: { 
+      duration: 0.5,
+      ease: "easeOut"
+    } 
+  }
+};
+
+export type AnimateInViewProps = {
+  children: React.ReactNode;
+  variants?: any; // Accept any variant shape
+  className?: string;
+  delay?: number;
 };
