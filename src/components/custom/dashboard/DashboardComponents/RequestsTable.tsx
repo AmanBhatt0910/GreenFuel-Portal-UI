@@ -11,6 +11,8 @@ import {
   Download,
   Filter,
   Calendar,
+  ArrowRight,
+  ArrowRightCircle,
 } from "lucide-react";
 
 import { RequestType } from "../types";
@@ -239,6 +241,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
   );
 
   const columns: Column[] = [
+    { key: 'budget_id', label: 'S.No.' },
     { key: 'budget_id', sortKey: 'budget_id', label: 'Budget ID' },
     { key: 'date', sortKey: 'date', label: 'Date' },
     { key: 'total', sortKey: 'total', label: 'Amount' },
@@ -268,18 +271,15 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-xl font-bold">Recent Budget Requests</CardTitle>
         <div className="flex items-center space-x-2">
-          <Button variant="outline" size="sm" className="flex items-center gap-1">
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
+          
           <Button 
             variant="default" 
             size="sm" 
-            className="flex items-center gap-1"
+            className="flex items-center gap-2"
             onClick={() => window.location.href = "/dashboard/requests"}
           >
             See All
-            <ChevronDown className="h-4 w-4" />
+            <ArrowRightCircle className="size-4" />
           </Button>
         </div>
       </CardHeader>
@@ -288,18 +288,27 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
           <Table>
             <TableHeader>
               <TableRow>
-                {columns.map((column) => (
-                  <TableHead key={column.key} className="px-4 py-3 text-center">
+                {columns.map((column, index) => (
+                  <TableHead 
+                    key={`${column.key}-${index}`} 
+                    className={`px-4 py-3 text-center ${index === 0 ? 'w-12 bg-gray-50' : ''}`}
+                  >
                     <div className="flex items-center justify-center">
-                      <Button
-                        variant="ghost"
-                        className="p-0 font-medium h-7 hover:bg-transparent"
-                        onClick={() => column.sortKey && handleSort(column.sortKey)}
-                      >
-                        {column.label}
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
-                      </Button>
-                      {renderFilterMenu(column)}
+                      {index === 0 ? (
+                        <span className="font-bold">{column.label}</span>
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            className="p-0 font-medium h-7 hover:bg-transparent"
+                            onClick={() => column.sortKey && handleSort(column.sortKey)}
+                          >
+                            {column.label}
+                            <ArrowUpDown className="ml-2 h-4 w-4" />
+                          </Button>
+                          {renderFilterMenu(column)}
+                        </>
+                      )}
                     </div>
                   </TableHead>
                 ))}
@@ -308,12 +317,18 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
             </TableHeader>
             <TableBody>
               {filteredAndSortedData.length > 0 ? (
-                filteredAndSortedData.map((request) => (
+                filteredAndSortedData.map((request, index) => (
                   <TableRow 
                     key={request.id}
                     className={getRowStyles(request)}
                   >
-                    <TableCell className="font-medium text-center">{request.budget_id}</TableCell>
+                    <TableCell className="font-bold text-center w-12 bg-gray-50">{index + 1}</TableCell>
+                    <TableCell className="font-medium text-center">
+                      <div className="flex items-center justify-center gap-1">
+                  
+                        {request.budget_id}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-center">
                       <div className="flex items-center justify-center">
                         <Calendar className="h-4 w-4 mr-2 text-gray-500" />
@@ -365,7 +380,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell colSpan={8} className="h-24 text-center">
+                  <TableCell colSpan={9} className="h-24 text-center">
                     No requests found.
                   </TableCell>
                 </TableRow>
