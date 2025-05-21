@@ -1,6 +1,6 @@
 "use client";
-import React, { useContext, useEffect, useState, Suspense, useRef } from "react";
-import { motion, useInView, useAnimation } from "framer-motion";
+import React, { useContext, useEffect, useState, Suspense, useRef, ReactNode } from "react";
+import { motion, useInView, useAnimation, AnimatePresence, Variants } from "framer-motion";
 import useAxios from "../hooks/use-axios";
 import { GFContext } from "@/context/AuthContext";
 import Loading from "./loading";
@@ -20,7 +20,7 @@ import {
 } from "@/components/custom/dashboard/DashboardComponents";
 
 // Import icons
-import { FileText, Users, CheckCircle, AlertCircle } from "lucide-react";
+import { FileText, Users, CheckCircle, AlertCircle, ChevronRight, LucideIcon } from "lucide-react";
 
 // Import types
 import {
@@ -33,83 +33,90 @@ import {
 } from "@/components/custom/dashboard/types";
 
 // Page transition animations
-const pageVariants = {
+const pageVariants: Variants = {
   initial: { opacity: 0 },
   animate: {
     opacity: 1,
     transition: {
-      duration: 0.6,
+      duration: 0.8,
       when: "beforeChildren",
-      staggerChildren: 0.15,
+      staggerChildren: 0.2,
     },
   },
   exit: {
     opacity: 0,
-    transition: { duration: 0.3 },
+    transition: { duration: 0.4 },
   },
 };
 
-// Animation variants for components that come into view
-const fadeInUpVariants = {
-  hidden: { opacity: 0, y: 20 },
+// Enhanced animation variants for components
+const fadeInUpVariants: Variants = {
+  hidden: { opacity: 0, y: 25 },
   visible: { 
     opacity: 1, 
     y: 0, 
     transition: { 
-      duration: 0.6,
-      ease: "easeOut"
+      duration: 0.7,
+      ease: [0.25, 0.1, 0.25, 1.0]
     } 
   }
 };
 
-const fadeInLeftVariants = {
-  hidden: { opacity: 0, x: -20 },
+const fadeInLeftVariants: Variants = {
+  hidden: { opacity: 0, x: -30 },
   visible: { 
     opacity: 1, 
     x: 0, 
     transition: { 
-      duration: 0.6,
-      ease: "easeOut"
+      duration: 0.7,
+      ease: [0.25, 0.1, 0.25, 1.0]
     } 
   }
 };
 
-const fadeInRightVariants = {
-  hidden: { opacity: 0, x: 20 },
+const fadeInRightVariants: Variants = {
+  hidden: { opacity: 0, x: 30 },
   visible: { 
     opacity: 1, 
     x: 0, 
     transition: { 
-      duration: 0.6,
-      ease: "easeOut"
+      duration: 0.7,
+      ease: [0.25, 0.1, 0.25, 1.0]
     } 
   }
 };
 
-const scaleInVariants = {
-  hidden: { opacity: 0, scale: 0.8 },
+const scaleInVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.95 },
   visible: { 
     opacity: 1, 
     scale: 1, 
     transition: { 
-      duration: 0.5,
-      ease: "easeOut"
+      duration: 0.6,
+      ease: [0.25, 0.1, 0.25, 1.0]
     } 
   }
 };
 
-// Custom component for animations when scrolling into view
-type AnimateInViewProps = {
-  children: React.ReactNode;
-  variants?: any; // Accept any variant shape
+// Improved AnimateInView component with threshold option
+interface AnimateInViewProps {
+  children: ReactNode;
+  variants?: Variants;
   className?: string;
   delay?: number;
-};
+  threshold?: number;
+}
 
-const AnimateInView: React.FC<AnimateInViewProps> = ({ children, variants = fadeInUpVariants, className = "", delay = 0 }) => {
+const AnimateInView: React.FC<AnimateInViewProps> = ({ 
+  children, 
+  variants = fadeInUpVariants, 
+  className = "", 
+  delay = 0,
+  threshold = 0.2
+}) => {
   const controls = useAnimation();
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, amount: 0.2 });
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: threshold });
   
   useEffect(() => {
     if (isInView) {
@@ -125,18 +132,54 @@ const AnimateInView: React.FC<AnimateInViewProps> = ({ children, variants = fade
       variants={variants}
       className={className}
       custom={delay}
+      style={{ willChange: "transform, opacity" }} // Performance optimization
     >
       {children}
     </motion.div>
   );
 };
 
+// Card wrapper component for consistent styling
+interface DashboardCardProps {
+  children: ReactNode;
+  className?: string;
+  title?: string;
+  icon?: ReactNode;
+  action?: string;
+}
+
+const DashboardCard: React.FC<DashboardCardProps> = ({ 
+  children, 
+  className = "", 
+  title, 
+  icon, 
+  action 
+}) => {
+  return (
+    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden ${className}`}>
+      {(title || action) && (
+        <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
+          <div className="flex items-center space-x-2">
+            {icon && <span className="text-indigo-500 dark:text-indigo-400">{icon}</span>}
+            <h3 className="font-medium text-gray-800 dark:text-gray-200">{title}</h3>
+          </div>
+          {action && (
+            <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center transition-colors duration-200">
+              {action}
+              <ChevronRight className="h-4 w-4 ml-1" />
+            </button>
+          )}
+        </div>
+      )}
+      <div className="p-6">{children}</div>
+    </div>
+  );
+};
+
 const DashboardPage: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const { userInfo, setUserInfo } = useContext(GFContext);
-  const [businessUnit, setBusinessUnit] = useState<BusinessUnitType | null>(
-    null
-  );
+  const [businessUnit, setBusinessUnit] = useState<BusinessUnitType | null>(null);
   const [department, setDepartment] = useState<DepartmentType | null>(null);
   const [designation, setDesignation] = useState<DesignationType | null>(null);
   const api = useAxios();
@@ -149,7 +192,6 @@ const DashboardPage: React.FC = () => {
 
   // Scroll to top on page load
   useEffect(() => {
-    // Force scroll to top with a slight delay to ensure it works after page transition
     const cleanup = scrollToTop({ behavior: "auto", delay: 100, position: 0 });
     return cleanup;
   }, []);
@@ -184,13 +226,12 @@ const DashboardPage: React.FC = () => {
   const getRequestData = async (): Promise<void> => {
     try {
       const response = await api.get(`/approval-requests/`);
-      console.log("Request data:", response.data);
-
+      
       // Ensure we're handling the data as an array
       const requestsArray = Array.isArray(response.data) ? response.data : [response.data];
       
       // Map the data to ensure all required fields are present
-      const mappedRequests = requestsArray.map(request => ({
+      const mappedRequests = requestsArray.map((request: Partial<RequestType>) => ({
         ...request,
         // Ensure these fields exist with default values if they don't
         current_status: request.current_status || request.status || "Pending",
@@ -199,7 +240,7 @@ const DashboardPage: React.FC = () => {
         approval_type: request.approval_type || "N/A",
         current_form_level: request.current_form_level || 1,
         form_max_level: request.form_max_level || 3
-      }));
+      })) as RequestType[];
       
       // Sort by date (newest first) before setting state
       const sortedRequests = mappedRequests.sort((a, b) => 
@@ -207,7 +248,7 @@ const DashboardPage: React.FC = () => {
       );
       
       setRequestsData(sortedRequests);
-    } catch (error: any) {
+    } catch (error) {
       console.error("Error fetching request data:", error);
     }
   };
@@ -246,9 +287,9 @@ const DashboardPage: React.FC = () => {
         await getUserDashboardData();
         await getRequestData();
       } catch (error) {
-        console.error("Error fetching user data:", error);
+        console.error("Error fetching data:", error);
       } finally {
-        setTimeout(() => setIsLoaded(true), 1000);
+        setTimeout(() => setIsLoaded(true), 800);
       }
     };
 
@@ -269,82 +310,118 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  // Show elegant loading state
   if (!isLoaded) {
     return <Loading />;
   }
 
   return (
-    <motion.div
-      className="min-h-screen bg-gray-50 dark:bg-gray-900"
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      variants={pageVariants}
-    >
-      <div className="p-6">
-        {/* Welcome Banner with slide-in animation */}
-        <AnimateInView variants={fadeInLeftVariants}>
-          <WelcomeBanner
-            userInfo={
-              userInfo ? { ...userInfo, role: userInfo.role ?? undefined } : null
-            }
-          />
-        </AnimateInView>
-
-        {/* Approval Status Cards with staggered fade-in animation */}
-        <AnimateInView variants={fadeInUpVariants} delay={0.1}>
-          <ApprovalStatusCards />
-        </AnimateInView>
-
-        {/* Charts and Profile Section with different animations */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          {/* Chart with scale-in animation */}
-          <AnimateInView variants={scaleInVariants} className="lg:col-span-2">
-            <FormStatisticsChart />
+    <AnimatePresence>
+      <motion.div
+        className="min-h-screen bg-gray-50 dark:bg-gray-900"
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={pageVariants}
+      >
+        <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto">
+          {/* Welcome Banner with enhanced styling */}
+          <AnimateInView variants={fadeInLeftVariants} className="mb-6">
+            <WelcomeBanner
+              userInfo={
+                userInfo ? { ...userInfo, role: userInfo.role ?? undefined } : null
+              }
+            />
           </AnimateInView>
-          
-          {/* Profile Card with slide-in from right animation */}
-          {userInfo && (
-            <AnimateInView variants={fadeInRightVariants}>
-              <ProfileCard
-                userInfo={{
-                  ...userInfo,
-                  role: userInfo.role || undefined // Convert null to undefined
-                }}
-                department={department}
-                designation={designation}
-                businessUnit={businessUnit}
-              />
+
+          {/* Approval Status Cards with upgraded animation */}
+          <AnimateInView variants={fadeInUpVariants} delay={0.1} className="mb-6">
+            <ApprovalStatusCards />
+          </AnimateInView>
+
+          {/* Charts and Profile Section with more dynamic layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+            {/* Chart with enhanced scale-in animation */}
+            <AnimateInView variants={scaleInVariants} className="lg:col-span-8">
+              <DashboardCard 
+                title="Performance Overview" 
+                action="View Details"
+                icon={<FileText className="h-5 w-5" />}
+              >
+                <FormStatisticsChart />
+              </DashboardCard>
             </AnimateInView>
-          )}
+            
+            {/* Profile Card with improved slide-in animation */}
+            {userInfo && (
+              <AnimateInView variants={fadeInRightVariants} className="lg:col-span-4">
+                <ProfileCard
+                  userInfo={{
+                    ...userInfo,
+                    role: userInfo.role || undefined
+                  }}
+                  department={department}
+                  designation={designation}
+                  businessUnit={businessUnit}
+                />
+              </AnimateInView>
+            )}
+          </div>
+
+          {/* Requests Table with enhanced fade-up animation */}
+          <AnimateInView 
+            variants={fadeInUpVariants} 
+            delay={0.2} 
+            className="mb-6"
+            threshold={0.1}
+          >
+            <DashboardCard 
+              title="Recent Requests" 
+              action="View All"
+              icon={<CheckCircle className="h-5 w-5" />}
+              className="overflow-hidden"
+            >
+              <RequestsTable 
+                requests={requestsData} 
+                formatDate={formatDate} 
+              />
+            </DashboardCard>
+          </AnimateInView>
+
+          {/* Optional bottom row components with grid layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AnimateInView variants={fadeInUpVariants} delay={0.3}>
+              <DashboardCard 
+                title="Recent Activity" 
+                icon={<Users className="h-5 w-5" />}
+              >
+                <ActivityTimeline />
+              </DashboardCard>
+            </AnimateInView>
+            
+            <AnimateInView variants={fadeInUpVariants} delay={0.4}>
+              <DashboardCard 
+                title="Quick Actions" 
+                icon={<AlertCircle className="h-5 w-5" />}
+              >
+                <QuickActions />
+              </DashboardCard>
+            </AnimateInView>
+          </div>
         </div>
-
-        {/* Request Table with fade-up animation */}
-        <AnimateInView variants={fadeInUpVariants} delay={0.2}>
-          <RequestsTable 
-            requests={requestsData} 
-            formatDate={formatDate} 
-          />
-        </AnimateInView>
-
-        {/* Uncomment if you want to add these components back with animations */}
-        {/* <div className="grid grid-cols-1 gap-6">
-          <AnimateInView variants={fadeInUpVariants} delay={0.3}>
-            <ActivityTimeline />
-          </AnimateInView>
-          <AnimateInView variants={fadeInUpVariants} delay={0.4}>
-            <QuickActions />
-          </AnimateInView>
-        </div> */}
-      </div>
-    </motion.div>
+      </motion.div>
+    </AnimatePresence>
   );
 };
 
-// Wrap the component with Suspense
-const DashboardPageWithSuspense = () => {
+// Wrap the component with Suspense and add some modern loading styles
+const DashboardPageWithSuspense: React.FC = () => {
   return (
-    <Suspense fallback={<Loading />}>
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+        <Loading />
+      </div>
+    }>
       <DashboardPage />
     </Suspense>
   );

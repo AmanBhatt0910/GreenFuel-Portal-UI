@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   BarChart,
   Bar,
@@ -7,19 +7,37 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  Cell
 } from "recharts";
-import { Calendar, BarChart2, DownloadCloud, RefreshCw } from "lucide-react";
-import * as XLSX from 'xlsx';
-import { SampleDataType, TabType } from "./types";
+import { Calendar, BarChart2, DownloadCloud, RefreshCw, ArrowUp, ArrowDown } from "lucide-react";
+import { motion } from "framer-motion";
 
-// Define types for the data structure
+// Define types for the chart data
+export type ChartDataPoint = {
+  name: string;
+  created: number;
+  approved: number;
+  rejected: number;
+};
 
+export type TabType = "weekly" | "monthly" | "yearly";
 
-const FormStatisticsChart = () => {
+export type SampleDataType = {
+  [key in TabType]: ChartDataPoint[];
+};
+
+// Component Props
+interface FormStatisticsChartProps {
+  className?: string;
+}
+
+const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) => {
   const [activeTab, setActiveTab] = useState<TabType>("monthly");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [exporting, setExporting] = useState<boolean>(false);
+  const [hoverBar, setHoverBar] = useState<number | null>(null);
+  const [isChartHovered, setIsChartHovered] = useState<boolean>(false);
   
   // Sample data for different time periods
   const sampleData: SampleDataType = {
@@ -58,102 +76,119 @@ const FormStatisticsChart = () => {
   };
 
   const currentData = sampleData[activeTab];
+  
+  // Calculate totals and percentages
+  const totalCreated = currentData?.reduce((sum, item) => sum + item.created, 0) || 0;
+  const totalApproved = currentData?.reduce((sum, item) => sum + item.approved, 0) || 0;
+  const totalRejected = currentData?.reduce((sum, item) => sum + item.rejected, 0) || 0;
+  
+  const approvalRate = totalCreated > 0 ? (totalApproved / totalCreated) * 100 : 0;
+  const rejectionRate = totalCreated > 0 ? (totalRejected / totalCreated) * 100 : 0;
+  
+  // Previous period comparison - simulated
+  const prevPeriodData = {
+    created: totalCreated * 0.88, // 12% increase from previous
+    approved: totalApproved * 0.9, // 10% increase from previous
+    rejected: totalRejected * 0.97 // 3% increase from previous
+  };
+  
+  const getGrowthPercentage = (current: number, previous: number): number => {
+    if (previous === 0) return 0;
+    return ((current - previous) / previous) * 100;
+  };
+  
+  const createdGrowth = getGrowthPercentage(totalCreated, prevPeriodData.created);
+  const approvedGrowth = getGrowthPercentage(totalApproved, prevPeriodData.approved);
+  const rejectedGrowth = getGrowthPercentage(totalRejected, prevPeriodData.rejected);
 
   const getTabClass = (tab: TabType): string => {
     return activeTab === tab
-      ? "px-4 py-2 text-sm font-medium bg-blue-600 text-white rounded-lg shadow-md transform scale-105"
-      : "px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all";
+      ? "px-4 py-2 text-sm font-medium bg-gradient-to-tr from-indigo-600 to-blue-500 text-white rounded-lg shadow-md transform scale-105 transition-all duration-200"
+      : "px-4 py-2 text-sm font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-all duration-200";
   };
 
-  // Function to export data to Excel
+  // Function to export data (simulated)
   const exportToExcel = () => {
     setExporting(true);
     
-    try {
-      // Create workbook and worksheet
-      const wb = XLSX.utils.book_new();
-      
-      // Format the current date for the filename
-      const date = new Date();
-      const formattedDate = date.toISOString().split('T')[0];
-      
-      // Format the data for Excel
-      const formattedData = currentData.map(item => ({
-        [activeTab === "weekly" ? "Day" : activeTab === "monthly" ? "Month" : "Year"]: item.name,
-        "Forms Created": item.created,
-        "Forms Approved": item.approved,
-        "Forms Rejected": item.rejected,
-        "Approval Rate (%)": ((item.approved / item.created) * 100).toFixed(2),
-        "Rejection Rate (%)": ((item.rejected / item.created) * 100).toFixed(2)
-      }));
-      
-      // Create the main data worksheet
-      const ws = XLSX.utils.json_to_sheet(formattedData);
-      
-      // Set column widths
-      const wscols = [
-        { wch: 15 }, // Day/Month/Year
-        { wch: 15 }, // Forms Created 
-        { wch: 15 }, // Forms Approved
-        { wch: 15 }, // Forms Rejected
-        { wch: 18 }, // Approval Rate 
-        { wch: 18 }  // Rejection Rate
-      ];
-      ws['!cols'] = wscols;
-      
-      // Add the main data worksheet to the workbook
-      XLSX.utils.book_append_sheet(wb, ws, "Form Statistics");
-      
-      // Create summary worksheet
-      const totalCreated = currentData.reduce((sum, item) => sum + item.created, 0);
-      const totalApproved = currentData.reduce((sum, item) => sum + item.approved, 0);
-      const totalRejected = currentData.reduce((sum, item) => sum + item.rejected, 0);
-      
-      const summaryData = [
-        { Metric: "Total Forms Created", Value: totalCreated },
-        { Metric: "Total Forms Approved", Value: totalApproved },
-        { Metric: "Total Forms Rejected", Value: totalRejected },
-        { Metric: "Overall Approval Rate (%)", Value: ((totalApproved / totalCreated) * 100).toFixed(2) },
-        { Metric: "Overall Rejection Rate (%)", Value: ((totalRejected / totalCreated) * 100).toFixed(2) }
-      ];
-      
-      const wsSummary = XLSX.utils.json_to_sheet(summaryData);
-      
-      // Set column widths for summary
-      const wsSummaryCols = [
-        { wch: 25 }, // Metric
-        { wch: 15 }  // Value
-      ];
-      wsSummary['!cols'] = wsSummaryCols;
-      
-      // Add the summary worksheet to the workbook
-      XLSX.utils.book_append_sheet(wb, wsSummary, "Summary");
-      
-      // Generate title for the Excel file
-      const title = `Form_Statistics_${activeTab}_${formattedDate}`;
-      
-      // Export the workbook
-      XLSX.writeFile(wb, `${title}.xlsx`);
-    } catch (error) {
-      console.error("Export failed:", error);
-    } finally {
+    // Simulate export process
+    setTimeout(() => {
       setExporting(false);
+    }, 1500);
+  };
+  
+  // Custom tooltip component for the chart
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <motion.div 
+          className="bg-gray-800/95 backdrop-blur-sm p-4 border border-gray-700 rounded-lg shadow-2xl"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          <p className="text-gray-100 font-medium mb-2">{label}</p>
+          <div className="space-y-1.5">
+            {payload.map((entry: any, index: number) => (
+              <div key={`tooltip-${index}`} className="flex items-center">
+                <div className="w-3 h-3 rounded-full mr-2" style={{ backgroundColor: entry.color }}></div>
+                <span className="text-gray-300 mr-2">{entry.name}:</span>
+                <span className="text-gray-100 font-medium">{entry.value}</span>
+              </div>
+            ))}
+            {/* Add approval rate for this data point */}
+            {payload[0] && payload[1] && (
+              <div className="pt-1 mt-1 border-t border-gray-700">
+                <div className="flex items-center">
+                  <div className="w-3 h-3 rounded-full mr-2 bg-blue-400"></div>
+                  <span className="text-gray-300 mr-2">Approval Rate:</span>
+                  <span className="text-gray-100 font-medium">
+                    {((payload[1].value / payload[0].value) * 100).toFixed(1)}%
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      );
     }
+    return null;
   };
 
+  // Refresh animation effect
+  useEffect(() => {
+    if (isLoading) {
+      const timer = setTimeout(() => setIsLoading(false), 800);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+
   return (
-    <div className="w-full lg:col-span-2 mx-auto">
-      <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden transform transition-all duration-300 hover:shadow-xl border border-gray-100 dark:border-gray-700">
-        {/* Header with glow effect */}
+    <div className={`w-full ${className || ""}`}>
+      <motion.div 
+        className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden border border-gray-100 dark:border-gray-700"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        whileHover={{ 
+          boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+          transition: { duration: 0.3 }
+        }}
+      >
+        {/* Header with gradient effect */}
         <div className="relative overflow-hidden">
-          <div className="absolute -left-10 -top-20 w-40 h-40 bg-blue-500 rounded-full opacity-20 blur-3xl"></div>
-          <div className="absolute -right-10 -bottom-20 w-40 h-40 bg-purple-500 rounded-full opacity-20 blur-3xl"></div>
+          <div className="absolute -left-10 -top-20 w-40 h-40 bg-blue-500 rounded-full opacity-10 blur-3xl"></div>
+          <div className="absolute -right-10 -bottom-20 w-40 h-40 bg-indigo-500 rounded-full opacity-10 blur-3xl"></div>
           
           <div className="relative p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3">
+              <motion.div 
+                className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg mr-3"
+                whileHover={{ rotate: 15, scale: 1.1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 10 }}
+              >
                 <BarChart2 className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-              </div>
+              </motion.div>
               <div>
                 <h3 className="text-xl font-bold text-gray-900 dark:text-white">Form Statistics</h3>
                 <p className="text-sm text-gray-500 dark:text-gray-400">Track your form performance over time</p>
@@ -161,24 +196,27 @@ const FormStatisticsChart = () => {
             </div>
             
             <div className="flex flex-wrap items-center gap-2 mt-2 md:mt-0">
-              <button 
+              <motion.button 
                 className={getTabClass("weekly")}
                 onClick={() => handleTabChange("weekly")}
+                whileTap={{ scale: 0.95 }}
               >
                 Weekly
-              </button>
-              <button 
+              </motion.button>
+              <motion.button 
                 className={getTabClass("monthly")}
                 onClick={() => handleTabChange("monthly")}
+                whileTap={{ scale: 0.95 }}
               >
                 Monthly
-              </button>
-              <button 
+              </motion.button>
+              <motion.button 
                 className={getTabClass("yearly")}
                 onClick={() => handleTabChange("yearly")}
+                whileTap={{ scale: 0.95 }}
               >
                 Yearly
-              </button>
+              </motion.button>
             </div>
           </div>
         </div>
@@ -194,35 +232,57 @@ const FormStatisticsChart = () => {
             </div>
             
             <div className="flex items-center space-x-3">
-              <button 
+              <motion.button 
                 className="flex cursor-pointer items-center space-x-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                onClick={() => {
-                  setIsLoading(true);
-                  setTimeout(() => setIsLoading(false), 800);
-                }}
+                onClick={() => setIsLoading(true)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin' : ''}`} />
                 <span>Refresh</span>
-              </button>
-              <button 
+              </motion.button>
+              <motion.button 
                 className="flex cursor-pointer items-center space-x-1 text-sm text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
                 onClick={exportToExcel}
                 disabled={exporting}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
                 <DownloadCloud className={`w-4 h-4 ${exporting ? 'animate-bounce' : ''}`} />
                 <span>{exporting ? "Exporting..." : "Export"}</span>
-              </button>
+              </motion.button>
             </div>
           </div>
           
-          <div className={`h-80 transition-opacity duration-300 ${isLoading ? 'opacity-30' : 'opacity-100'}`}>
+          <div 
+            className={`h-80 transition-opacity duration-300 ${isLoading ? 'opacity-30' : 'opacity-100'}`}
+            onMouseEnter={() => setIsChartHovered(true)}
+            onMouseLeave={() => {
+              setIsChartHovered(false);
+              setHoverBar(null);
+            }}
+          >
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <motion.div 
+                  className="h-12 w-12 rounded-full border-t-2 border-r-2 border-blue-600"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                ></motion.div>
               </div>
             )}
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={currentData} barGap={8} margin={{ top: 10, right: 10, left: 0, bottom: 10 }}>
+              <BarChart 
+                data={currentData} 
+                barGap={8} 
+                margin={{ top: 10, right: 10, left: 0, bottom: 10 }}
+                onMouseMove={(data) => {
+                  if (data.activeTooltipIndex !== undefined) {
+                    setHoverBar(data.activeTooltipIndex);
+                  }
+                }}
+                onMouseLeave={() => setHoverBar(null)}
+              >
                 <defs>
                   <linearGradient id="createdGradient" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.8}/>
@@ -251,21 +311,7 @@ const FormStatisticsChart = () => {
                   tickLine={false}
                   axisLine={{ stroke: '#4b5563', strokeWidth: 1 }}
                 />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "rgba(31, 41, 55, 0.95)",
-                    border: "none",
-                    borderRadius: "0.5rem",
-                    color: "#f9fafb",
-                    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)",
-                    padding: "12px"
-                  }}
-                  itemStyle={{ padding: "4px 0" }}
-                  labelStyle={{ fontWeight: "bold", marginBottom: "8px" }}
-                  animationDuration={300}
-                  animationEasing="ease-out"
-                  cursor={{ fill: 'rgba(255, 255, 255, 0.05)' }}
-                />
+                <Tooltip content={<CustomTooltip />} />
                 <Legend 
                   wrapperStyle={{
                     paddingTop: "20px"
@@ -282,7 +328,15 @@ const FormStatisticsChart = () => {
                   animationEasing="ease-in-out"
                   strokeWidth={1}
                   stroke="#4338ca"
-                />
+                >
+                  {currentData.map((_, index) => (
+                    <Cell 
+                      key={`created-${index}`} 
+                      fillOpacity={hoverBar === index ? 1 : isChartHovered ? 0.7 : 0.9}
+                      strokeWidth={hoverBar === index ? 2 : 1}
+                    />
+                  ))}
+                </Bar>
                 <Bar
                   dataKey="approved"
                   name="Approved"
@@ -293,7 +347,15 @@ const FormStatisticsChart = () => {
                   animationBegin={300}
                   strokeWidth={1}
                   stroke="#059669"
-                />
+                >
+                  {currentData.map((_, index) => (
+                    <Cell 
+                      key={`approved-${index}`} 
+                      fillOpacity={hoverBar === index ? 1 : isChartHovered ? 0.7 : 0.9}
+                      strokeWidth={hoverBar === index ? 2 : 1}
+                    />
+                  ))}
+                </Bar>
                 <Bar
                   dataKey="rejected"
                   name="Rejected"
@@ -304,14 +366,29 @@ const FormStatisticsChart = () => {
                   animationBegin={600}
                   strokeWidth={1}
                   stroke="#dc2626"
-                />
+                >
+                  {currentData.map((_, index) => (
+                    <Cell 
+                      key={`rejected-${index}`} 
+                      fillOpacity={hoverBar === index ? 1 : isChartHovered ? 0.7 : 0.9}
+                      strokeWidth={hoverBar === index ? 2 : 1}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
           
           {/* Summary cards */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
-            <div className="bg-gray-50 dark:bg-gray-900/30 p-4 rounded-lg border border-gray-100 dark:border-gray-700 transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <motion.div 
+              className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
+              whileHover={{ 
+                y: -4, 
+                boxShadow: "0 12px 20px -5px rgba(0, 0, 0, 0.1)",
+                transition: { duration: 0.3 }
+              }}
+            >
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Created</span>
                 <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-md">
@@ -319,14 +396,22 @@ const FormStatisticsChart = () => {
                 </div>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {currentData.reduce((sum, item) => sum + item.created, 0)}
+                {totalCreated.toLocaleString()}
               </div>
-              <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                +14.2% from previous period
+              <div className={`text-xs flex items-center mt-1 ${createdGrowth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {createdGrowth >= 0 ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
+                {Math.abs(createdGrowth).toFixed(1)}% from previous period
               </div>
-            </div>
+            </motion.div>
             
-            <div className="bg-gray-50 dark:bg-gray-900/30 p-4 rounded-lg border border-gray-100 dark:border-gray-700 transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <motion.div 
+              className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
+              whileHover={{ 
+                y: -4, 
+                boxShadow: "0 12px 20px -5px rgba(0, 0, 0, 0.1)",
+                transition: { duration: 0.3 }
+              }}
+            >
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Approved</span>
                 <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-md">
@@ -334,14 +419,22 @@ const FormStatisticsChart = () => {
                 </div>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {currentData.reduce((sum, item) => sum + item.approved, 0)}
+                {totalApproved.toLocaleString()}
               </div>
-              <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                +9.7% from previous period
+              <div className={`text-xs flex items-center mt-1 ${approvedGrowth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {approvedGrowth >= 0 ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
+                {Math.abs(approvedGrowth).toFixed(1)}% from previous period
               </div>
-            </div>
+            </motion.div>
             
-            <div className="bg-gray-50 dark:bg-gray-900/30 p-4 rounded-lg border border-gray-100 dark:border-gray-700 transform transition-all duration-300 hover:shadow-md hover:-translate-y-1">
+            <motion.div 
+              className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 p-4 rounded-lg border border-gray-100 dark:border-gray-700"
+              whileHover={{ 
+                y: -4, 
+                boxShadow: "0 12px 20px -5px rgba(0, 0, 0, 0.1)",
+                transition: { duration: 0.3 }
+              }}
+            >
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm font-medium text-gray-500 dark:text-gray-400">Total Rejected</span>
                 <div className="p-1.5 bg-red-100 dark:bg-red-900/30 rounded-md">
@@ -349,15 +442,50 @@ const FormStatisticsChart = () => {
                 </div>
               </div>
               <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {currentData.reduce((sum, item) => sum + item.rejected, 0)}
+                {totalRejected.toLocaleString()}
               </div>
-              <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-                +3.2% from previous period
+              <div className={`text-xs flex items-center mt-1 ${rejectedGrowth <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                {rejectedGrowth >= 0 ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
+                {Math.abs(rejectedGrowth).toFixed(1)}% from previous period
               </div>
-            </div>
+            </motion.div>
           </div>
+          
+          {/* Approval rate gauge */}
+          <motion.div 
+            className="mt-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-100 dark:border-gray-700"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+            whileHover={{ boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
+          >
+            <div className="flex justify-between mb-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Approval Rate</h4>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{approvalRate.toFixed(1)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+              <motion.div 
+                className="bg-gradient-to-r from-green-500 to-blue-500 h-2.5 rounded-full"
+                initial={{ width: "0%" }}
+                animate={{ width: `${approvalRate}%` }}
+                transition={{ duration: 1, delay: 0.3 }}
+              ></motion.div>
+            </div>
+            <div className="flex justify-between mt-2">
+              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Rejection Rate</h4>
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{rejectionRate.toFixed(1)}%</span>
+            </div>
+            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+              <motion.div 
+                className="bg-gradient-to-r from-red-500 to-orange-400 h-2.5 rounded-full"
+                initial={{ width: "0%" }}
+                animate={{ width: `${rejectionRate}%` }}
+                transition={{ duration: 1, delay: 0.4 }}
+              ></motion.div>
+            </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
