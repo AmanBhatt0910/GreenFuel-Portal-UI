@@ -82,7 +82,6 @@ const CategoryManagementContent: React.FC = () => {
 
       const transformedCategories: Category[] = categoriesRes.data.map(
         (cat: any) => {
-          console.log(`Category ${cat.id} created_at:`, cat.created_at);
           return {
             id: cat.id,
             name: cat.name,
@@ -137,8 +136,6 @@ const CategoryManagementContent: React.FC = () => {
       const approversRes = await api.get("/approver/", {
         params: { type: "category" },
       });
-
-      console.log("Approvers API response:", approversRes.data);
 
       const enrichedApprovers: Approver[] = Array.isArray(approversRes.data)
         ? approversRes.data.map((approver: any) => ({

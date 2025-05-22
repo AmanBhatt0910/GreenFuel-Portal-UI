@@ -26,8 +26,8 @@ import {
   List,
   LayoutDashboard,
   LockIcon,
-  Activity,
-  ChevronRight,
+  CreditCardIcon,
+  BadgeIndianRupeeIcon,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -42,7 +42,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { GFContext } from "@/context/AuthContext";
 import { motion } from "framer-motion";
 
@@ -53,6 +58,7 @@ interface MenuItem {
   roles: string[];
   excludeUsernames?: string[];
   badge?: string;
+  fullForm?: string;
 }
 
 // Menu item configurations
@@ -122,6 +128,17 @@ const BusinessUnits: MenuItem[] = [
   },
 ];
 
+const BudgetAllocation: MenuItem[] = [
+  {
+    title: "B.A.S",
+    url: "/dashboard/budget-allocation?tab=allocations",
+    icon: BadgeIndianRupeeIcon,
+    roles: ["ADMIN"],
+    fullForm: "Budget Allocation System",
+    badge: "New",
+  }
+]
+
 const AppSidebar = () => {
   const pathname = usePathname();
   const [approvalOpen, setApprovalOpen] = useState(false);
@@ -151,32 +168,48 @@ const AppSidebar = () => {
     ) {
       return false;
     }
-    
+
     // Special case for Budget Approvals - only visible for admin or budget requesters
-    if (item.title === "Budget Approvals") {
+    if (item.title === "Budget Approvals" ) {
       return userRole === "ADMIN" || !!userInfo?.is_budget_requester;
     }
-    
+
     // Special case for Approval Dashboard - only visible for approvers
-    if (item.title === "Approval Dashboard" && userRole !== "APPROVER" && userRole !== "ADMIN" && userRole !== "MD") {
+    if (
+      item.title === "Approval Dashboard" &&
+      userRole !== "APPROVER" &&
+      userRole !== "ADMIN" &&
+      userRole !== "MD"
+    ) {
       return false;
     }
-    
+
     // Special case for My Requests - visible for admin, approver, MD, and budget requesters
     if (item.title === "My Requests") {
-      return userRole === "ADMIN" || userRole === "APPROVER" || userRole === "MD" || !!userInfo?.is_budget_requester;
+      return (
+        userRole === "ADMIN" ||
+        userRole === "APPROVER" ||
+        userRole === "MD" ||
+        !!userInfo?.is_budget_requester
+      );
     }
-    
+
     // For admin-only items
-    if (["Credentials", "Business Units", "Category", "Approval Access"].includes(item.title)) {
+    if (
+      ["Credentials", "Business Units", "Category", "Approval Access" , "Budget Allocation"].includes(
+        item.title
+      )
+    ) {
       return userRole === "ADMIN" || userInfo?.is_staff === true;
     }
-    
+
     // Special case for Manage MD - only for MD and admin
     if (item.title === "Manage MD") {
-      return userRole === "MD" || userRole === "ADMIN" || userInfo?.is_staff === true;
+      return (
+        userRole === "MD" || userRole === "ADMIN" || userInfo?.is_staff === true
+      );
     }
-    
+
     // Default visibility check
     return (
       item.roles.includes("all") ||
@@ -189,15 +222,29 @@ const AppSidebar = () => {
   const filteredApprovalItems = ApprovalItems.filter(isItemVisible);
   const filteredCredentialsItems = Credentials.filter(isItemVisible);
   const filteredBusinessUnitsItems = BusinessUnits.filter(isItemVisible);
-  
+  const filteredBudgetAllocationItems = BudgetAllocation.filter(isItemVisible);
+
   const showApprovalsSection = filteredApprovalItems.length > 0;
   const showCredentialsSection = filteredCredentialsItems.length > 0;
   const showBusinessUnitsSection = filteredBusinessUnitsItems.length > 0;
+  const showBudgetAllocationSection = filteredBudgetAllocationItems.length > 0;
 
-  const MenuItemComponent = ({ item, isActive }: { item: MenuItem, isActive: boolean }) => (
+  const MenuItemComponent = ({
+    item,
+    isActive,
+  }: {
+    item: MenuItem;
+    isActive: boolean;
+  }) => (
     <div className="flex items-center justify-between w-full">
       <div className="flex items-center gap-3">
-        <span className={`relative ${isActive ? "before:absolute before:-left-4 before:top-1/2 before:-translate-y-1/2 before:h-3/5 before:w-1 before:bg-green-500 before:rounded-r-md" : ""}`}>
+        <span
+          className={`relative ${
+            isActive
+              ? "before:absolute before:-left-4 before:top-1/2 before:-translate-y-1/2 before:h-3/5 before:w-1 before:bg-green-500 before:rounded-r-md"
+              : ""
+          }`}
+        >
           <item.icon
             className={`h-5 w-5 ${
               isActive
@@ -225,7 +272,11 @@ const AppSidebar = () => {
   );
 
   const SectionHeader = ({ title }: { title: string }) => (
-    <h3 className={`text-xs uppercase font-bold px-3 mb-3 text-gray-500 dark:text-gray-400 tracking-wider ${collapsed ? "text-center" : ""}`}>
+    <h3
+      className={`text-xs uppercase font-bold px-3 mb-3 text-gray-500 dark:text-gray-400 tracking-wider ${
+        collapsed ? "text-center" : ""
+      }`}
+    >
       {collapsed ? title.charAt(0) : title}
     </h3>
   );
@@ -233,11 +284,11 @@ const AppSidebar = () => {
   // Animation variants for menu items
   const itemVariants = {
     hidden: { opacity: 0, x: -10 },
-    visible: { 
-      opacity: 1, 
+    visible: {
+      opacity: 1,
       x: 0,
-      transition: { type: "spring", stiffness: 300, damping: 24 }
-    }
+      transition: { type: "spring", stiffness: 300, damping: 24 },
+    },
   };
 
   return (
@@ -249,8 +300,12 @@ const AppSidebar = () => {
         >
           <ChevronRight className={`h-4 w-4 text-gray-600 dark:text-gray-300 transition-transform ${collapsed ? "" : "rotate-180"}`} />
         </button> */}
-        
-        <Sidebar className={`h-screen flex flex-col border-r dark:border-gray-700 bg-white dark:bg-gray-900 shadow-md transition-all duration-300 ${collapsed ? "w-20" : "w-64"}`}>
+
+        <Sidebar
+          className={`h-screen flex flex-col border-r dark:border-gray-700 bg-white dark:bg-gray-900 shadow-md transition-all duration-300 ${
+            collapsed ? "w-20" : "w-64"
+          }`}
+        >
           <SidebarHeader className="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-center">
             <div className="flex items-center justify-center">
               {collapsed ? (
@@ -258,11 +313,11 @@ const AppSidebar = () => {
                   G
                 </div>
               ) : (
-                <Image 
-                  src="/green.png" 
-                  alt="Logo" 
+                <Image
+                  src="/green.png"
+                  alt="Logo"
                   width={120}
-                  height={40} 
+                  height={40}
                   className="object-contain"
                   priority
                 />
@@ -278,9 +333,9 @@ const AppSidebar = () => {
                 variants={{
                   visible: {
                     transition: {
-                      staggerChildren: 0.1
-                    }
-                  }
+                      staggerChildren: 0.1,
+                    },
+                  },
                 }}
                 className="mb-6"
               >
@@ -308,12 +363,23 @@ const AppSidebar = () => {
                                             : "hover:bg-gray-100/50 dark:hover:bg-gray-800/60"
                                         }`}
                                     >
-                                      <MenuItemComponent item={item} isActive={isActive} />
+                                      <MenuItemComponent
+                                        item={item}
+                                        isActive={isActive}
+                                      />
                                     </Link>
                                   </SidebarMenuButton>
                                 </TooltipTrigger>
-                                <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
-                                  {item.title} {item.badge && <span className="ml-1 px-1.5 py-0.5 bg-green-600 rounded-sm text-white text-xs">{item.badge}</span>}
+                                <TooltipContent
+                                  side="right"
+                                  className="bg-gray-800 text-gray-100 text-xs font-medium"
+                                >
+                                  {item.title}{" "}
+                                  {item.badge && (
+                                    <span className="ml-1 px-1.5 py-0.5 bg-green-600 rounded-sm text-white text-xs">
+                                      {item.badge}
+                                    </span>
+                                  )}
                                 </TooltipContent>
                               </Tooltip>
                             </SidebarMenuItem>
@@ -334,24 +400,37 @@ const AppSidebar = () => {
                   visible: {
                     transition: {
                       staggerChildren: 0.1,
-                      delayChildren: 0.2
-                    }
-                  }
+                      delayChildren: 0.2,
+                    },
+                  },
                 }}
                 className="mb-6"
               >
                 <SectionHeader title="Approvals" />
                 <SidebarGroup>
                   <SidebarGroupContent>
-                    <Collapsible open={approvalOpen} onOpenChange={setApprovalOpen}>
+                    <Collapsible
+                      open={approvalOpen}
+                      onOpenChange={setApprovalOpen}
+                    >
                       <CollapsibleTrigger asChild>
                         <button
                           className={`flex w-full items-center justify-between px-4 py-3 text-sm rounded-lg transition-all duration-200 group
                             hover:bg-gray-100 dark:hover:bg-gray-800/60
-                            ${approvalOpen ? "bg-white dark:bg-gray-800 shadow-sm" : ""}`}
+                            ${
+                              approvalOpen
+                                ? "bg-white dark:bg-gray-800 shadow-sm"
+                                : ""
+                            }`}
                         >
                           <div className="flex items-center gap-3">
-                            <span className={`relative ${approvalOpen ? "before:absolute before:-left-4 before:top-1/2 before:-translate-y-1/2 before:h-3/5 before:w-1 before:bg-green-500 before:rounded-r-md" : ""}`}>
+                            <span
+                              className={`relative ${
+                                approvalOpen
+                                  ? "before:absolute before:-left-4 before:top-1/2 before:-translate-y-1/2 before:h-3/5 before:w-1 before:bg-green-500 before:rounded-r-md"
+                                  : ""
+                              }`}
+                            >
                               <PanelRight
                                 className={`h-5 w-5 ${
                                   approvalOpen
@@ -360,11 +439,13 @@ const AppSidebar = () => {
                                 }`}
                               />
                             </span>
-                            <span className={`${
-                              approvalOpen
-                                ? "text-gray-800 dark:text-gray-100 font-medium"
-                                : "text-gray-600 dark:text-gray-300 "
-                            } ${collapsed ? "hidden" : "block"}`}>
+                            <span
+                              className={`${
+                                approvalOpen
+                                  ? "text-gray-800 dark:text-gray-100 font-medium"
+                                  : "text-gray-600 dark:text-gray-300 "
+                              } ${collapsed ? "hidden" : "block"}`}
+                            >
                               Approval Notes
                             </span>
                           </div>
@@ -379,7 +460,11 @@ const AppSidebar = () => {
                           )}
                         </button>
                       </CollapsibleTrigger>
-                      <CollapsibleContent className={`mt-1 space-y-1 ${collapsed ? "pl-0" : "pl-6"}`}>
+                      <CollapsibleContent
+                        className={`mt-1 space-y-1 ${
+                          collapsed ? "pl-0" : "pl-6"
+                        }`}
+                      >
                         {filteredApprovalItems.map((item, index) => {
                           const isActive = pathname === item.url;
                           return (
@@ -390,13 +475,28 @@ const AppSidebar = () => {
                                     href={item.url}
                                     className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 group
                                       hover:bg-gray-100 dark:hover:bg-gray-800/60
-                                      ${isActive ? "bg-white dark:bg-gray-800 shadow-sm" : ""}`}
+                                      ${
+                                        isActive
+                                          ? "bg-white dark:bg-gray-800 shadow-sm"
+                                          : ""
+                                      }`}
                                   >
-                                    <MenuItemComponent item={item} isActive={isActive} />
+                                    <MenuItemComponent
+                                      item={item}
+                                      isActive={isActive}
+                                    />
                                   </Link>
                                 </TooltipTrigger>
-                                <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
-                                  {item.title} {item.badge && <span className="ml-1 px-1.5 py-0.5 bg-green-600 rounded-sm text-white text-xs">{item.badge}</span>}
+                                <TooltipContent
+                                  side="right"
+                                  className="bg-gray-800 text-gray-100 text-xs font-medium"
+                                >
+                                  {item.title}{" "}
+                                  {item.badge && (
+                                    <span className="ml-1 px-1.5 py-0.5 bg-green-600 rounded-sm text-white text-xs">
+                                      {item.badge}
+                                    </span>
+                                  )}
                                 </TooltipContent>
                               </Tooltip>
                             </motion.div>
@@ -419,9 +519,9 @@ const AppSidebar = () => {
                       visible: {
                         transition: {
                           staggerChildren: 0.1,
-                          delayChildren: 0.3
-                        }
-                      }
+                          delayChildren: 0.3,
+                        },
+                      },
                     }}
                     className="mb-6"
                   >
@@ -449,12 +549,23 @@ const AppSidebar = () => {
                                                 : "hover:bg-gray-100/50 dark:hover:bg-gray-800/60"
                                             }`}
                                         >
-                                          <MenuItemComponent item={item} isActive={isActive} />
+                                          <MenuItemComponent
+                                            item={item}
+                                            isActive={isActive}
+                                          />
                                         </Link>
                                       </SidebarMenuButton>
                                     </TooltipTrigger>
-                                    <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
-                                      {item.title} {item.badge && <span className="ml-1 px-1.5 py-0.5 bg-green-600 rounded-sm text-white text-xs">{item.badge}</span>}
+                                    <TooltipContent
+                                      side="right"
+                                      className="bg-gray-800 text-gray-100 text-xs font-medium"
+                                    >
+                                      {item.title}{" "}
+                                      {item.badge && (
+                                        <span className="ml-1 px-1.5 py-0.5 bg-green-600 rounded-sm text-white text-xs">
+                                          {item.badge}
+                                        </span>
+                                      )}
                                     </TooltipContent>
                                   </Tooltip>
                                 </SidebarMenuItem>
@@ -475,9 +586,9 @@ const AppSidebar = () => {
                       visible: {
                         transition: {
                           staggerChildren: 0.1,
-                          delayChildren: 0.4
-                        }
-                      }
+                          delayChildren: 0.4,
+                        },
+                      },
                     }}
                     className="mb-6"
                   >
@@ -505,11 +616,17 @@ const AppSidebar = () => {
                                                 : "hover:bg-gray-100/50 dark:hover:bg-gray-800/60"
                                             }`}
                                         >
-                                          <MenuItemComponent item={item} isActive={isActive} />
+                                          <MenuItemComponent
+                                            item={item}
+                                            isActive={isActive}
+                                          />
                                         </Link>
                                       </SidebarMenuButton>
                                     </TooltipTrigger>
-                                    <TooltipContent side="right" className="bg-gray-800 text-gray-100 text-xs font-medium">
+                                    <TooltipContent
+                                      side="right"
+                                      className="bg-gray-800 text-gray-100 text-xs font-medium"
+                                    >
                                       {item.title}
                                     </TooltipContent>
                                   </Tooltip>
@@ -522,6 +639,69 @@ const AppSidebar = () => {
                     </SidebarGroup>
                   </motion.div>
                 )}
+
+                {showBudgetAllocationSection && (
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                      visible: {
+                        transition: {
+                          staggerChildren: 0.1,
+                          delayChildren: 0.5,
+                        },
+                      },
+                    }}
+                    className="mb-6"
+                  >
+                    <SectionHeader title="Budget Allocation" />
+                    <SidebarGroup>
+                      <SidebarGroupContent>
+                        <SidebarMenu className="space-y-1">
+                          {filteredBudgetAllocationItems.map((item, index) => {
+                            const isActive = pathname === item.url;
+                            return (
+                              <motion.div key={index} variants={itemVariants}>
+                                <SidebarMenuItem>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <SidebarMenuButton
+                                        asChild
+                                        className="w-full group"
+                                      >
+                                        <Link
+                                          href={item.url}
+                                          className={`flex items-center justify-between w-full px-4 py-3 rounded-lg text-sm transition-all duration-200 
+                                            ${
+                                              isActive
+                                                ? "bg-white dark:bg-gray-800 shadow-sm"
+                                                : "hover:bg-gray-100/50 dark:hover:bg-gray-800/60"
+                                            }`}
+                                        >
+                                          <MenuItemComponent
+                                            item={item}
+                                            isActive={isActive}
+                                          />
+                                        </Link>
+                                      </SidebarMenuButton>
+                                    </TooltipTrigger>
+                                    <TooltipContent
+                                      side="right"
+                                      className="bg-gray-800 text-gray-100 text-xs font-medium"
+                                    >
+                                      {item.fullForm || item.title}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </SidebarMenuItem>
+                              </motion.div>
+                            );
+                          })}
+                        </SidebarMenu>
+                      </SidebarGroupContent>
+                    </SidebarGroup>
+
+                  </motion.div>
+                  )}
               </>
             )}
           </SidebarContent>
@@ -531,9 +711,14 @@ const AppSidebar = () => {
               <PopoverTrigger asChild>
                 <button className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/60 transition-colors">
                   <Avatar className="h-10 w-10 border-2 border-green-100 dark:border-green-900 ring-2 ring-green-50 dark:ring-green-900/30">
-                    <AvatarImage src="https://github.com/shadcn.png" alt="User" />
+                    <AvatarImage
+                      src="https://github.com/shadcn.png"
+                      alt="User"
+                    />
                     <AvatarFallback className="bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 text-white font-semibold">
-                      {userInfo?.name?.substring(0, 2) || userInfo?.email?.substring(0, 2) || "JD"}
+                      {userInfo?.name?.substring(0, 2) ||
+                        userInfo?.email?.substring(0, 2) ||
+                        "JD"}
                     </AvatarFallback>
                   </Avatar>
                   {!collapsed && (
@@ -568,11 +753,17 @@ const AppSidebar = () => {
                   </p>
                 </div>
                 <div className="space-y-1">
-                  <Link href="/dashboard/profile" className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <Link
+                    href="/dashboard/profile"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
                     <User className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     Profile
                   </Link>
-                  <Link href="/dashboard/change-password" className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <Link
+                    href="/dashboard/change-password"
+                    className="w-full flex items-center gap-3 p-2.5 rounded-md text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
                     <LockIcon className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                     Change Password
                   </Link>

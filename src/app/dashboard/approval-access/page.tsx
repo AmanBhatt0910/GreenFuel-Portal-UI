@@ -356,7 +356,7 @@ const ApprovalAccessPage = () => {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
+    <div className="container mx-auto py-6 px-2 space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>Approval Access Management</CardTitle>

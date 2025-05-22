@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { Plus, Bell, Calendar, Sparkles } from "lucide-react";
 import { UserInfoType } from "../types";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 
 interface WelcomeBannerProps {
   userInfo: UserInfoType | null;
@@ -72,18 +71,6 @@ const iconVariants = {
       type: "spring", 
       stiffness: 300, 
       damping: 10 
-    }
-  }
-};
-
-const floatingIconVariants = {
-  animate: {
-    y: [0, -10, 0],
-    transition: {
-      duration: 3,
-      repeat: Infinity,
-      repeatType: "reverse",
-      ease: "easeInOut"
     }
   }
 };
@@ -196,7 +183,7 @@ const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userInfo }) => {
                   damping: 15
                 }}
               >
-                {greeting}, {userInfo?.name?.split(' ')[0] || "User"}!
+                {greeting}, {userInfo?.name?.split(' ') || "User"}!
               </motion.h1>
               
               <motion.p
