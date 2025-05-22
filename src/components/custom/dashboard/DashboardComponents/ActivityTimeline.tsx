@@ -129,7 +129,7 @@ const ActivityTimeline: React.FC = () => {
               Today at 2:15 PM
             </p>
             <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
-              You've submitted a new budget request for $1,500 for the
+              You've submitted a new budget request for ₹1,500 for the
               Marketing department.
             </p>
           </motion.div>

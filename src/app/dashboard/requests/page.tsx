@@ -394,7 +394,6 @@ const BudgetRequestsList = () => {
 
                       <div className="flex items-center gap-6 mt-3 sm:mt-0">
                         <div className="flex items-center">
-                          <DollarSign className="h-4 w-4 text-green-500 mr-1.5" />
                           <span className="text-sm font-medium text-green-600">
                             {formatCurrency(request.total)}
                           </span>
