@@ -65,7 +65,7 @@ const GFContext = createContext<GFContextType>({
 });
 
 const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const baseURL = "http://sugamgreenfuel.in/api";
+  const baseURL = process.env.BACKEND_API_URL || "http://127.0.0.1:8000/api";
 
   const router = useRouter();
   const [authToken, setAuthToken] = useState<AccessTokenType | null>(
