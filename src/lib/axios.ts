@@ -1,6 +1,6 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
-const baseURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://127.0.0.1:8000/api";
+const baseURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://127.0.0.1:8000";
 const axiosInstance = axios.create({
   baseURL,
   headers: {
