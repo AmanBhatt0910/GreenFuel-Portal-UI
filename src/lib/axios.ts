@@ -1,12 +1,12 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
-// Create axios instance with default configuration
+const baseURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://127.0.0.1:8000/api";
 const axiosInstance = axios.create({
-  baseURL: process.env.BACKEND_API_URL || "http://127.0.0.1:8000/api",
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },
-  timeout: 10000, // 10 seconds timeout
+  timeout: 10000,
 });
 
 // Add request interceptor for auth token
