@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
 // Create axios instance with default configuration
 const axiosInstance = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://192.168.1.3:8000",
+  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://sugamgreenfuel.in/api",
   headers: {
     "Content-Type": "application/json",
   },
