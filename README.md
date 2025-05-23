@@ -1,5 +1,29 @@
 # GreenFuel Portal UI
 
+<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+
+- [GreenFuel Portal UI](#greenfuel-portal-ui)
+   * [Overview](#overview)
+   * [Features](#features)
+   * [Tech Stack](#tech-stack)
+   * [Color Theme](#color-theme)
+   * [Project Structure](#project-structure)
+   * [Key Modules](#key-modules)
+      + [Dashboard](#dashboard)
+      + [Budget Allocation System](#budget-allocation-system)
+      + [Request Form System](#request-form-system)
+      + [Approval System](#approval-system)
+      + [Business Unit Management](#business-unit-management)
+   * [Getting Started](#getting-started)
+      + [Prerequisites](#prerequisites)
+      + [Installation](#installation)
+      + [Build for Production](#build-for-production)
+   * [Development Guidelines](#development-guidelines)
+   * [Key Design Decisions](#key-design-decisions)
+   * [License](#license)
+
+<!-- TOC end -->
+
 ## Overview
 
 This repository contains the employee portal for Green Fuel Corporation. The application is built with Next.js 15, TypeScript, Tailwind CSS, Shadcn UI components, and Framer Motion for animations. The design focuses on a clean, professional look aligned with the company's branding, emphasizing sustainability and eco-friendliness.
