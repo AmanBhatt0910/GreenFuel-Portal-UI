@@ -44,7 +44,7 @@ interface GreenFuelTitleProps {
   subtitle?: string;
 }
 
-export const GreenFuelTitle: React.FC<GreenFuelTitleProps> = ({
+export const CubiaTitle: React.FC<GreenFuelTitleProps> = ({
   title,
   subtitle,
 }) => {

@@ -55,7 +55,7 @@ export const FooterLinks: React.FC<FooterLinksProps> = ({ links }) => {
         className="text-center text-xs text-gray-500 dark:text-gray-400 mt-6 border-t border-gray-100 dark:border-gray-700 pt-4"
       >
         <p>
-          © {new Date().getFullYear()} GreenFuel Corporation. All rights reserved.
+          © {new Date().getFullYear()} Cubia Corporation. All rights reserved.
         </p>
       </motion.div>
     </div>

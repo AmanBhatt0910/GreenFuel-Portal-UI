@@ -1,8 +1,8 @@
 "use client";
 import React, { useState, useContext } from "react";
 import { motion } from "framer-motion";
-import { GreenFuelLogo } from "@/components/custom/ui/Logo.custom";
-import { GreenFuelTitle } from "@/components/custom/ui/Title.custom";
+import { CubiaLogo } from "@/components/custom/ui/Logo.custom";
+import { CubiaTitle } from "@/components/custom/ui/Title.custom";
 import { LoginForm } from "@/components/custom/LoginComponents/LoginForm.custom";
 import { FooterLinks } from "@/components/custom/LoginComponents/Footer.custom";
 import { GFContext } from "@/context/AuthContext";
@@ -66,7 +66,7 @@ export default function LoginPage() {
             transition={{ delay: 0.3 }}
             className="relative z-10"
           >
-            <h1 className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">Welcome to GreenFuel Energy</h1>
+            <h1 className="text-4xl font-bold mb-6 bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">Welcome to Cubia</h1>
             <p className="text-lg mb-8 max-w-md text-gray-200">
               Empowering a sustainable future with innovative energy solutions.
             </p>
@@ -130,9 +130,9 @@ export default function LoginPage() {
             className="w-full max-w-md"
           >
             <div className="flex justify-center mb-6">
-              <GreenFuelLogo size="lg" variant="light" />
+              <CubiaLogo size="sm" variant="light" />
             </div>
-            <GreenFuelTitle
+            <CubiaTitle
               title="Welcome Back"
               subtitle="Sign in to your account to access the dashboard"
             />
