@@ -664,7 +664,7 @@ const generatePDF = async (): Promise<void> => {
         5: { halign: "right" }
       },
       foot: [
-        ["", "", "", "", "Total:", formatCurrency(formData.assetAmount)]
+        ["", "", "", "", "Total:", formatCurrency(Number(formData.assetAmount))]
       ]
     });
 
