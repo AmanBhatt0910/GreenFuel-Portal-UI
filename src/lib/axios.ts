@@ -1,6 +1,23 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
-const baseURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || "http://127.0.0.1:8000";
+// Determine the base URL based on environment and hostname
+const getBaseUrl = () => {
+  const envUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
+  if (envUrl) return envUrl;
+  
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'sugamgreenfuel.in' || hostname.includes('sugamgreenfuel')) {
+      return 'https://api.sugamgreenfuel.in';
+    }
+  }
+  
+  return 'http://127.0.0.1:8000';
+};
+
+const baseURL = getBaseUrl();
+console.log('Axios instance using base URL:', baseURL);
+
 const axiosInstance = axios.create({
   baseURL,
   headers: {

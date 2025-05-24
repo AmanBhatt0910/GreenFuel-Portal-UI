@@ -8,7 +8,7 @@ import axios, {
 import dayjs from "dayjs";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { GFContext } from "@/context/AuthContext";
 // import { toast } from "sonner";
 
@@ -17,16 +17,22 @@ type AuthToken = {
   refresh: string;
 };
 
-const useAxios = (): AxiosInstance => {
-  const { authToken, baseURL, setAuthToken } = useContext(GFContext);
+const useAxios = (): AxiosInstance => {  const { authToken, baseURL, setAuthToken } = useContext(GFContext);
   const router = useRouter();
 
+  // Create axios instance with proper logging for debugging
   const axiosInstance: AxiosInstance = axios.create({
     baseURL: baseURL,
     headers: {
       Authorization: `Bearer ${authToken?.access}`,
     },
   });
+
+  // Log the configuration when the instance is created (helps with debugging)
+  useEffect(() => {
+    console.log('useAxios hook created with baseURL:', baseURL);
+    console.log('Current auth token exists:', !!authToken);
+  }, [baseURL, authToken]);
 
   axiosInstance.interceptors.request.use(
     async (req: InternalAxiosRequestConfig) => {
