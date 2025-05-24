@@ -246,11 +246,9 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
       setSortField(field);
       setSortDirection("desc");
     }
-  };
-  
-  // Handle view request
+  };    // Handle view request
   const handleViewRequest = (id: number) => {
-    router.push(`/dashboard/requests/${id}`);
+    router.push(`/dashboard/requests/id?id=${id}`);
   };
   
   // Handle view all
@@ -578,9 +576,8 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                         {request.current_status}
                       </motion.div>
                     </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
-                        <Link href={`/dashboard/requests/${request.id}`}>
+                    <td className="py-4 px-4">                      <div className="flex items-center justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
+                        <Link href={`/dashboard/requests/id?id=${request.id}`}>
                           <motion.button 
                             className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:hover:bg-indigo-900/40"
                             variants={buttonVariants}

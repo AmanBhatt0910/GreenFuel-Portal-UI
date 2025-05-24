@@ -493,12 +493,10 @@ const BudgetRequestsList = () => {
                                 {request.rejection_reason}
                               </p>
                             </div>
-                          )}
-
-                          <div className="flex justify-end gap-3">
+                          )}                          <div className="flex justify-end gap-3">
                             <Link
-                              href={`/dashboard/requests/${request.id}${
-                                currentUserId ? `?userId=${currentUserId}` : ""
+                              href={`/dashboard/requests/id?id=${request.id}${
+                                currentUserId ? `&userId=${currentUserId}` : ""
                               }`}
                             >
                               <Button

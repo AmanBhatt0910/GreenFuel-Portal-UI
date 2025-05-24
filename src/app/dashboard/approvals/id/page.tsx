@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, MessageSquare, FileText } from "lucide-react";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import useApprovalDetails from './hooks/useApprovalDetails';
 import ApprovalHeader from './components/ApprovalHeader';
 import RequesterInfo from './components/RequesterInfo';
@@ -14,8 +14,11 @@ import LoadingState from './components/LoadingState';
 import ApprovalDetails from './components/ApprovalDetails';
 
 function ApprovalDetailsPage() {
-  const params = useParams();
-  const id = params?.id as string || '';
+  const searchParams = useSearchParams();
+  
+  // Get ID from query parameter instead of route parameter
+  const id = searchParams.get('id') || '';
+  
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<string>("details");
 

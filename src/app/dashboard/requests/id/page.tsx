@@ -71,8 +71,8 @@ const NotFoundAlert: React.FC = React.memo(() => (
 NotFoundAlert.displayName = "NotFoundAlert";
 
 const RequestDetailsPage: React.FC = () => {
-  const params = useParams();
-  const requestId = params.id as string;
+  const params = useSearchParams();
+  const requestId = params.get('id') || '';
 
   const [currentTab, setCurrentTab] = useState<string>("details");
 

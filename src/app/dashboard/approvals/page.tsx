@@ -48,13 +48,12 @@ const ApprovalDashboard: React.FC = () => {
     setSearchTerm,   // Function to update search term
     filteredForms    // Forms after applying filters and search
   } = useApprovals();
-
   /**
    * Navigate to the details page for a specific approval
    * @param id - The ID of the approval request to view
    */
   const navigateToDetails = (id: string) => {
-    router.push(`/dashboard/approvals/${id}`);
+    router.push(`/dashboard/approvals/id?id=${id}`);
   };
   const api = useAxios();
 
