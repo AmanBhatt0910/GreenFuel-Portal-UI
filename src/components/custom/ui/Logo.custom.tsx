@@ -7,14 +7,14 @@ interface GreenFuelLogoProps {
   variant?: "dark" | "light";
 }
 
-export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
+export const CubiaLogo: React.FC<GreenFuelLogoProps> = ({
   size = "md",
   variant = "light",
 }) => {
   const sizes = {
-    sm: { logoHeight: 40, textSize: "text-xs" },
-    md: { logoHeight: 60, textSize: "text-sm" },
-    lg: { logoHeight: 80, textSize: "text-base" },
+    sm: { logoWidth: 160, logoHeight: 160, textSize: "text-xs" },
+    md: { logoWidth: 200, logoHeight: 200, textSize: "text-sm" },
+    lg: { logoWidth: 240, logoHeight: 240, textSize: "text-base" },
   };
 
   const colors = {
@@ -33,6 +33,7 @@ export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
   };
 
   const selectedColors = colors[variant];
+  const currentSize = sizes[size];
   
   const logoVariants = {
     hidden: { scale: 0.8, opacity: 0 },
@@ -55,11 +56,13 @@ export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
       variants={logoVariants}
     >
       <div className="relative">
-        <Image src={'/Greenfuel.png'} alt="Logo" width={30} height={30}/>
-      </div>
-
-      <div className={`mt-1 font-extrabold ${sizes[size].textSize} ${selectedColors.text}`}>
-        GreenFuel
+        <Image 
+          src={'/CubiaBlack.png'} 
+          alt="Logo" 
+          width={currentSize.logoWidth} 
+          height={currentSize.logoHeight}
+          className="object-contain"
+        />
       </div>
     </motion.div>
   );

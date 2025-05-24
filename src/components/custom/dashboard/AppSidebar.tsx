@@ -308,20 +308,22 @@ const AppSidebar = () => {
         >
           <SidebarHeader className="p-4 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-900 flex justify-center">
             <div className="flex items-center justify-center">
-              {collapsed ? (
-                <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
-                  G
-                </div>
-              ) : (
-                <Image
-                  src="/green.png"
-                  alt="Logo"
-                  width={120}
-                  height={40}
-                  className="object-contain"
-                  priority
-                />
-              )}
+              <Link href="/dashboard" className="flex items-center justify-center hover:opacity-80 transition-opacity">
+                {collapsed ? (
+                  <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center text-white font-bold text-lg">
+                    G
+                  </div>
+                ) : (
+                  <Image
+                    src="/CubiaBlack.png"
+                    alt="Logo"
+                    width={110}
+                    height={40}
+                    className="object-contain"
+                    priority
+                  />
+                )}
+              </Link>
             </div>
           </SidebarHeader>
 
