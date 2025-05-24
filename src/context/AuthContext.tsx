@@ -76,16 +76,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const baseURL = isProduction
     ? 'http://sugamgreenfuel.in/api'
     : (process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://127.0.0.1:8000');
-    
-  // Log the base URL and environment for debugging
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('AuthContext NODE_ENV:', process.env.NODE_ENV);
-      console.log('AuthContext isProduction:', isProduction);
-      console.log('AuthContext hostname:', window.location.hostname);
-      console.log('AuthContext using baseURL:', baseURL);
-    }
-  }, [baseURL, isProduction]);
+
 
   const router = useRouter();
   const [authToken, setAuthToken] = useState<AccessTokenType | null>(
@@ -125,7 +116,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
       if(response.status === 400){
         const errorData = await response.json();
-        console.log("Login error:", errorData);
+        // console.log("Login error:", errorData);
         return {
           success: false,
           message: errorData.detail || "Invalid credentials",
@@ -170,7 +161,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error("Login error:", error);
+      // console.error("Login error:", error);
       return {
         success: false,
         message: "Network error. Please check your connection.",

@@ -14,10 +14,11 @@ const nextConfig: NextConfig = {
         hostname: 'images.unsplash.com',
         pathname: '/**',
       },
-    ],
-  },  experimental: {
-    allowedDevOrigins: ['https://sugamgreenfuel.in', 'http://sugamgreenfuel.in', 'http://localhost:4000'],
-  // },  async rewrites() {
+    ],  },  
+  experimental: {
+    allowedDevOrigins: ['https://sugamgreenfuel.in', 'http://sugamgreenfuel.in', 'http://localhost:4000']
+  }
+  // async rewrites() {
   //   // Force production URL when running in production
   //   const isProduction = process.env.NODE_ENV === 'production';
   //   console.log('NODE_ENV:', process.env.NODE_ENV);
@@ -33,11 +34,10 @@ const nextConfig: NextConfig = {
     
   //   return [
   //     {
-  //       source: '/api/:path*',
-  //       destination: `${apiBaseUrl}/:path*`,
+  //       source: '/api/:path*',  //       destination: `${apiBaseUrl}/:path*`,
   //     },
   //   ];
-  },
+  // }
 };
 
 export default nextConfig;

@@ -18,11 +18,11 @@ const firaCode = Fira_Code({
 export const metadata: Metadata = {
   title: "Cubia",
   description: "Cubia - Modern Business Management Platform",
-  icons: [
-    { rel: 'icon', url: '/favicon.png' },
-    { rel: 'apple-touch-icon', url: '/favicon.png' },
-    { rel: 'shortcut icon', url: '/favicon.png' }
-  ],
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+    shortcut: '/favicon.png'
+  },
 };
 
 export default function RootLayout({

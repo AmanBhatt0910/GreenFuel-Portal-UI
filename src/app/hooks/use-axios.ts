@@ -29,10 +29,10 @@ const useAxios = (): AxiosInstance => {  const { authToken, baseURL, setAuthToke
   });
 
   // Log the configuration when the instance is created (helps with debugging)
-  useEffect(() => {
-    console.log('useAxios hook created with baseURL:', baseURL);
-    console.log('Current auth token exists:', !!authToken);
-  }, [baseURL, authToken]);
+  // useEffect(() => {
+  //   console.log('useAxios hook created with baseURL:', baseURL);
+  //   console.log('Current auth token exists:', !!authToken);
+  // }, [baseURL, authToken]);
 
   axiosInstance.interceptors.request.use(
     async (req: InternalAxiosRequestConfig) => {

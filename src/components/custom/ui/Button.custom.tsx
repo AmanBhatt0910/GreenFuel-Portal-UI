@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import { Button as ShadcnButton } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-interface GreenFuelButtonProps
+interface CubiaButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: string;
   fullWidth?: boolean;
@@ -13,7 +13,7 @@ interface GreenFuelButtonProps
   ariaDescribedBy?: string;
 }
 
-export const GreenFuelButton: React.FC<GreenFuelButtonProps> = ({
+export const CubiaButton: React.FC<CubiaButtonProps> = ({
   variant = "primary",
   fullWidth = false,
   children,
