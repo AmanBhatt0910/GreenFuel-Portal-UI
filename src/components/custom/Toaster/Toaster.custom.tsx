@@ -1,7 +1,7 @@
 import { Toaster } from "sonner";
 import React from "react";
 
-export function GreenFuelToaster() {
+export function CubiaToaster() {
   return (
     <Toaster
       theme="system"

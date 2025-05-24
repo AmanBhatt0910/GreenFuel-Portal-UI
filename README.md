@@ -1,8 +1,8 @@
-# GreenFuel Portal UI
+# Cubia Portal UI
 
 <!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
 
-- [GreenFuel Portal UI](#greenfuel-portal-ui)
+- [Cubia Portal UI](#cubia-portal-ui)
    * [Overview](#overview)
    * [Features](#features)
    * [Tech Stack](#tech-stack)
@@ -26,23 +26,23 @@
 
 ## Overview
 
-This repository contains the employee portal for Green Fuel Corporation. The application is built with Next.js 15, TypeScript, Tailwind CSS, Shadcn UI components, and Framer Motion for animations. The design focuses on a clean, professional look aligned with the company's branding, emphasizing sustainability and eco-friendliness.
+This repository contains the employee portal for Cubia Corporation. The application is built with Next.js 15, TypeScript, Tailwind CSS, Shadcn UI components, and Framer Motion for animations. The design focuses on a clean, professional look aligned with the company's branding, emphasizing modernity and efficiency.
 
 ## Color Theme
 
-The application uses a cohesive green-themed palette that emphasizes sustainability and eco-friendliness:
+The application uses a cohesive blue-themed palette that emphasizes professionalism and reliability:
 
-- **Primary Background**: Gradient from `#f0fdf4` (green-50) to `#ffffff` (white)
-- **Secondary Background**: Gradient from `#f0fdf4` (green-50) to `#dcfce7` (green-100)
-- **Primary Green**: `#22c55e` (green-500) for buttons and active elements
-- **Dark Green**: `#15803d` (green-700) for hover states and accents
-- **Light Green**: `#dcfce7` (green-100) for subtle backgrounds and cards
-- **Green Gradient**: `from-green-600 to-green-700` for buttons and important UI elements
+- **Primary Background**: Gradient from `#f8fafc` (slate-50) to `#ffffff` (white)
+- **Secondary Background**: Gradient from `#f1f5f9` (slate-100) to `#e2e8f0` (slate-200)
+- **Primary Blue**: `#3b82f6` (blue-500) for buttons and active elements
+- **Dark Blue**: `#1d4ed8` (blue-700) for hover states and accents
+- **Light Blue**: `#dbeafe` (blue-100) for subtle backgrounds and cards
+- **Blue Gradient**: `from-blue-600 to-blue-700` for buttons and important UI elements
 - **Accent**: Amber/yellow for warnings and alerts
 - **Neutral Gray**: Various shades from gray-100 to gray-900 for text and borders
-- **Dark Mode Background**: Gradient from gray-900 to green-900/20 (semi-transparent)
+- **Dark Mode Background**: Gradient from gray-900 to blue-900/20 (semi-transparent)
 
-This color palette creates a professional, cohesive interface that emphasizes the eco-friendly brand identity of Green Fuel. The green theme is consistently applied across all pages, including dashboard, forms, and credential management interfaces.
+This color palette creates a professional, cohesive interface that emphasizes the modern brand identity of Cubia. The blue theme is consistently applied across all pages, including dashboard, forms, and credential management interfaces.
 
 ## Component Structure
 
@@ -166,8 +166,8 @@ The application features multiple pages organized by functionality:
 
 1. Clone this repository
    ```bash
-   git clone https://github.com/your-organization/GreenFuel-Portal-UI.git
-   cd GreenFuel-Portal-UI
+   git clone https://github.com/your-organization/Cubia-Portal-UI.git
+   cd Cubia-Portal-UI
    ```
 
 2. Install dependencies

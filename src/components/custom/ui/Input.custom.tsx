@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { EyeIcon, EyeOffIcon } from "lucide-react";
 import { motion } from "framer-motion";
 
-interface GreenFuelInputProps
+interface CubiaInputProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
   label?: string;
   showPassword?: boolean;
@@ -15,7 +15,7 @@ interface GreenFuelInputProps
   ariaRequired?: boolean;
 }
 
-export const GreenFuelInput = forwardRef<HTMLInputElement, GreenFuelInputProps>(
+export const CubiaInput = forwardRef<HTMLInputElement, CubiaInputProps>(
   (
     {
       label,
@@ -78,4 +78,4 @@ export const GreenFuelInput = forwardRef<HTMLInputElement, GreenFuelInputProps>(
   }
 );
 
-GreenFuelInput.displayName = "GreenFuelInput";
+CubiaInput.displayName = "CubiaInput";

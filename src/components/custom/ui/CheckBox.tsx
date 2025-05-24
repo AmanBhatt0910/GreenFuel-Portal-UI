@@ -2,7 +2,7 @@ import React from "react";
 import { Checkbox as ShadcnCheckbox } from "@/components/ui/checkbox";
 import { motion } from "framer-motion";
 
-interface GreenFuelCheckboxProps {
+interface CubiaCheckboxProps {
   id: string;
   label: string;
   checked?: boolean;
@@ -11,7 +11,7 @@ interface GreenFuelCheckboxProps {
   ariaRequired?: boolean;
 }
 
-export const GreenFuelCheckbox: React.FC<GreenFuelCheckboxProps> = ({
+export const CubiaCheckbox: React.FC<CubiaCheckboxProps> = ({
   id,
   label,
   checked,

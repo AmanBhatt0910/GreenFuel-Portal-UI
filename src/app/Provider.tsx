@@ -2,7 +2,7 @@
 import React from "react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import  {GFProvider}  from "@/context/AuthContext";
-import { GreenFuelToaster } from "@/components/custom/Toaster/Toaster.custom";
+import { CubiaToaster } from "@/components/custom/Toaster/Toaster.custom";
 
 
 interface ProviderProps {
@@ -19,7 +19,7 @@ const Provider = ({ children }: ProviderProps) => {
           disableTransitionOnChange
         >
           {children}
-          <GreenFuelToaster/>
+          <CubiaToaster/>
         </NextThemesProvider>
       
     </GFProvider>

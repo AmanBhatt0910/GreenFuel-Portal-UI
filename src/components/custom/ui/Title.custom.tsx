@@ -2,11 +2,11 @@ import React from "react";
 import { Leaf } from "lucide-react";
 import { motion } from "framer-motion";
 
-interface GreenFuelLogoProps {
+interface CubiaLogoProps {
   size?: "sm" | "md" | "lg";
 }
 
-export const GreenFuelLogo: React.FC<GreenFuelLogoProps> = ({
+export const CubiaLogo: React.FC<CubiaLogoProps> = ({
   size = "md",
 }) => {
   const sizes = {

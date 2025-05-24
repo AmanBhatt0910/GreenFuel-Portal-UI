@@ -14,7 +14,7 @@ type PromiseData<ToastData = any> = {
   [key: string]: any;
 };
 
-// GreenFuel themed toast utilities
+// Cubia themed toast utilities
 export const toast = {
   // Default toast
   message: (message: ToastMessage, options?: ToastOptions) => {
@@ -58,7 +58,7 @@ export const toast = {
     });
   },
 
-  // Promise toast (with GreenFuel styling)
+  // Promise toast (with Cubia styling)
   promise: <TData = any>(
     promise: PromiseT<TData>, 
     options?: PromiseData<TData>

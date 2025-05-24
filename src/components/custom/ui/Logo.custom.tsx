@@ -2,12 +2,12 @@ import React from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 
-interface GreenFuelLogoProps {
+interface CubiaLogoProps {
   size?: "sm" | "md" | "lg";
   variant?: "dark" | "light";
 }
 
-export const CubiaLogo: React.FC<GreenFuelLogoProps> = ({
+export const CubiaLogo: React.FC<CubiaLogoProps> = ({
   size = "md",
   variant = "light",
 }) => {
