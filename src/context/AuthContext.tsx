@@ -65,12 +65,27 @@ const GFContext = createContext<GFContextType>({
 });
 
 const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  // Determine if we're in production environment
+  const isProduction = process.env.NODE_ENV === 'production' || 
+    (typeof window !== 'undefined' && (
+      window.location.hostname === 'sugamgreenfuel.in' ||
+      window.location.hostname.includes('sugamgreenfuel')
+    ));
+    
   // Use environment variable for API URL, with fallback depending on environment
-  const baseURL = process.env.NEXT_PUBLIC_BACKEND_API_URL || (
-    typeof window !== 'undefined' && window.location.hostname === 'sugamgreenfuel.in' 
-      ? 'https://api.sugamgreenfuel.in' 
-      : 'http://127.0.0.1:8000'
-  );
+  const baseURL = isProduction
+    ? 'http://sugamgreenfuel.in/api'
+    : (process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://127.0.0.1:8000');
+    
+  // Log the base URL and environment for debugging
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('AuthContext NODE_ENV:', process.env.NODE_ENV);
+      console.log('AuthContext isProduction:', isProduction);
+      console.log('AuthContext hostname:', window.location.hostname);
+      console.log('AuthContext using baseURL:', baseURL);
+    }
+  }, [baseURL, isProduction]);
 
   const router = useRouter();
   const [authToken, setAuthToken] = useState<AccessTokenType | null>(

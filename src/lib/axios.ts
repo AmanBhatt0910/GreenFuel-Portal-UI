@@ -1,21 +1,26 @@
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 
-// Determine the base URL based on environment and hostname
+// Determine if we're in production environment
+const isProduction = process.env.NODE_ENV === 'production' || 
+  (typeof window !== 'undefined' && (
+    window.location.hostname === 'sugamgreenfuel.in' ||
+    window.location.hostname.includes('sugamgreenfuel')
+  ));
+
+// Determine the base URL based on environment
 const getBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_BACKEND_API_URL;
-  if (envUrl) return envUrl;
-  
-  if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    if (hostname === 'sugamgreenfuel.in' || hostname.includes('sugamgreenfuel')) {
-      return 'https://api.sugamgreenfuel.in';
-    }
+  // In production, always use the production URL
+  if (isProduction) {
+    return 'http://sugamgreenfuel.in/api';
   }
   
-  return 'http://127.0.0.1:8000';
+  // Otherwise, use environment variable or fallback
+  return process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://127.0.0.1:8000';
 };
 
 const baseURL = getBaseUrl();
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('isProduction:', isProduction);
 console.log('Axios instance using base URL:', baseURL);
 
 const axiosInstance = axios.create({
