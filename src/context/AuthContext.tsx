@@ -74,7 +74,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     
   // Use environment variable for API URL, with fallback depending on environment
   const baseURL = isProduction
-    ? 'http://sugamgreenfuel.in/api'
+    ? 'http://api.sugamgreenfuel.in'
     : (process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://127.0.0.1:8000');
     
   // Log the base URL and environment for debugging
