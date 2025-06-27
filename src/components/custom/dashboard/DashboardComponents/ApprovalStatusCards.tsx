@@ -5,11 +5,10 @@ import {
   CheckCircle, 
   XCircle, 
   ChevronRight, 
-  AlertTriangle,
-  ArrowUpRight,
   TrendingUp,
   TrendingDown
 } from "lucide-react";
+import useAxios from "@/app/hooks/use-axios";
 
 // Enhanced animation variants
 const staggerContainer = {
@@ -197,12 +196,49 @@ const StatusCard: React.FC<StatusCardProps> = ({
   );
 };
 
-const ApprovalStatusCards: React.FC = () => {
-  // Example data - in a real app, this would come from props or API
+interface ApprovalStatusCardsProps {
+  yearlyStats?: {
+    year: number;
+    data: {
+      month: string;
+      created: number;
+      approved: number;
+      rejected: number;
+    }[];
+  };
+}
+
+const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }) => {
+  // Get current month
+  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
+  
+  // Find current month data
+  const currentMonthData = yearlyStats?.data.find(
+    month => month.month === currentMonth
+  );
+  
+  // Calculate totals
+  const totalCreated = yearlyStats?.data.reduce(
+    (sum, month) => sum + month.created, 0
+  ) || 0;
+  const totalApproved = yearlyStats?.data.reduce(
+    (sum, month) => sum + month.approved, 0
+  ) || 0;
+  const totalRejected = yearlyStats?.data.reduce(
+    (sum, month) => sum + month.rejected, 0
+  ) || 0;
+
+  // Calculate approval/rejection rates
+  const approvalRate = totalCreated > 0 ? 
+    Math.round((totalApproved / totalCreated) * 100) : 0;
+  const rejectionRate = totalCreated > 0 ? 
+    Math.round((totalRejected / totalCreated) * 100) : 0;
+  
+  // Create card data based on API response
   const cardData = [
     {
       title: "Pending Approval",
-      count: 12,
+      count: 0,
       description: "Requests awaiting review",
       icon: <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
       color: "amber",
@@ -211,21 +247,21 @@ const ApprovalStatusCards: React.FC = () => {
     },
     {
       title: "Approved Requests",
-      count: 28,
+      count: currentMonthData?.approved || 0,
       description: "Requests approved this month",
       icon: <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
       color: "green",
-      trend: 12,
-      progress: 78
+      trend: approvalRate > 50 ? 12 : -5,
+      progress: approvalRate
     },
     {
       title: "Rejected Requests",
-      count: 7,
+      count: currentMonthData?.rejected || 0,
       description: "Requests rejected this month",
       icon: <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
       color: "red",
-      trend: -5,
-      progress: 40
+      trend: rejectionRate > 20 ? -5 : 3,
+      progress: rejectionRate
     }
   ];
 
