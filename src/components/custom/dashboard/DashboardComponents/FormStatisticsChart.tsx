@@ -30,7 +30,7 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({
   const [isChartHovered, setIsChartHovered] = React.useState<boolean>(false);
   
   // Prepare data from API
-  const chartData = yearlyStats?.data.map(month => ({
+  const chartData = yearlyStats?.data?.map(month => ({
     name: month.month.substring(0, 3),
     created: month.created,
     approved: month.approved,

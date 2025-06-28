@@ -146,18 +146,18 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }
   const currentMonth = new Date().toLocaleString('default', { month: 'long' });
   
   // Find current month data
-  const currentMonthData = yearlyStats?.data.find(
+  const currentMonthData = yearlyStats?.data?.find(
     month => month.month === currentMonth
   );
   
   // Calculate totals
-  const totalCreated = yearlyStats?.data.reduce(
+  const totalCreated = yearlyStats?.data?.reduce(
     (sum, month) => sum + month.created, 0
   ) || 0;
-  const totalApproved = yearlyStats?.data.reduce(
+  const totalApproved = yearlyStats?.data?.reduce(
     (sum, month) => sum + month.approved, 0
   ) || 0;
-  const totalRejected = yearlyStats?.data.reduce(
+  const totalRejected = yearlyStats?.data?.reduce(
     (sum, month) => sum + month.rejected, 0
   ) || 0;
 
