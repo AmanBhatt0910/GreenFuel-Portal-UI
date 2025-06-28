@@ -8,7 +8,6 @@ import {
   TrendingUp,
   TrendingDown
 } from "lucide-react";
-import useAxios from "@/app/hooks/use-axios";
 import { StatusCardProps } from "./types";
 import { cardVariants } from "./WeeklyActivityChart";
 

@@ -10,7 +10,6 @@ import { scrollToTop } from "@/utils/scroll-utils";
 // Import components
 import {
   WelcomeBanner,
-  StatsCard,
   ApprovalStatusCards,
   FormStatisticsChart,
   ProfileCard,
@@ -21,7 +20,7 @@ import {
 } from "@/components/custom/dashboard/DashboardComponents";
 
 // Import icons
-import { FileText, Users, CheckCircle, AlertCircle, ChevronRight, BarChart2, LucideIcon } from "lucide-react";
+import { FileText, Users, CheckCircle, AlertCircle, ChevronRight, BarChart2 } from "lucide-react";
 
 // Import types
 import {
@@ -30,7 +29,6 @@ import {
   DepartmentType,
   DesignationType,
   RequestType,
-  FormDataType,
 } from "@/components/custom/dashboard/types";
 
 // Import chart components

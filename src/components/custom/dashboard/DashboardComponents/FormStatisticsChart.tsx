@@ -10,9 +10,8 @@ import {
   ResponsiveContainer,
   Cell
 } from "recharts";
-import { Calendar, BarChart2, DownloadCloud, RefreshCw, ArrowUp, ArrowDown } from "lucide-react";
+import { Calendar, BarChart2, DownloadCloud, RefreshCw } from "lucide-react";
 import { motion } from "framer-motion";
-import useAxios from "@/app/hooks/use-axios";
 import { YearlyStatsResponse } from "@/app/dashboard/page";
 
 // Component Props
@@ -42,14 +41,6 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({
   const totalCreated = chartData.reduce((sum, item) => sum + item.created, 0);
   const totalApproved = chartData.reduce((sum, item) => sum + item.approved, 0);
   const totalRejected = chartData.reduce((sum, item) => sum + item.rejected, 0);
-  
-  const approvalRate = totalCreated > 0 ? (totalApproved / totalCreated) * 100 : 0;
-  const rejectionRate = totalCreated > 0 ? (totalRejected / totalCreated) * 100 : 0;
-
-  // Previous period comparison - not used in this implementation
-  const createdGrowth = 0;
-  const approvedGrowth = 0;
-  const rejectedGrowth = 0;
 
   // Function to export data (simulated)
   const exportToExcel = () => {
