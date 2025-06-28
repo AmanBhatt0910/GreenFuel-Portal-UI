@@ -8,12 +8,28 @@ import {
   TrendingUp,
   TrendingDown
 } from "lucide-react";
-import { cardVariants, pulseVariants, staggerContainer, StatusCardProps } from "./types";
-import { FormDataType } from "../types";
+import useAxios from "@/app/hooks/use-axios";
+import { StatusCardProps } from "./types";
+import { cardVariants } from "./WeeklyActivityChart";
 
 // Enhanced animation variants
+const staggerContainer = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.12,
+      delayChildren: 0.1
+    },
+  },
+};
 
-
+const pulseVariants = {
+  pulse: { 
+    scale: [1, 1.05, 1],
+    transition: { repeat: Infinity, repeatDelay: 2, duration: 1 }
+  }
+};
 
 
 const StatusCard: React.FC<StatusCardProps> = ({
@@ -115,34 +131,48 @@ const StatusCard: React.FC<StatusCardProps> = ({
 };
 
 interface ApprovalStatusCardsProps {
-  statData: FormDataType[] | any; // Allow any type to prevent crashes
+  yearlyStats?: {
+    year: number;
+    data: {
+      month: string;
+      created: number;
+      approved: number;
+      rejected: number;
+    }[];
+  };
 }
 
-const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ statData }) => {
-  // Handle both array format and direct object format
-  let totalCreated = 0;
-  let totalApproved = 0;
-  let totalRejected = 0;
-  let totalPending = 0;
+const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }) => {
+  // Get current month
+  const currentMonth = new Date().toLocaleString('default', { month: 'long' });
   
-  if (Array.isArray(statData)) {
-    // Original format: array of objects with created, approved, rejected
-    totalCreated = statData.reduce((sum, item) => sum + (item.created || 0), 0);
-    totalApproved = statData.reduce((sum, item) => sum + (item.approved || 0), 0);
-    totalRejected = statData.reduce((sum, item) => sum + (item.rejected || 0), 0);
-    totalPending = totalCreated - (totalApproved + totalRejected);
-  } else if (statData && typeof statData === 'object') {
-    // New format: direct object with pending_count, approved_count, rejected_count, form_count
-    totalCreated = Number(statData.form_count) || 0;
-    totalApproved = Number(statData.approved_count) || 0;
-    totalRejected = Number(statData.rejected_count) || 0;
-    totalPending = Number(statData.pending_count) || 0;
-  }
-    // Create the card data based on actual stats
+  // Find current month data
+  const currentMonthData = yearlyStats?.data.find(
+    month => month.month === currentMonth
+  );
+  
+  // Calculate totals
+  const totalCreated = yearlyStats?.data.reduce(
+    (sum, month) => sum + month.created, 0
+  ) || 0;
+  const totalApproved = yearlyStats?.data.reduce(
+    (sum, month) => sum + month.approved, 0
+  ) || 0;
+  const totalRejected = yearlyStats?.data.reduce(
+    (sum, month) => sum + month.rejected, 0
+  ) || 0;
+
+  // Calculate approval/rejection rates
+  const approvalRate = totalCreated > 0 ? 
+    Math.round((totalApproved / totalCreated) * 100) : 0;
+  const rejectionRate = totalCreated > 0 ? 
+    Math.round((totalRejected / totalCreated) * 100) : 0;
+  
+  // Create card data based on API response
   const cardData = [
     {
       title: "Pending Approval",
-      count: Number(totalPending) || 0,
+      count: 0,
       description: "Requests awaiting review",
       icon: <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
       color: "amber",
@@ -151,21 +181,21 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ statData }) =
     },
     {
       title: "Approved Requests",
-      count: Number(totalApproved) || 0,
-      description: "Requests approved",
+      count: currentMonthData?.approved || 0,
+      description: "Requests approved this month",
       icon: <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
       color: "green",
-      trend: 0,
-      progress: 78
+      trend: approvalRate > 50 ? 12 : -5,
+      progress: approvalRate
     },
     {
       title: "Rejected Requests",
-      count: Number(totalRejected) || 0,
-      description: "Requests rejected",
+      count: currentMonthData?.rejected || 0,
+      description: "Requests rejected this month",
       icon: <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
       color: "red",
-      trend: 0,
-      progress: 40
+      trend: rejectionRate > 20 ? -5 : 3,
+      progress: rejectionRate
     }
   ];
 

@@ -96,7 +96,7 @@ const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userInfo }) => {
   });
   
   // Get number of tasks (this would normally come from props or API)
-  const pendingTasks = 5;
+  const pendingTasks = 0;
 
   return (
     <motion.div
@@ -213,15 +213,6 @@ const WelcomeBanner: React.FC<WelcomeBannerProps> = ({ userInfo }) => {
                 </div>
               </div>
               
-              <div className="flex items-center">
-                <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 mr-2">
-                  <Calendar className="h-4 w-4 text-white" />
-                </span>
-                <div>
-                  <span className="text-sm text-indigo-100">Today</span>
-                  <p className="font-medium text-white">{today.getDate()} Tasks</p>
-                </div>
-              </div>
             </motion.div>
           </div>
           

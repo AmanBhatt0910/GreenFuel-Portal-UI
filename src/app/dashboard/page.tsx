@@ -17,17 +17,11 @@ import {
   RequestsTable,
   ActivityTimeline,
   QuickActions,
-  fadeInUpVariants,
-  pageVariants,
-  fadeInLeftVariants,
-  scaleInVariants,
-  fadeInRightVariants,
-  AnimateInViewProps,
   DashboardCardProps,
 } from "@/components/custom/dashboard/DashboardComponents";
 
 // Import icons
-import { FileText, Users, CheckCircle, AlertCircle, ChevronRight, LucideIcon } from "lucide-react";
+import { FileText, Users, CheckCircle, AlertCircle, ChevronRight, BarChart2, LucideIcon } from "lucide-react";
 
 // Import types
 import {
@@ -39,6 +33,102 @@ import {
   FormDataType,
 } from "@/components/custom/dashboard/types";
 
+// Import chart components
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+// Register ChartJS components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
+
+// Page transition animations
+const pageVariants: Variants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      duration: 0.8,
+      when: "beforeChildren",
+      staggerChildren: 0.2,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.4 },
+  },
+};
+
+// Enhanced animation variants for components
+const fadeInUpVariants: Variants = {
+  hidden: { opacity: 0, y: 25 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.7,
+      ease: [0.25, 0.1, 0.25, 1.0]
+    } 
+  }
+};
+
+const fadeInLeftVariants: Variants = {
+  hidden: { opacity: 0, x: -30 },
+  visible: { 
+    opacity: 1, 
+    x: 0, 
+    transition: { 
+      duration: 0.7,
+      ease: [0.25, 0.1, 0.25, 1.0]
+    } 
+  }
+};
+
+const fadeInRightVariants: Variants = {
+  hidden: { opacity: 0, x: 30 },
+  visible: { 
+    opacity: 1, 
+    x: 0, 
+    transition: { 
+      duration: 0.7,
+      ease: [0.25, 0.1, 0.25, 1.0]
+    } 
+  }
+};
+
+const scaleInVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    transition: { 
+      duration: 0.6,
+      ease: [0.25, 0.1, 0.25, 1.0]
+    } 
+  }
+};
+
+// Improved AnimateInView component with threshold option
+interface AnimateInViewProps {
+  children: ReactNode;
+  variants?: Variants;
+  className?: string;
+  delay?: number;
+  threshold?: number;
+}
 
 const AnimateInView: React.FC<AnimateInViewProps> = ({ 
   children, 
@@ -101,6 +191,95 @@ const DashboardCard: React.FC<DashboardCardProps> = ({
   );
 };
 
+// Yearly Stats Chart Component
+interface YearlyStatsData {
+  month: string;
+  created: number;
+  approved: number;
+  rejected: number;
+}
+
+export interface YearlyStatsResponse {
+  year: number;
+  data: YearlyStatsData[];
+}
+
+const YearlyStatsChart: React.FC<{ yearlyStats: YearlyStatsResponse | null }> = ({ yearlyStats }) => {
+  if (!yearlyStats) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+      </div>
+    );
+  }
+
+  const chartData = {
+    labels: yearlyStats.data.map(item => item.month),
+    datasets: [
+      {
+        label: 'Created',
+        data: yearlyStats.data.map(item => item.created),
+        backgroundColor: 'rgba(79, 70, 229, 0.8)',
+        borderColor: 'rgba(79, 70, 229, 1)',
+        borderWidth: 1,
+      },
+      {
+        label: 'Approved',
+        data: yearlyStats.data.map(item => item.approved),
+        backgroundColor: 'rgba(16, 185, 129, 0.8)',
+        borderColor: 'rgba(16, 185, 129, 1)',
+        borderWidth: 1,
+      },
+      {
+        label: 'Rejected',
+        data: yearlyStats.data.map(item => item.rejected),
+        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+        borderColor: 'rgba(239, 68, 68, 1)',
+        borderWidth: 1,
+      }
+    ]
+  };
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: `Form Statistics for ${yearlyStats.year}`,
+        font: {
+          size: 16,
+        }
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        ticks: {
+          precision: 0,
+        },
+        grid: {
+          color: 'rgba(0, 0, 0, 0.05)',
+        },
+      },
+      x: {
+        grid: {
+          display: false,
+        },
+      },
+    },
+  };
+
+  return (
+    <div className="h-80">
+      <Bar data={chartData} options={options} />
+    </div>
+  );
+};
+
 const DashboardPage: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const { userInfo, setUserInfo } = useContext(GFContext);
@@ -109,10 +288,13 @@ const DashboardPage: React.FC = () => {
   const [designation, setDesignation] = useState<DesignationType | null>(null);
   const api = useAxios();
   const [requestsData, setRequestsData] = useState<RequestType[]>([]);
-  const [statData, setStatData] = useState<any>([]);
+  const router = useRouter();
+  const [yearlyStats, setYearlyStats] = useState<YearlyStatsResponse | null>(null);
 
   useEffect(() => {
-    document.cookie = `user_role=${userInfo?.role}; path=/`;
+    if (userInfo?.role) {
+      document.cookie = `user_role=${userInfo.role}; path=/`;
+    }
   }, [userInfo]);
 
   // Scroll to top on page load
@@ -147,6 +329,26 @@ const DashboardPage: React.FC = () => {
       console.error("Error fetching user data:", error);
     }
   };
+
+  const fetchYearlyStats = async (): Promise<void> => {
+  try {
+    const currentYear = new Date().getFullYear();
+    const response = await api.get<YearlyStatsResponse>(`/yearly-stats?year=${currentYear}`);
+    setYearlyStats(response.data);
+  } catch (error) {
+    const currentYear = new Date().getFullYear(); // Define currentYear here
+    console.error("Error fetching yearly stats:", error);
+    setYearlyStats({
+      year: currentYear,
+      data: Array(12).fill(0).map((_, i) => ({
+        month: new Date(0, i).toLocaleString('default', { month: 'long' }),
+        created: 0,
+        approved: 0,
+        rejected: 0
+      }))
+    });
+  }
+};
 
   const getRequestData = async (): Promise<void> => {
     try {
@@ -211,7 +413,7 @@ const DashboardPage: React.FC = () => {
       try {
         await getUserDashboardData();
         await getRequestData();
-        await fetchStat();
+        await fetchYearlyStats();
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -221,35 +423,6 @@ const DashboardPage: React.FC = () => {
 
     fetchData();
   }, []); 
-  const fetchStat = async() => {
-    try {
-      const res = await api.get("approver-dashboard-stats/");
-      console.log("Dashboard stats:", res.data);
-      
-      // Pass the data directly, the component will handle both formats
-      setStatData(res.data);
-    } catch (error) {
-      console.error("Error fetching dashboard stats:", error);
-      // Set empty object in case of error
-      setStatData({
-        pending_count: 0,
-        approved_count: 0,
-        rejected_count: 0,
-        form_count: 0
-      });
-    }
-  }
-
-  // const fetchchart = async()=>{
-  //   try {
-  //     const res = await api.get("form-statistics/");
-  //     console.log("Form statistics:", res.data);
-  //     return res.data;
-  //   } catch (error) {
-  //     console.error("Error fetching form statistics:", error);
-  //     return [];
-  //   }
-  // }
 
   const formatDate = (dateString: string): string => {
     try {
@@ -291,25 +464,35 @@ const DashboardPage: React.FC = () => {
 
           {/* Approval Status Cards with upgraded animation */}
           <AnimateInView variants={fadeInUpVariants} delay={0.1} className="mb-6">
-            <ApprovalStatusCards statData={statData} />
+            <ApprovalStatusCards yearlyStats={yearlyStats || undefined} />
+          </AnimateInView>
+
+          {/* Yearly Statistics Chart */}
+          <AnimateInView variants={fadeInUpVariants} delay={0.15} className="mb-6">
+            <DashboardCard 
+              title="Yearly Statistics" 
+              icon={<BarChart2 className="h-5 w-5" />}
+            >
+              <YearlyStatsChart yearlyStats={yearlyStats} />
+            </DashboardCard>
           </AnimateInView>
 
           {/* Charts and Profile Section with more dynamic layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
             {/* Chart with enhanced scale-in animation */}
-            <AnimateInView variants={scaleInVariants} className="lg:col-span-8">
+            <AnimateInView variants={scaleInVariants} delay={0.2} className="lg:col-span-8">
               <DashboardCard 
                 title="Performance Overview" 
                 action="View Details"
                 icon={<FileText className="h-5 w-5" />}
               >
-                <FormStatisticsChart statData = {statData} />
+                <FormStatisticsChart yearlyStats={yearlyStats} />
               </DashboardCard>
             </AnimateInView>
             
             {/* Profile Card with improved slide-in animation */}
             {userInfo && (
-              <AnimateInView variants={fadeInRightVariants} className="lg:col-span-4">
+              <AnimateInView variants={fadeInRightVariants} delay={0.25} className="lg:col-span-4">
                 <ProfileCard
                   userInfo={{
                     ...userInfo,
@@ -326,7 +509,7 @@ const DashboardPage: React.FC = () => {
           {/* Requests Table with enhanced fade-up animation */}
           <AnimateInView 
             variants={fadeInUpVariants} 
-            delay={0.2} 
+            delay={0.3} 
             className="mb-6"
             threshold={0.1}
           >
@@ -344,8 +527,8 @@ const DashboardPage: React.FC = () => {
           </AnimateInView>
 
           {/* Optional bottom row components with grid layout */}
-          {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <AnimateInView variants={fadeInUpVariants} delay={0.3}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <AnimateInView variants={fadeInUpVariants} delay={0.4}>
               <DashboardCard 
                 title="Recent Activity" 
                 icon={<Users className="h-5 w-5" />}
@@ -354,7 +537,7 @@ const DashboardPage: React.FC = () => {
               </DashboardCard>
             </AnimateInView>
             
-            <AnimateInView variants={fadeInUpVariants} delay={0.4}>
+            <AnimateInView variants={fadeInUpVariants} delay={0.5}>
               <DashboardCard 
                 title="Quick Actions" 
                 icon={<AlertCircle className="h-5 w-5" />}
@@ -362,7 +545,7 @@ const DashboardPage: React.FC = () => {
                 <QuickActions />
               </DashboardCard>
             </AnimateInView>
-          </div> */}
+          </div>
 
         </div>
       </motion.div>

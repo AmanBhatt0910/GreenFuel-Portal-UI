@@ -11,7 +11,7 @@ const isProduction = process.env.NODE_ENV === 'production' ||
 const getBaseUrl = () => {
   // In production, always use the production URL
   if (isProduction) {
-    return 'http://sugamgreenfuel.in/api';
+    return 'http://api.sugamgreenfuel.in';
   }
   
   // Otherwise, use environment variable or fallback
