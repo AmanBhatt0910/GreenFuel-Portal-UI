@@ -1,18 +1,18 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  Filter, 
-  Download, 
-  CheckCircle, 
-  XCircle, 
-  Clock, 
-  Eye, 
+import {
+  Filter,
+  Download,
+  CheckCircle,
+  XCircle,
+  Clock,
+  Eye,
   MoreHorizontal,
   Search,
   ChevronDown,
   ChevronUp,
   Calendar,
-  ChevronsUpDown
+  ChevronsUpDown,
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -20,17 +20,18 @@ import { useRouter } from "next/navigation";
 // Status configuration object
 const STATUS_CONFIG = {
   approved: {
-    bgColor: "from-emerald-500 to-green-600 dark:from-emerald-600 dark:to-green-700",
+    bgColor:
+      "from-emerald-500 to-green-600 dark:from-emerald-600 dark:to-green-700",
     textColor: "text-white",
     icon: CheckCircle,
     animation: {
       scale: [1, 1.2, 1],
-      transition: { 
-        repeat: Infinity, 
+      transition: {
+        repeat: Infinity,
         repeatDelay: 3,
-        duration: 0.5
-      }
-    }
+        duration: 0.5,
+      },
+    },
   },
   rejected: {
     bgColor: "from-rose-500 to-red-600 dark:from-rose-600 dark:to-red-700",
@@ -38,97 +39,98 @@ const STATUS_CONFIG = {
     icon: XCircle,
     animation: {
       rotate: [0, 10, 0, -10, 0],
-      transition: { 
-        repeat: Infinity, 
+      transition: {
+        repeat: Infinity,
         repeatDelay: 3,
-        duration: 0.5
-      }
-    }
+        duration: 0.5,
+      },
+    },
   },
   pending: {
-    bgColor: "from-amber-400 to-amber-500 dark:from-amber-500 dark:to-amber-600",
+    bgColor:
+      "from-amber-400 to-amber-500 dark:from-amber-500 dark:to-amber-600",
     textColor: "text-white",
     icon: Clock,
     animation: {
       rotate: 360,
-      transition: { 
-        repeat: Infinity, 
+      transition: {
+        repeat: Infinity,
         duration: 3,
-        ease: "linear"
-      }
-    }
-  }
+        ease: "linear",
+      },
+    },
+  },
 };
 
 // Animation variants
 const tableVariants = {
   hidden: { opacity: 0 },
-  visible: { 
+  visible: {
     opacity: 1,
-    transition: { 
-      duration: 0.4, 
+    transition: {
+      duration: 0.4,
       when: "beforeChildren",
-      staggerChildren: 0.1
-    }
-  }
+      staggerChildren: 0.1,
+    },
+  },
 };
 
 const tableHeaderVariants = {
   hidden: { opacity: 0, y: -20 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     y: 0,
-    transition: { 
+    transition: {
       type: "spring",
       stiffness: 100,
-      duration: 0.5
-    }
-  }
+      duration: 0.5,
+    },
+  },
 };
 
 const tableRowVariants = {
   hidden: { opacity: 0, y: 20 },
-  visible: (i: number) => ({ 
-    opacity: 1, 
+  visible: (i: number) => ({
+    opacity: 1,
     y: 0,
-    transition: { 
+    transition: {
       type: "spring",
       stiffness: 80,
       delay: 0.05 * i,
-      duration: 0.4
-    }
-  })
+      duration: 0.4,
+    },
+  }),
 };
 
 const buttonVariants = {
   hidden: { scale: 0.8, opacity: 0 },
-  visible: { 
-    scale: 1, 
+  visible: {
+    scale: 1,
     opacity: 1,
-    transition: { type: "spring", stiffness: 200 }
+    transition: { type: "spring", stiffness: 200 },
   },
-  hover: { 
+  hover: {
     scale: 1.1,
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-    transition: { duration: 0.2 }
+    transition: { duration: 0.2 },
   },
-  tap: { scale: 0.95 }
+  tap: { scale: 0.95 },
 };
 
 const iconVariants = {
-  hover: { 
+  hover: {
     rotate: [0, 15, -15, 0],
-    transition: { duration: 0.5 }
-  }
+    transition: { duration: 0.5 },
+  },
 };
 
 const filterPanelVariants = {
   hidden: { opacity: 0, height: 0 },
-  visible: { 
-    opacity: 1, 
+  visible: {
+    opacity: 1,
     height: "auto",
-    transition: { duration: 0.3, ease: "easeInOut" }
-  }
+    transition: { duration: 0.3, ease: "easeInOut" },
+  },
 };
 
 // Types definition
@@ -175,21 +177,28 @@ const isHighAmount = (totalStr: string): boolean => {
 
 // Function to determine the correct status configuration
 const getStatusConfig = (request: RequestType) => {
-  if (request.status === "approved" || request.current_status.toLowerCase() === "approved") {
+  if (
+    request.status === "approved" ||
+    request.current_status.toLowerCase() === "approved"
+  ) {
     return STATUS_CONFIG.approved;
-  } else if (request.status === "rejected" || request.rejected || request.current_status.toLowerCase() === "rejected") {
+  } else if (
+    request.status === "rejected" ||
+    request.rejected ||
+    request.current_status.toLowerCase() === "rejected"
+  ) {
     return STATUS_CONFIG.rejected;
   } else {
     return STATUS_CONFIG.pending;
   }
 };
 
-const RequestsTable: React.FC<RequestsTableProps> = ({ 
-  requests, 
-  formatDate, 
-  showControls = true, 
+const RequestsTable: React.FC<RequestsTableProps> = ({
+  requests,
+  formatDate,
+  showControls = true,
   maxItems = 5,
-  onViewAll
+  onViewAll,
 }) => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -198,27 +207,35 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
   const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
   const [categoryFilter, setCategoryFilter] = useState<string>("");
   const [statusFilter, setStatusFilter] = useState<string>("");
-  
+
   // Get unique categories for filter dropdown
-  const categories = Array.from(new Set(requests.map(r => r.approval_category)));
+  const categories = Array.from(
+    new Set(requests.map((r) => r.approval_category))
+  );
   const statuses = ["Approved", "Pending", "Rejected"];
-  
+
   // Filter and sort requests
   const filteredRequests = requests
-    .filter(request => {
-      const matchesSearch = 
+    .filter((request) => {
+      const matchesSearch =
         request.budget_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.approval_category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        request.approval_category
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
         request.approval_type.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesCategory = categoryFilter ? request.approval_category === categoryFilter : true;
-      const matchesStatus = statusFilter ? request.current_status.toLowerCase() === statusFilter.toLowerCase() : true;
-      
+
+      const matchesCategory = categoryFilter
+        ? request.approval_category === categoryFilter
+        : true;
+      const matchesStatus = statusFilter
+        ? request.current_status.toLowerCase() === statusFilter.toLowerCase()
+        : true;
+
       return matchesSearch && matchesCategory && matchesStatus;
     })
     .sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortField) {
         case "date":
           comparison = new Date(b.date).getTime() - new Date(a.date).getTime();
@@ -232,12 +249,12 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
         default:
           comparison = 0;
       }
-      
+
       return sortDirection === "asc" ? comparison * -1 : comparison;
     });
-  
+
   const displayRequests = filteredRequests.slice(0, maxItems);
-  
+
   // Handle sorting
   const toggleSort = (field: string) => {
     if (sortField === field) {
@@ -246,18 +263,9 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
       setSortField(field);
       setSortDirection("desc");
     }
-  };    // Handle view request
+  }; // Handle view request
   const handleViewRequest = (id: number) => {
     router.push(`/dashboard/requests/id?id=${id}`);
-  };
-  
-  // Handle view all
-  const handleViewAll = () => {
-    if (onViewAll) {
-      onViewAll();
-    } else {
-      router.push("/dashboard/requests");
-    }
   };
 
   return (
@@ -266,24 +274,26 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
       <div className="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-4 md:space-y-0">
           <div className="flex items-center space-x-3">
-            <motion.div 
+            <motion.div
               className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400"
               whileHover={{ rotate: 15, scale: 1.1 }}
               transition={{ type: "spring", stiffness: 300 }}
             >
               <Filter className="h-4 w-4" />
             </motion.div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Budget Requests</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Recent Budget Requests
+            </h3>
             <div className="flex items-center">
-              <motion.div 
+              <motion.div
                 className="relative ml-2 h-2 w-2 rounded-full bg-green-500"
-                animate={{ 
+                animate={{
                   scale: [1, 1.2, 1],
-                  opacity: [0.7, 1, 0.7]
+                  opacity: [0.7, 1, 0.7],
                 }}
-                transition={{ 
+                transition={{
                   repeat: Infinity,
-                  duration: 2
+                  duration: 2,
                 }}
               />
               <span className="ml-2 text-xs font-medium text-gray-500 dark:text-gray-400">
@@ -291,7 +301,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
               </span>
             </div>
           </div>
-          
+
           {showControls && (
             <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
               <div className="relative w-full sm:w-auto">
@@ -304,7 +314,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                   className="pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm w-full sm:w-auto focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-gray-300"
                 />
               </div>
-              
+
               <motion.button
                 onClick={() => setShowFilters(!showFilters)}
                 className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
@@ -320,20 +330,10 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </motion.div>
               </motion.button>
-              
-              <motion.button
-                onClick={handleViewAll}
-                className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 text-gray-700 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors"
-                whileHover={{ scale: 1.03, x: 3 }}
-                whileTap={{ scale: 0.97 }}
-              >
-                View All
-                <ChevronDown className="ml-1 h-4 w-4 rotate-270" style={{ transform: 'rotate(-90deg)' }} />
-              </motion.button>
             </div>
           )}
         </div>
-        
+
         {/* Filter panel */}
         <AnimatePresence>
           {showFilters && (
@@ -345,7 +345,9 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
               exit="hidden"
             >
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Category</label>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Category
+                </label>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value)}
@@ -353,13 +355,17 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                 >
                   <option value="">All Categories</option>
                   {categories.map((category, index) => (
-                    <option key={index} value={category}>{category}</option>
+                    <option key={index} value={category}>
+                      {category}
+                    </option>
                   ))}
                 </select>
               </div>
-              
+
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Status</label>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Status
+                </label>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
@@ -367,18 +373,20 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                 >
                   <option value="">All Statuses</option>
                   {statuses.map((status, index) => (
-                    <option key={index} value={status}>{status}</option>
+                    <option key={index} value={status}>
+                      {status}
+                    </option>
                   ))}
                 </select>
               </div>
-              
+
               <div className="space-y-2">
-                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">Date Range</label>
+                <label className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                  Date Range
+                </label>
                 <div className="relative">
                   <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <select
-                    className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-gray-300"
-                  >
+                  <select className="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-gray-300">
                     <option value="all">All Time</option>
                     <option value="today">Today</option>
                     <option value="week">Last 7 Days</option>
@@ -391,9 +399,9 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
           )}
         </AnimatePresence>
       </div>
-      
+
       {/* Table section */}
-      <motion.div 
+      <motion.div
         className="overflow-x-auto"
         variants={tableVariants}
         initial="hidden"
@@ -408,23 +416,37 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                 </div>
               </th>
               <th className="py-3 px-4 text-left">
-                <div 
+                <div
                   className="flex items-center space-x-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => toggleSort("date")}
                 >
                   <span>Date</span>
-                  <motion.div animate={{ rotate: sortField === "date" && sortDirection === "asc" ? 180 : 0 }}>
+                  <motion.div
+                    animate={{
+                      rotate:
+                        sortField === "date" && sortDirection === "asc"
+                          ? 180
+                          : 0,
+                    }}
+                  >
                     <ChevronsUpDown className="h-3 w-3" />
                   </motion.div>
                 </div>
               </th>
               <th className="py-3 px-4 text-left">
-                <div 
+                <div
                   className="flex items-center space-x-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => toggleSort("amount")}
                 >
                   <span>Amount</span>
-                  <motion.div animate={{ rotate: sortField === "amount" && sortDirection === "asc" ? 180 : 0 }}>
+                  <motion.div
+                    animate={{
+                      rotate:
+                        sortField === "amount" && sortDirection === "asc"
+                          ? 180
+                          : 0,
+                    }}
+                  >
                     <ChevronsUpDown className="h-3 w-3" />
                   </motion.div>
                 </div>
@@ -440,12 +462,19 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                 </div>
               </th>
               <th className="py-3 px-4 text-left">
-                <div 
+                <div
                   className="flex items-center space-x-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => toggleSort("level")}
                 >
                   <span>Level</span>
-                  <motion.div animate={{ rotate: sortField === "level" && sortDirection === "asc" ? 180 : 0 }}>
+                  <motion.div
+                    animate={{
+                      rotate:
+                        sortField === "level" && sortDirection === "asc"
+                          ? 180
+                          : 0,
+                    }}
+                  >
                     <ChevronsUpDown className="h-3 w-3" />
                   </motion.div>
                 </div>
@@ -462,14 +491,12 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
               </th>
             </tr>
           </motion.thead>
-          <motion.tbody 
-            className="divide-y divide-gray-100 dark:divide-gray-700"
-          >
+          <motion.tbody className="divide-y divide-gray-100 dark:divide-gray-700">
             {displayRequests.length > 0 ? (
               displayRequests.map((request, index) => {
                 const statusConfig = getStatusConfig(request);
                 const StatusIcon = statusConfig.icon;
-                
+
                 return (
                   <motion.tr
                     key={request.id}
@@ -480,7 +507,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                     whileHover={{
                       backgroundColor: "rgba(243, 244, 246, 0.7)",
                       boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-                      scale: 1.005
+                      scale: 1.005,
                     }}
                   >
                     <td className="py-4 px-4">
@@ -492,34 +519,43 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex flex-col">
-                        <span className="text-sm text-gray-800 dark:text-gray-200">{formatDate(request.date)}</span>
+                        <span className="text-sm text-gray-800 dark:text-gray-200">
+                          {formatDate(request.date)}
+                        </span>
                         <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {new Date(request.date).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                          {new Date(request.date).toLocaleTimeString([], {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <motion.div 
+                      <motion.div
                         className={`${
-                          isHighAmount(request.total) 
-                            ? "font-medium text-amber-600 dark:text-amber-400" 
+                          isHighAmount(request.total)
+                            ? "font-medium text-amber-600 dark:text-amber-400"
                             : "text-gray-800 dark:text-gray-200"
                         } text-sm`}
-                        whileHover={isHighAmount(request.total) ? {
-                          scale: 1.05,
-                          transition: { duration: 0.2 }
-                        } : {}}
+                        whileHover={
+                          isHighAmount(request.total)
+                            ? {
+                                scale: 1.05,
+                                transition: { duration: 0.2 },
+                              }
+                            : {}
+                        }
                       >
                         {isHighAmount(request.total) && (
-                          <motion.span 
+                          <motion.span
                             className="inline-block h-2 w-2 mr-1.5 rounded-full bg-amber-500"
-                            animate={{ 
+                            animate={{
                               scale: [1, 1.3, 1],
-                              opacity: [0.7, 1, 0.7]
+                              opacity: [0.7, 1, 0.7],
                             }}
-                            transition={{ 
+                            transition={{
                               repeat: Infinity,
-                              duration: 1.5
+                              duration: 1.5,
                             }}
                           />
                         )}
@@ -539,10 +575,14 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                     <td className="py-4 px-4">
                       <div className="flex items-center">
                         <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div 
-                            className="bg-indigo-500 h-2 rounded-full" 
+                          <div
+                            className="bg-indigo-500 h-2 rounded-full"
                             style={{
-                              width: `${(request.current_form_level / request.form_max_level) * 100}%`
+                              width: `${
+                                (request.current_form_level /
+                                  request.form_max_level) *
+                                100
+                              }%`,
                             }}
                           />
                         </div>
@@ -555,19 +595,19 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                       <motion.div
                         className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-gradient-to-r ${statusConfig.bgColor} ${statusConfig.textColor}`}
                         initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ 
-                          opacity: 1, 
+                        animate={{
+                          opacity: 1,
                           scale: 1,
-                          transition: { 
-                            delay: 0.2 + (0.05 * index),
+                          transition: {
+                            delay: 0.2 + 0.05 * index,
                             type: "spring",
-                            stiffness: 200
-                          }
+                            stiffness: 200,
+                          },
                         }}
-                        whileHover={{ 
+                        whileHover={{
                           scale: 1.05,
                           boxShadow: "0 2px 10px 0 rgba(0,0,0,0.12)",
-                          transition: { duration: 0.2 }
+                          transition: { duration: 0.2 },
                         }}
                       >
                         <motion.div animate={statusConfig.animation}>
@@ -576,31 +616,28 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                         {request.current_status}
                       </motion.div>
                     </td>
-                    <td className="py-4 px-4">                      <div className="flex items-center justify-end space-x-2" onClick={(e) => e.stopPropagation()}>
+                    <td className="py-4 px-4">
+                      {" "}
+                      <div
+                        className="flex items-center justify-end space-x-2"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Link href={`/dashboard/requests/id?id=${request.id}`}>
-                          <motion.button 
+                          <motion.button
                             className="flex items-center justify-center w-8 h-8 rounded-lg bg-indigo-50 text-indigo-600 hover:bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400 dark:hover:bg-indigo-900/40"
                             variants={buttonVariants}
                             whileHover="hover"
                             whileTap="tap"
                             title="View Request Details"
                           >
-                            <motion.div variants={iconVariants} whileHover="hover">
+                            <motion.div
+                              variants={iconVariants}
+                              whileHover="hover"
+                            >
                               <Eye className="h-4 w-4" />
                             </motion.div>
                           </motion.button>
                         </Link>
-                        <motion.button 
-                          className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
-                          variants={buttonVariants}
-                          whileHover="hover"
-                          whileTap="tap"
-                          title="More Options"
-                        >
-                          <motion.div variants={iconVariants}>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </motion.div>
-                        </motion.button>
                       </div>
                     </td>
                   </motion.tr>
@@ -613,8 +650,13 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                     <div className="rounded-full bg-gray-100 dark:bg-gray-700 p-3">
                       <Search className="h-6 w-6 text-gray-400" />
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">No requests found</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500">Try adjusting your search or filter to find what you're looking for.</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">
+                      No requests found
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500">
+                      Try adjusting your search or filter to find what you're
+                      looking for.
+                    </p>
                   </div>
                 </td>
               </tr>
@@ -622,24 +664,21 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
           </motion.tbody>
         </table>
       </motion.div>
-      
+
       {/* Footer with pagination if needed */}
       {showControls && displayRequests.length > 0 && (
         <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            Showing <span className="font-medium text-gray-700 dark:text-gray-300">{displayRequests.length}</span> of{" "}
-            <span className="font-medium text-gray-700 dark:text-gray-300">{filteredRequests.length}</span> requests
+            Showing{" "}
+            <span className="font-medium text-gray-700 dark:text-gray-300">
+              {displayRequests.length}
+            </span>{" "}
+            of{" "}
+            <span className="font-medium text-gray-700 dark:text-gray-300">
+              {filteredRequests.length}
+            </span>{" "}
+            requests
           </div>
-          
-          <motion.button
-            onClick={handleViewAll}
-            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
-            whileHover={{ scale: 1.03, x: 3 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            View All
-            <ChevronDown className="ml-1 h-4 w-4 rotate-270" style={{ transform: 'rotate(-90deg)' }} />
-          </motion.button>
         </div>
       )}
     </div>

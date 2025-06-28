@@ -30,7 +30,7 @@ import {
 
 const BudgetAllocationSystem = () => {    // API data states
   const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  // const [departments, setDepartments] = useState<Department[]>([]);
   const [categories, setCategories] = useState<string[]>([]);
   const [activeTab, setActiveTab] = useState<string>("allocations");
   const [error, setError] = useState<string | null>(null);
@@ -215,7 +215,7 @@ const BudgetAllocationSystem = () => {    // API data states
     { month: 'May', budget: 200000, spent: 178000 },
   ];
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7300'];  return (
+  return (
     <div className="p-6 space-y-6">
       {error && (
         <Alert variant="destructive">
@@ -225,9 +225,9 @@ const BudgetAllocationSystem = () => {    // API data states
       )}
       
       {/* Header */}
-      <BudgetHeader businessUnits={businessUnits} departments={departments} />
+      <BudgetHeader businessUnits={businessUnits} departments={filteredDepartments} />
 
-      {/* Quick Stats */}      <StatsCards budgetAllocations={budgetAllocations} />
+      <StatsCards budgetAllocations={budgetAllocations} />
       <TabManager
         activeTab={activeTab}
         setActiveTab={setActiveTab}

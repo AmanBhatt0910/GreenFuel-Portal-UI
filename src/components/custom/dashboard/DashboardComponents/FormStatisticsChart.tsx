@@ -30,42 +30,16 @@ export type SampleDataType = {
 // Component Props
 interface FormStatisticsChartProps {
   className?: string;
+  statData?: any; // Add statData prop
 }
 
-const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) => {
+const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className, statData }) => {
   const [activeTab, setActiveTab] = useState<TabType>("monthly");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [exporting, setExporting] = useState<boolean>(false);
   const [hoverBar, setHoverBar] = useState<number | null>(null);
   const [isChartHovered, setIsChartHovered] = useState<boolean>(false);
   
-  // Sample data for different time periods
-  const sampleData: SampleDataType = {
-    weekly: [
-      { name: "Mon", created: 18, approved: 12, rejected: 4 },
-      { name: "Tue", created: 24, approved: 18, rejected: 3 },
-      { name: "Wed", created: 30, approved: 24, rejected: 5 },
-      { name: "Thu", created: 27, approved: 20, rejected: 6 },
-      { name: "Fri", created: 32, approved: 26, rejected: 4 },
-      { name: "Sat", created: 15, approved: 10, rejected: 2 },
-      { name: "Sun", created: 12, approved: 8, rejected: 1 }
-    ],
-    monthly: [
-      { name: "Jan", created: 85, approved: 65, rejected: 12 },
-      { name: "Feb", created: 78, approved: 60, rejected: 15 },
-      { name: "Mar", created: 92, approved: 75, rejected: 14 },
-      { name: "Apr", created: 110, approved: 88, rejected: 17 },
-      { name: "May", created: 125, approved: 100, rejected: 20 },
-      { name: "Jun", created: 140, approved: 115, rejected: 18 }
-    ],
-    yearly: [
-      { name: "2020", created: 720, approved: 580, rejected: 140 },
-      { name: "2021", created: 860, approved: 710, rejected: 150 },
-      { name: "2022", created: 950, approved: 800, rejected: 145 },
-      { name: "2023", created: 1100, approved: 920, rejected: 180 },
-      { name: "2024", created: 1250, approved: 1050, rejected: 195 }
-    ]
-  };
 
   const handleTabChange = (tab: TabType): void => {
     setIsLoading(true);
@@ -77,10 +51,29 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) 
 
   const currentData = sampleData[activeTab];
   
-  // Calculate totals and percentages
-  const totalCreated = currentData?.reduce((sum, item) => sum + item.created, 0) || 0;
-  const totalApproved = currentData?.reduce((sum, item) => sum + item.approved, 0) || 0;
-  const totalRejected = currentData?.reduce((sum, item) => sum + item.rejected, 0) || 0;
+  // Calculate totals from API data if available, otherwise use sample data
+  let totalCreated = 0;
+  let totalApproved = 0; 
+  let totalRejected = 0;
+  
+  // Check if statData is available and in the right format
+  if (statData) {
+    if (Array.isArray(statData)) {
+      // If it's an array (old format)
+      totalCreated = statData.reduce((sum: number, item: any) => sum + (Number(item.created) || 0), 0);
+      totalApproved = statData.reduce((sum: number, item: any) => sum + (Number(item.approved) || 0), 0);
+      totalRejected = statData.reduce((sum: number, item: any) => sum + (Number(item.rejected) || 0), 0);
+    } else if (typeof statData === 'object') {
+      // If it's an object (new format)
+      totalCreated = Number(statData.form_count) || 0;
+      totalApproved = Number(statData.approved_count) || 0;
+      totalRejected = Number(statData.rejected_count) || 0;
+    }
+  } else {    // Fallback to calculated values from sample data
+    totalCreated = currentData?.reduce((sum: number, item: ChartDataPoint) => sum + item.created, 0) || 0;
+    totalApproved = currentData?.reduce((sum: number, item: ChartDataPoint) => sum + item.approved, 0) || 0;
+    totalRejected = currentData?.reduce((sum: number, item: ChartDataPoint) => sum + item.rejected, 0) || 0;
+  }
   
   const approvalRate = totalCreated > 0 ? (totalApproved / totalCreated) * 100 : 0;
   const rejectionRate = totalCreated > 0 ? (totalRejected / totalCreated) * 100 : 0;
@@ -318,8 +311,7 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) 
                   }}
                   iconType="circle"
                   formatter={(value) => <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{value}</span>}
-                />
-                <Bar
+                />                <Bar
                   dataKey="created"
                   name="Forms Created"
                   fill="url(#createdGradient)"
@@ -329,15 +321,14 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) 
                   strokeWidth={1}
                   stroke="#4338ca"
                 >
-                  {currentData.map((_, index) => (
+                  {currentData.map((_: any, index: number) => (
                     <Cell 
                       key={`created-${index}`} 
                       fillOpacity={hoverBar === index ? 1 : isChartHovered ? 0.7 : 0.9}
                       strokeWidth={hoverBar === index ? 2 : 1}
                     />
                   ))}
-                </Bar>
-                <Bar
+                </Bar>                <Bar
                   dataKey="approved"
                   name="Approved"
                   fill="url(#approvedGradient)"
@@ -348,15 +339,14 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) 
                   strokeWidth={1}
                   stroke="#059669"
                 >
-                  {currentData.map((_, index) => (
+                  {currentData.map((_: any, index: number) => (
                     <Cell 
                       key={`approved-${index}`} 
                       fillOpacity={hoverBar === index ? 1 : isChartHovered ? 0.7 : 0.9}
                       strokeWidth={hoverBar === index ? 2 : 1}
                     />
                   ))}
-                </Bar>
-                <Bar
+                </Bar>                <Bar
                   dataKey="rejected"
                   name="Rejected"
                   fill="url(#rejectedGradient)"
@@ -367,7 +357,7 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) 
                   strokeWidth={1}
                   stroke="#dc2626"
                 >
-                  {currentData.map((_, index) => (
+                  {currentData.map((_: any, index: number) => (
                     <Cell 
                       key={`rejected-${index}`} 
                       fillOpacity={hoverBar === index ? 1 : isChartHovered ? 0.7 : 0.9}
@@ -394,14 +384,13 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) 
                 <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-md">
                   <div className="w-2 h-2 bg-indigo-600 rounded-full"></div>
                 </div>
+              </div>              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {Number(totalCreated).toLocaleString()}
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {totalCreated.toLocaleString()}
-              </div>
-              <div className={`text-xs flex items-center mt-1 ${createdGrowth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {/* <div className={`text-xs flex items-center mt-1 ${createdGrowth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {createdGrowth >= 0 ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
                 {Math.abs(createdGrowth).toFixed(1)}% from previous period
-              </div>
+              </div> */}
             </motion.div>
             
             <motion.div 
@@ -417,14 +406,13 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) 
                 <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-md">
                   <div className="w-2 h-2 bg-green-600 rounded-full"></div>
                 </div>
+              </div>              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {Number(totalApproved).toLocaleString()}
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {totalApproved.toLocaleString()}
-              </div>
-              <div className={`text-xs flex items-center mt-1 ${approvedGrowth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {/* <div className={`text-xs flex items-center mt-1 ${approvedGrowth >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {approvedGrowth >= 0 ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
                 {Math.abs(approvedGrowth).toFixed(1)}% from previous period
-              </div>
+              </div> */}
             </motion.div>
             
             <motion.div 
@@ -440,54 +428,49 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({ className }) 
                 <div className="p-1.5 bg-red-100 dark:bg-red-900/30 rounded-md">
                   <div className="w-2 h-2 bg-red-600 rounded-full"></div>
                 </div>
+              </div>              <div className="text-2xl font-bold text-gray-900 dark:text-white">
+                {Number(totalRejected).toLocaleString()}
               </div>
-              <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                {totalRejected.toLocaleString()}
-              </div>
-              <div className={`text-xs flex items-center mt-1 ${rejectedGrowth <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+              {/* <div className={`text-xs flex items-center mt-1 ${rejectedGrowth <= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                 {rejectedGrowth >= 0 ? <ArrowUp className="w-3 h-3 mr-1" /> : <ArrowDown className="w-3 h-3 mr-1" />}
                 {Math.abs(rejectedGrowth).toFixed(1)}% from previous period
-              </div>
+              </div> */}
             </motion.div>
           </div>
           
-          {/* Approval rate gauge */}
-          <motion.div 
-            className="mt-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-100 dark:border-gray-700"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            whileHover={{ boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-          >
-            <div className="flex justify-between mb-2">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Approval Rate</h4>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{approvalRate.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <motion.div 
-                className="bg-gradient-to-r from-green-500 to-blue-500 h-2.5 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: `${approvalRate}%` }}
-                transition={{ duration: 1, delay: 0.3 }}
-              ></motion.div>
-            </div>
-            <div className="flex justify-between mt-2">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Rejection Rate</h4>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{rejectionRate.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <motion.div 
-                className="bg-gradient-to-r from-red-500 to-orange-400 h-2.5 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: `${rejectionRate}%` }}
-                transition={{ duration: 1, delay: 0.4 }}
-              ></motion.div>
-            </div>
-          </motion.div>
+          
         </div>
       </motion.div>
     </div>
   );
+};
+
+// Sample data for the chart
+const sampleData: SampleDataType = {
+  weekly: [
+    { name: "Mon", created: 12, approved: 8, rejected: 2 },
+    { name: "Tue", created: 18, approved: 12, rejected: 3 },
+    { name: "Wed", created: 15, approved: 10, rejected: 1 },
+    { name: "Thu", created: 20, approved: 15, rejected: 2 },
+    { name: "Fri", created: 25, approved: 18, rejected: 4 },
+    { name: "Sat", created: 10, approved: 6, rejected: 1 },
+    { name: "Sun", created: 5, approved: 3, rejected: 0 }
+  ],
+  monthly: [
+    { name: "Jan", created: 65, approved: 45, rejected: 8 },
+    { name: "Feb", created: 75, approved: 50, rejected: 10 },
+    { name: "Mar", created: 85, approved: 65, rejected: 12 },
+    { name: "Apr", created: 95, approved: 70, rejected: 15 },
+    { name: "May", created: 110, approved: 85, rejected: 18 },
+    { name: "Jun", created: 120, approved: 90, rejected: 20 }
+  ],
+  yearly: [
+    { name: "2021", created: 450, approved: 350, rejected: 60 },
+    { name: "2022", created: 550, approved: 420, rejected: 75 },
+    { name: "2023", created: 650, approved: 500, rejected: 90 },
+    { name: "2024", created: 750, approved: 580, rejected: 100 },
+    { name: "2025", created: 850, approved: 650, rejected: 120 }
+  ]
 };
 
 export default FormStatisticsChart;

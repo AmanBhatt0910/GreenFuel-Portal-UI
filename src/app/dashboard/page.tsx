@@ -17,6 +17,13 @@ import {
   RequestsTable,
   ActivityTimeline,
   QuickActions,
+  fadeInUpVariants,
+  pageVariants,
+  fadeInLeftVariants,
+  scaleInVariants,
+  fadeInRightVariants,
+  AnimateInViewProps,
+  DashboardCardProps,
 } from "@/components/custom/dashboard/DashboardComponents";
 
 // Import icons
@@ -32,84 +39,10 @@ import {
   FormDataType,
 } from "@/components/custom/dashboard/types";
 
-// Page transition animations
-const pageVariants: Variants = {
-  initial: { opacity: 0 },
-  animate: {
-    opacity: 1,
-    transition: {
-      duration: 0.8,
-      when: "beforeChildren",
-      staggerChildren: 0.2,
-    },
-  },
-  exit: {
-    opacity: 0,
-    transition: { duration: 0.4 },
-  },
-};
-
-// Enhanced animation variants for components
-const fadeInUpVariants: Variants = {
-  hidden: { opacity: 0, y: 25 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { 
-      duration: 0.7,
-      ease: [0.25, 0.1, 0.25, 1.0]
-    } 
-  }
-};
-
-const fadeInLeftVariants: Variants = {
-  hidden: { opacity: 0, x: -30 },
-  visible: { 
-    opacity: 1, 
-    x: 0, 
-    transition: { 
-      duration: 0.7,
-      ease: [0.25, 0.1, 0.25, 1.0]
-    } 
-  }
-};
-
-const fadeInRightVariants: Variants = {
-  hidden: { opacity: 0, x: 30 },
-  visible: { 
-    opacity: 1, 
-    x: 0, 
-    transition: { 
-      duration: 0.7,
-      ease: [0.25, 0.1, 0.25, 1.0]
-    } 
-  }
-};
-
-const scaleInVariants: Variants = {
-  hidden: { opacity: 0, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    scale: 1, 
-    transition: { 
-      duration: 0.6,
-      ease: [0.25, 0.1, 0.25, 1.0]
-    } 
-  }
-};
-
-// Improved AnimateInView component with threshold option
-interface AnimateInViewProps {
-  children: ReactNode;
-  variants?: Variants;
-  className?: string;
-  delay?: number;
-  threshold?: number;
-}
 
 const AnimateInView: React.FC<AnimateInViewProps> = ({ 
   children, 
-  variants = fadeInUpVariants, 
+  variants = fadeInUpVariants,
   className = "", 
   delay = 0,
   threshold = 0.2
@@ -132,21 +65,13 @@ const AnimateInView: React.FC<AnimateInViewProps> = ({
       variants={variants}
       className={className}
       custom={delay}
-      style={{ willChange: "transform, opacity" }} // Performance optimization
+      style={{ willChange: "transform, opacity" }}
     >
       {children}
     </motion.div>
   );
 };
 
-// Card wrapper component for consistent styling
-interface DashboardCardProps {
-  children: ReactNode;
-  className?: string;
-  title?: string;
-  icon?: ReactNode;
-  action?: string;
-}
 
 const DashboardCard: React.FC<DashboardCardProps> = ({ 
   children, 
@@ -184,7 +109,7 @@ const DashboardPage: React.FC = () => {
   const [designation, setDesignation] = useState<DesignationType | null>(null);
   const api = useAxios();
   const [requestsData, setRequestsData] = useState<RequestType[]>([]);
-  const router = useRouter();
+  const [statData, setStatData] = useState<any>([]);
 
   useEffect(() => {
     document.cookie = `user_role=${userInfo?.role}; path=/`;
@@ -286,6 +211,7 @@ const DashboardPage: React.FC = () => {
       try {
         await getUserDashboardData();
         await getRequestData();
+        await fetchStat();
       } catch (error) {
         console.error("Error fetching data:", error);
       } finally {
@@ -294,7 +220,36 @@ const DashboardPage: React.FC = () => {
     };
 
     fetchData();
-  }, []);
+  }, []); 
+  const fetchStat = async() => {
+    try {
+      const res = await api.get("approver-dashboard-stats/");
+      console.log("Dashboard stats:", res.data);
+      
+      // Pass the data directly, the component will handle both formats
+      setStatData(res.data);
+    } catch (error) {
+      console.error("Error fetching dashboard stats:", error);
+      // Set empty object in case of error
+      setStatData({
+        pending_count: 0,
+        approved_count: 0,
+        rejected_count: 0,
+        form_count: 0
+      });
+    }
+  }
+
+  // const fetchchart = async()=>{
+  //   try {
+  //     const res = await api.get("form-statistics/");
+  //     console.log("Form statistics:", res.data);
+  //     return res.data;
+  //   } catch (error) {
+  //     console.error("Error fetching form statistics:", error);
+  //     return [];
+  //   }
+  // }
 
   const formatDate = (dateString: string): string => {
     try {
@@ -336,7 +291,7 @@ const DashboardPage: React.FC = () => {
 
           {/* Approval Status Cards with upgraded animation */}
           <AnimateInView variants={fadeInUpVariants} delay={0.1} className="mb-6">
-            <ApprovalStatusCards />
+            <ApprovalStatusCards statData={statData} />
           </AnimateInView>
 
           {/* Charts and Profile Section with more dynamic layout */}
@@ -348,7 +303,7 @@ const DashboardPage: React.FC = () => {
                 action="View Details"
                 icon={<FileText className="h-5 w-5" />}
               >
-                <FormStatisticsChart />
+                <FormStatisticsChart statData = {statData} />
               </DashboardCard>
             </AnimateInView>
             
@@ -389,7 +344,7 @@ const DashboardPage: React.FC = () => {
           </AnimateInView>
 
           {/* Optional bottom row components with grid layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AnimateInView variants={fadeInUpVariants} delay={0.3}>
               <DashboardCard 
                 title="Recent Activity" 
@@ -407,7 +362,8 @@ const DashboardPage: React.FC = () => {
                 <QuickActions />
               </DashboardCard>
             </AnimateInView>
-          </div>
+          </div> */}
+
         </div>
       </motion.div>
     </AnimatePresence>

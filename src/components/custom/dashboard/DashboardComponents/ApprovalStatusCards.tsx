@@ -5,87 +5,16 @@ import {
   CheckCircle, 
   XCircle, 
   ChevronRight, 
-  AlertTriangle,
-  ArrowUpRight,
   TrendingUp,
   TrendingDown
 } from "lucide-react";
+import { cardVariants, pulseVariants, staggerContainer, StatusCardProps } from "./types";
+import { FormDataType } from "../types";
 
 // Enhanced animation variants
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.2
-    },
-  },
-};
 
-const cardVariants = {
-  hidden: { y: 30, opacity: 0, scale: 0.95 },
-  visible: {
-    y: 0,
-    opacity: 1,
-    scale: 1,
-    transition: {
-      type: "spring",
-      stiffness: 100,
-      damping: 15,
-      mass: 0.8
-    },
-  },
-  hover: {
-    y: -8,
-    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-    transition: { 
-      type: "spring", 
-      stiffness: 300, 
-      damping: 15 
-    }
-  },
-  tap: {
-    scale: 0.98,
-    transition: { duration: 0.1 }
-  }
-};
 
-// Progress bar animation
-const progressVariants = {
-  hidden: { width: "0%" },
-  visible: (width: number) => ({
-    width: `${width}%`,
-    transition: { 
-      duration: 0.8, 
-      ease: "easeOut", 
-      delay: 0.8 
-    }
-  })
-};
 
-// Icon pulse animation
-const pulseVariants = {
-  pulse: {
-    scale: [1, 1.15, 1],
-    opacity: [0.7, 1, 0.7],
-    transition: {
-      duration: 2,
-      repeat: Infinity,
-      ease: "easeInOut"
-    }
-  }
-};
-
-interface StatusCardProps {
-  title: string;
-  count: number;
-  description: string;
-  icon: React.ReactNode;
-  color: string;
-  trend?: number;
-  progress?: number;
-}
 
 const StatusCard: React.FC<StatusCardProps> = ({
   title,
@@ -154,15 +83,14 @@ const StatusCard: React.FC<StatusCardProps> = ({
           <div className="flex items-end justify-between">
             <motion.div 
               className="text-3xl font-bold text-gray-900 dark:text-white"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
+              initial={{ opacity: 0, scale: 0.5 }}              animate={{ opacity: 1, scale: 1 }}
               transition={{ 
                 delay: 0.4, 
                 type: "spring", 
                 stiffness: 100 
               }}
             >
-              {count}
+              {String(count)}
             </motion.div>
             
             {trend !== 0 && (
@@ -171,17 +99,6 @@ const StatusCard: React.FC<StatusCardProps> = ({
                 <span>{trendText}</span>
               </div>
             )}
-          </div>
-          
-          {/* Progress bar */}
-          <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-            <motion.div 
-              className={`h-full rounded-full ${classes.progress}`}
-              variants={progressVariants}
-              initial="hidden"
-              animate="visible"
-              custom={progress}
-            />
           </div>
           
           {/* View details link */}
@@ -197,34 +114,57 @@ const StatusCard: React.FC<StatusCardProps> = ({
   );
 };
 
-const ApprovalStatusCards: React.FC = () => {
-  // Example data - in a real app, this would come from props or API
+interface ApprovalStatusCardsProps {
+  statData: FormDataType[] | any; // Allow any type to prevent crashes
+}
+
+const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ statData }) => {
+  // Handle both array format and direct object format
+  let totalCreated = 0;
+  let totalApproved = 0;
+  let totalRejected = 0;
+  let totalPending = 0;
+  
+  if (Array.isArray(statData)) {
+    // Original format: array of objects with created, approved, rejected
+    totalCreated = statData.reduce((sum, item) => sum + (item.created || 0), 0);
+    totalApproved = statData.reduce((sum, item) => sum + (item.approved || 0), 0);
+    totalRejected = statData.reduce((sum, item) => sum + (item.rejected || 0), 0);
+    totalPending = totalCreated - (totalApproved + totalRejected);
+  } else if (statData && typeof statData === 'object') {
+    // New format: direct object with pending_count, approved_count, rejected_count, form_count
+    totalCreated = Number(statData.form_count) || 0;
+    totalApproved = Number(statData.approved_count) || 0;
+    totalRejected = Number(statData.rejected_count) || 0;
+    totalPending = Number(statData.pending_count) || 0;
+  }
+    // Create the card data based on actual stats
   const cardData = [
     {
       title: "Pending Approval",
-      count: 12,
+      count: Number(totalPending) || 0,
       description: "Requests awaiting review",
       icon: <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
       color: "amber",
-      trend: 8,
+      trend: 0,
       progress: 65
     },
     {
       title: "Approved Requests",
-      count: 28,
-      description: "Requests approved this month",
+      count: Number(totalApproved) || 0,
+      description: "Requests approved",
       icon: <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
       color: "green",
-      trend: 12,
+      trend: 0,
       progress: 78
     },
     {
       title: "Rejected Requests",
-      count: 7,
-      description: "Requests rejected this month",
+      count: Number(totalRejected) || 0,
+      description: "Requests rejected",
       icon: <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
       color: "red",
-      trend: -5,
+      trend: 0,
       progress: 40
     }
   ];

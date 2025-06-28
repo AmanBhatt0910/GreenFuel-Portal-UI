@@ -1,4 +1,6 @@
 import { UserInfoType } from "@/context/AuthContext";
+import { Variants } from "framer-motion";
+import { ReactNode } from "react";
 
 // Types for the dashboard components
 export interface FormStat {
@@ -236,3 +238,111 @@ export const buttonVariants = {
     transition: { duration: 0.1 } 
   }
 };
+
+export interface AnimateInViewProps {
+  children: ReactNode;
+  variants?: Variants;
+  className?: string;
+  delay?: number;
+  threshold?: number;
+}
+
+
+export const pageVariants: Variants = {
+  initial: { opacity: 0 },
+  animate: {
+    opacity: 1,
+    transition: {
+      duration: 0.8,
+      when: "beforeChildren",
+      staggerChildren: 0.2,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: { duration: 0.4 },
+  },
+};
+
+// Enhanced animation variants for components
+export const fadeInUpVariants: Variants = {
+  hidden: { opacity: 0, y: 25 },
+  visible: { 
+    opacity: 1, 
+    y: 0, 
+    transition: { 
+      duration: 0.7,
+      ease: [0.25, 0.1, 0.25, 1.0]
+    } 
+  }
+};
+
+export const fadeInLeftVariants: Variants = {
+  hidden: { opacity: 0, x: -30 },
+  visible: { 
+    opacity: 1, 
+    x: 0, 
+    transition: { 
+      duration: 0.7,
+      ease: [0.25, 0.1, 0.25, 1.0]
+    } 
+  }
+};
+
+export const fadeInRightVariants: Variants = {
+  hidden: { opacity: 0, x: 30 },
+  visible: { 
+    opacity: 1, 
+    x: 0, 
+    transition: { 
+      duration: 0.7,
+      ease: [0.25, 0.1, 0.25, 1.0]
+    } 
+  }
+};
+
+export const scaleInVariants: Variants = {
+  hidden: { opacity: 0, scale: 0.95 },
+  visible: { 
+    opacity: 1, 
+    scale: 1, 
+    transition: { 
+      duration: 0.6,
+      ease: [0.25, 0.1, 0.25, 1.0]
+    } 
+  }
+};
+
+
+export interface DashboardCardProps {
+  children: ReactNode;
+  className?: string;
+  title?: string;
+  icon?: ReactNode;
+  action?: string;
+}
+
+
+// Icon pulse animation
+export const pulseVariants = {
+  pulse: {
+    scale: [1, 1.15, 1],
+    opacity: [0.7, 1, 0.7],
+    transition: {
+      duration: 2,
+      repeat: Infinity,
+      ease: "easeInOut"
+    }
+  }
+};
+
+export interface StatusCardProps {
+  title: string;
+  count: number;
+  description: string;
+  icon: React.ReactNode;
+  color: string;
+  trend?: number;
+  progress?: number;
+}
+
