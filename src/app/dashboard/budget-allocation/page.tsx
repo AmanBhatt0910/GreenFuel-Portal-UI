@@ -278,6 +278,7 @@ const BudgetAllocationSystem = () => {
     }));
   };
 
+  // Sample data - replace with actual API data when available
   const monthlyTrend: MonthlyTrend[] = [
     { month: 'Jan', budget: 180000, spent: 145000 },
     { month: 'Feb', budget: 185000, spent: 152000 },
