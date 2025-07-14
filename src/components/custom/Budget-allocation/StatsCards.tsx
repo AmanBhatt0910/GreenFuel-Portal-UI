@@ -27,7 +27,7 @@ export const StatsCards = ({ budgetAllocations }: StatsCardsProps) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Budget</p>
-              <p className="text-2xl font-bold text-gray-900">${totalBudget.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">₹{totalBudget.toLocaleString()}</p>
             </div>
             <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center">
               <DollarSign size={16} className="text-blue-600" />
@@ -41,7 +41,7 @@ export const StatsCards = ({ budgetAllocations }: StatsCardsProps) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Total Spent</p>
-              <p className="text-2xl font-bold text-gray-900">${totalSpent.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">₹{totalSpent.toLocaleString()}</p>
             </div>
             <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center">
               <TrendingUp size={16} className="text-green-600" />
@@ -55,7 +55,7 @@ export const StatsCards = ({ budgetAllocations }: StatsCardsProps) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600">Remaining</p>
-              <p className="text-2xl font-bold text-gray-900">${totalRemaining.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900">₹{totalRemaining.toLocaleString()}</p>
             </div>
             <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center">
               <Target size={16} className="text-purple-600" />

@@ -20,7 +20,7 @@ import {
   Department, 
   BudgetAllocation, 
   Transaction, 
-  FormData, 
+  FormData as ChildFormData,
   DepartmentStats,
   CategoryStats,
   DepartmentUsage,
@@ -28,183 +28,254 @@ import {
   MonthlyTrend
 } from '@/components/custom/Budget-allocation/types';
 
-const BudgetAllocationSystem = () => {    // API data states
+// Define local types to fix missing exports
+interface Category {
+  id: number;
+  name: string;
+}
+
+interface ApiBudgetAllocation {
+  id: number;
+  budget: string;
+  remaining_budget: string;
+  business_unit: number;
+  department: number;
+  category: number;
+}
+
+const BudgetAllocationSystem = () => {
+  // API data states
   const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [categories, setCategories] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [activeTab, setActiveTab] = useState<string>("allocations");
   const [error, setError] = useState<string | null>(null);
+  const [budgetAllocations, setBudgetAllocations] = useState<BudgetAllocation[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-  const [budgetAllocations, setBudgetAllocations] = useState<BudgetAllocation[]>([
-    { id: 1, department_id: 1, department_name: 'Software Development', category: 'Equipment & Hardware', allocated_budget: 50000, spent_budget: 32000, status: 'active' },
-    { id: 2, department_id: 1, department_name: 'Software Development', category: 'Software & Licenses', allocated_budget: 30000, spent_budget: 28500, status: 'warning' },
-    { id: 3, department_id: 3, department_name: 'Digital Marketing', category: 'Marketing & Advertising', allocated_budget: 75000, spent_budget: 45000, status: 'active' },
-    { id: 4, department_id: 5, department_name: 'Recruitment', category: 'Training & Development', allocated_budget: 25000, spent_budget: 26000, status: 'over_budget' },
-  ]);
-
-  const [transactions] = useState<Transaction[]>([
-    { id: 1, department: 'Software Development', category: 'Equipment & Hardware', amount: 5000, date: '2024-01-15', description: 'New laptops for developers', type: 'expense' },
-    { id: 2, department: 'Digital Marketing', category: 'Marketing & Advertising', amount: 12000, date: '2024-01-14', description: 'Q1 campaign launch', type: 'expense' },
-    { id: 3, department: 'Software Development', category: 'Software & Licenses', amount: 3500, date: '2024-01-13', description: 'Annual IDE licenses', type: 'expense' },
-    { id: 4, department: 'Recruitment', category: 'Training & Development', amount: 2500, date: '2024-01-12', description: 'HR certification program', type: 'expense' },
-    { id: 5, department: 'IT Infrastructure', category: 'Utilities & Maintenance', amount: 8000, date: '2024-01-11', description: 'Server maintenance', type: 'expense' },
-  ]);
-
-  const [formData, setFormData] = useState<FormData>({
+  // Form state for AllocationForm
+  const [childFormData, setChildFormData] = useState<ChildFormData>({
     business_unit: 0,
     department: 0,
     category: '',
-    budget: '',
+    budget: ''
   });
+  
+  // Additional form state for API
+  const [apiFormData, setApiFormData] = useState({
+    transaction_type: 'CREDIT' as 'CREDIT' | 'DEBIT',
+    remarks: ''
+  });
+  
   const [loading, setLoading] = useState(false);
   const [filteredDepartments, setFilteredDepartments] = useState<Department[]>([]);
-  const api = useAxios();  // Read tab from URL when component mounts
+  const api = useAxios();
+
+  // Format currency in INR
+  const formatINR = (amount: number | string) => {
+    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0,
+    }).format(num);
+  };
+
+  // Read tab from URL when component mounts
   useEffect(() => {
-    // Check if we're in the browser environment
     if (typeof window !== 'undefined') {
       const url = new URL(window.location.href);
       const tabParam = url.searchParams.get('tab');
-      
-      // Valid tab values
       const validTabs = ['allocations', 'analytics', 'transactions', 'reports'];
-      
-      // Set active tab if it's valid
       if (tabParam && validTabs.includes(tabParam)) {
         setActiveTab(tabParam);
       }
     }
   }, []);
 
-  // Fetch business units and categories on component mount
+  // Fetch initial data
   useEffect(() => {
     const fetchInitialData = async () => {
       try {
+        setError(null);
+        
         // Fetch business units
         const businessUnitsResponse = await api.get('/business-units/');
         setBusinessUnits(businessUnitsResponse.data);
         
+        // Fetch departments
+        const departmentsResponse = await api.get('/departments/');
+        setDepartments(departmentsResponse.data);
+        
         // Fetch categories
         const categoriesRes = await api.get("/approval-request-category/");
-        if (categoriesRes.data && Array.isArray(categoriesRes.data)) {
-          // Extract category names from the response
-          const categoryNames = categoriesRes.data.map((cat: {name?: string; category_name?: string}) => 
-            cat.name || cat.category_name || '');
-          setCategories(categoryNames);
-        }      } catch (error) {
+        setCategories(categoriesRes.data);
+        
+        // Fetch budget allocations
+        await fetchBudgetAllocations();
+        
+      } catch (error) {
         console.error('Error fetching initial data:', error);
-        setError('Failed to load business units and categories. Please try refreshing the page.');
+        setError('Failed to load data. Please try refreshing the page.');
       }
     };
     
     fetchInitialData();
   }, []);
 
-  // Fetch departments when business unit changes
-  useEffect(() => {
-    const fetchDepartments = async () => {
-      if (!formData.business_unit) {
-        setFilteredDepartments([]);
-        return;
-      }
-      
-      try {
-        const response = await api.get(`/departments/?business_unit=${formData.business_unit}`);
-        setFilteredDepartments(response.data);
-        setFormData(prev => ({ ...prev, department: 0 }));      } catch (error) {
-        console.error('Error fetching departments:', error);
-        setFilteredDepartments([]);
-        setError('Failed to load departments for the selected business unit.');
-      }
-    };
+  // Map API allocation to UI type
+  const mapApiAllocationToUi = (apiAllocation: ApiBudgetAllocation): BudgetAllocation => {
+    const allocated = parseFloat(apiAllocation.budget);
+    const spent = allocated - parseFloat(apiAllocation.remaining_budget);
+    const department = departments.find(d => d.id === apiAllocation.department);
+    const category = categories.find(c => c.id === apiAllocation.category);
     
-    fetchDepartments();
-  }, [formData.business_unit]);
+    return {
+      id: apiAllocation.id,
+      department_id: apiAllocation.department,
+      department_name: department?.name || `Department ${apiAllocation.department}`,
+      category: category?.name || `Category ${apiAllocation.category}`,
+      allocated_budget: allocated,
+      spent_budget: spent,
+      status: spent > allocated ? 'over_budget' : 
+              spent >= allocated * 0.8 ? 'warning' : 'active'
+    };
+  };
+
+  // Fetch budget allocations
+  const fetchBudgetAllocations = async () => {
+    try {
+      const response = await api.get('/budget-allocation/?all=true');
+      const apiAllocations: ApiBudgetAllocation[] = response.data;
+      
+      // Map to UI type
+      const uiAllocations = apiAllocations.map(mapApiAllocationToUi);
+      setBudgetAllocations(uiAllocations);
+    } catch (error) {
+      console.error('Error fetching budget allocations:', error);
+      setError('Failed to load budget allocations');
+    }
+  };
+
+  // Filter departments when business unit changes
+  useEffect(() => {
+    if (!childFormData.business_unit) {
+      setFilteredDepartments([]);
+      return;
+    }
+    setFilteredDepartments(
+      departments.filter(d => d.business_unit === childFormData.business_unit)
+    );
+    setChildFormData(prev => ({ ...prev, department: 0 }));
+  }, [childFormData.business_unit, departments]);
+
   const handleSubmit = async () => {
-    if (!formData.business_unit || !formData.department || !formData.category || !formData.budget) {
+    if (!childFormData.business_unit || !childFormData.department || 
+        !childFormData.category || !childFormData.budget) {
       alert('Please fill all required fields');
       return;
     }
 
     setLoading(true);
     try {
-      // Prepare data for API
+      // Find category ID from name
+      const categoryId = categories.find(c => c.name === childFormData.category)?.id;
+      if (!categoryId) {
+        throw new Error('Invalid category selected');
+      }
+
       const allocationData = {
-        department: formData.department,
-        category: formData.category,
-        allocated_budget: parseInt(formData.budget),
-        spent_budget: 0,
-        status: 'active'
+        business_unit: childFormData.business_unit,
+        department: childFormData.department,
+        category: categoryId,
+        amount: childFormData.budget,
+        transaction_type: apiFormData.transaction_type,
+        remarks: apiFormData.remarks || `Budget ${apiFormData.transaction_type === 'CREDIT' ? 'allocated' : 'deducted'}`
       };
 
-      // NOTE: Uncomment the API call when backend endpoint is ready
-      // const response = await api.post('/budget-allocations/', allocationData);
-      // const newAllocation = response.data;
+      await api.post('/budget-allocation/', allocationData);
+      await fetchBudgetAllocations();
       
-      // For now, simulate API response
-      const departmentName = filteredDepartments.find(d => d.id === formData.department)?.name || '';
-      const newAllocation: BudgetAllocation = {
-        id: budgetAllocations.length + 1,
-        department_id: formData.department,
-        department_name: departmentName,
-        category: formData.category,
-        allocated_budget: parseInt(formData.budget),
-        spent_budget: 0,
-        status: 'active'
-      };
-
-      setBudgetAllocations(prev => [...prev, newAllocation]);
-      setFormData({ business_unit: 0, department: 0, category: '', budget: '' });      alert('Budget allocation created successfully!');
+      // Reset form
+      setChildFormData({
+        business_unit: childFormData.business_unit, // Keep same business unit
+        department: 0,
+        category: '',
+        budget: ''
+      });
+      
+      setApiFormData({
+        transaction_type: 'CREDIT',
+        remarks: ''
+      });
+      
+      alert('Budget operation completed successfully!');
     } catch (error) {
       console.error('Error creating budget allocation:', error);
-      setError('Failed to create budget allocation. Please try again.');
+      setError('Failed to perform budget operation. Please try again.');
     } finally {
       setLoading(false);
     }
   };
-  // Status functions now moved to AllocationList component
 
+  // Calculate stats
   const calculateTotalBudget = () => {
-    return budgetAllocations.reduce((sum, allocation) => sum + allocation.allocated_budget, 0);
+    return budgetAllocations.reduce((sum, allocation) => 
+      sum + allocation.allocated_budget, 0);
   };
 
   const calculateTotalSpent = () => {
-    return budgetAllocations.reduce((sum, allocation) => sum + allocation.spent_budget, 0);
+    return budgetAllocations.reduce((sum, allocation) => 
+      sum + allocation.spent_budget, 0);
   };
 
   const getDepartmentUsage = (): DepartmentUsage[] => {
-    const departmentStats: DepartmentStats = {};
+    const departmentStats: Record<number, { allocated: number; spent: number; categories: number }> = {};
+    
     budgetAllocations.forEach(allocation => {
-      if (!departmentStats[allocation.department_name]) {
-        departmentStats[allocation.department_name] = {
+      const deptId = allocation.department_id;
+      
+      if (!departmentStats[deptId]) {
+        departmentStats[deptId] = {
           allocated: 0,
           spent: 0,
           categories: 0
         };
       }
-      departmentStats[allocation.department_name].allocated += allocation.allocated_budget;
-      departmentStats[allocation.department_name].spent += allocation.spent_budget;
-      departmentStats[allocation.department_name].categories += 1;
+      
+      departmentStats[deptId].allocated += allocation.allocated_budget;
+      departmentStats[deptId].spent += allocation.spent_budget;
+      departmentStats[deptId].categories += 1;
     });
 
-    return Object.entries(departmentStats).map(([name, stats]) => ({
-      name,
-      allocated: stats.allocated,
-      spent: stats.spent,
-      utilization: (stats.spent / stats.allocated) * 100,
-      categories: stats.categories
-    }));
+    return Object.entries(departmentStats).map(([id, stats]) => {
+      const department = departments.find(d => d.id === parseInt(id));
+      return {
+        name: department?.name || `Department ${id}`,
+        allocated: stats.allocated,
+        spent: stats.spent,
+        utilization: stats.allocated > 0 ? 
+          (stats.spent / stats.allocated) * 100 : 0,
+        categories: stats.categories
+      };
+    });
   };
 
   const getCategoryDistribution = (): CategoryDistribution[] => {
-    const categoryStats: CategoryStats = {};
+    const categoryStats: Record<string, number> = {};
+    
     budgetAllocations.forEach(allocation => {
-      if (!categoryStats[allocation.category]) {
-        categoryStats[allocation.category] = 0;
+      const categoryName = allocation.category;
+      if (!categoryStats[categoryName]) {
+        categoryStats[categoryName] = 0;
       }
-      categoryStats[allocation.category] += allocation.allocated_budget;
+      categoryStats[categoryName] += allocation.allocated_budget;
     });
 
-    return Object.entries(categoryStats).map(([name, value]) => ({ name, value }));
+    return Object.entries(categoryStats).map(([name, value]) => ({
+      name,
+      value
+    }));
   };
 
   const monthlyTrend: MonthlyTrend[] = [
@@ -215,7 +286,7 @@ const BudgetAllocationSystem = () => {    // API data states
     { month: 'May', budget: 200000, spent: 178000 },
   ];
 
-  const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8', '#82CA9D', '#FFC658', '#FF7300'];  return (
+  return (
     <div className="p-6 space-y-6">
       {error && (
         <Alert variant="destructive">
@@ -227,22 +298,74 @@ const BudgetAllocationSystem = () => {    // API data states
       {/* Header */}
       <BudgetHeader businessUnits={businessUnits} departments={departments} />
 
-      {/* Quick Stats */}      <StatsCards budgetAllocations={budgetAllocations} />
+      {/* Quick Stats */}
+      <StatsCards budgetAllocations={budgetAllocations} />
+      
       <TabManager
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         allocationsContent={
           <>
-            <AllocationForm 
-              businessUnits={businessUnits}
-              filteredDepartments={filteredDepartments}
-              categories={categories}
-              formData={formData}
-              setFormData={setFormData}
-              loading={loading}
-              handleSubmit={handleSubmit}
+            <div className="bg-white p-6 rounded-lg shadow-md">
+              <AllocationForm 
+                businessUnits={businessUnits}
+                filteredDepartments={filteredDepartments}
+                categories={categories.map(c => c.name)}
+                formData={childFormData}
+                setFormData={setChildFormData}
+                loading={loading}
+                handleSubmit={handleSubmit}
+              />
+              
+              {/* Additional form fields for API */}
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Transaction Type
+                  </label>
+                  <div className="flex space-x-4">
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        className="form-radio"
+                        name="transaction_type"
+                        value="CREDIT"
+                        checked={apiFormData.transaction_type === 'CREDIT'}
+                        onChange={() => setApiFormData({...apiFormData, transaction_type: 'CREDIT'})}
+                      />
+                      <span className="ml-2">Credit</span>
+                    </label>
+                    <label className="inline-flex items-center">
+                      <input
+                        type="radio"
+                        className="form-radio"
+                        name="transaction_type"
+                        value="DEBIT"
+                        checked={apiFormData.transaction_type === 'DEBIT'}
+                        onChange={() => setApiFormData({...apiFormData, transaction_type: 'DEBIT'})}
+                      />
+                      <span className="ml-2">Debit</span>
+                    </label>
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Remarks
+                  </label>
+                  <textarea
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    value={apiFormData.remarks}
+                    onChange={(e) => setApiFormData({...apiFormData, remarks: e.target.value})}
+                    placeholder="Enter remarks for this transaction"
+                  />
+                </div>
+              </div>
+            </div>
+            
+            <AllocationList 
+              budgetAllocations={budgetAllocations}
             />
-            <AllocationList budgetAllocations={budgetAllocations} />
           </>
         }
         analyticsContent={
@@ -258,15 +381,15 @@ const BudgetAllocationSystem = () => {    // API data states
         reportsContent={
           <ReportsView 
             departmentUsage={getDepartmentUsage()} 
-            overBudgetCategories={budgetAllocations
-              .filter(a => (a.spent_budget / a.allocated_budget) > 0.8)
+            overBudgetCategories={getDepartmentUsage()
+              .filter(a => a.utilization > 80)
               .map(a => ({
-                name: a.category,
-                allocated: a.allocated_budget,
-                spent: a.spent_budget,
-                overspend: a.spent_budget - a.allocated_budget
+                name: a.name,
+                allocated: a.allocated,
+                spent: a.spent,
+                overspend: a.spent - a.allocated
               }))
-            } 
+            }
           />
         }
       />
