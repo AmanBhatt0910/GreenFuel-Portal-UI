@@ -47,7 +47,7 @@ export const ReportsView = ({
                         </span>
                       </div>
                     </TableCell>
-                    <TableCell className="text-right">${dept.allocated.toLocaleString()}</TableCell>
+                    <TableCell className="text-right">₹{dept.allocated.toLocaleString()}</TableCell>
                   </TableRow>
                 ))}
             </TableBody>
@@ -75,7 +75,7 @@ export const ReportsView = ({
                 .map((category) => (
                   <TableRow key={category.name}>
                     <TableCell className="font-medium">{category.name}</TableCell>
-                    <TableCell className="text-red-600">${category.overspend.toLocaleString()}</TableCell>
+                    <TableCell className="text-red-600">₹{category.overspend.toLocaleString()}</TableCell>
                     <TableCell className="text-right">
                       <span className="inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700">
                         {((category.spent / category.allocated) * 100).toFixed(1)}% of Budget

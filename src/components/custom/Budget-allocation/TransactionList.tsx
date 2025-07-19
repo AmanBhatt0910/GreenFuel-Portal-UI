@@ -37,7 +37,7 @@ export const TransactionList = ({ transactions }: TransactionListProps) => {
                     <div>
                       <p className="text-gray-600">Amount</p>
                       <p className={`font-semibold ${transaction.type === 'expense' ? 'text-red-600' : 'text-green-600'}`}>
-                        {transaction.type === 'expense' ? '-' : '+'}${transaction.amount.toLocaleString()}
+                        {transaction.type === 'expense' ? '-' : '+'}₹{transaction.amount.toLocaleString()}
                       </p>
                     </div>
                   </div>
