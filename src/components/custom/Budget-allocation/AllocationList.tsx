@@ -43,15 +43,15 @@ export const AllocationList = ({ budgetAllocations }: AllocationListProps) => {
                   <div className="grid grid-cols-3 gap-4 text-sm">
                     <div>
                       <p className="text-gray-600">Allocated</p>
-                      <p className="font-semibold">${allocation.allocated_budget.toLocaleString()}</p>
+                      <p className="font-semibold">₹{allocation.allocated_budget.toLocaleString()}</p>
                     </div>
                     <div>
                       <p className="text-gray-600">Spent</p>
-                      <p className="font-semibold">${allocation.spent_budget.toLocaleString()}</p>
+                      <p className="font-semibold">₹{allocation.spent_budget.toLocaleString()}</p>
                     </div>
                     <div>
                       <p className="text-gray-600">Remaining</p>
-                      <p className="font-semibold">${(allocation.allocated_budget - allocation.spent_budget).toLocaleString()}</p>
+                      <p className="font-semibold">₹{(allocation.allocated_budget - allocation.spent_budget).toLocaleString()}</p>
                     </div>
                   </div>
 
