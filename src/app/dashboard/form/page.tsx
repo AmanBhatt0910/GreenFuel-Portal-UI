@@ -556,7 +556,6 @@ export default function AssetRequestForm() {
     }
   };
 
-  // Reset the form
   const resetForm = () => {
     const initialData = getInitialFormData();
     if (userInfo) {

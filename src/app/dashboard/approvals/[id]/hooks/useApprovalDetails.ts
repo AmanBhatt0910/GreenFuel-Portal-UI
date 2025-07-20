@@ -41,6 +41,7 @@ interface UseApprovalDetailsReturn {
   isApproving: boolean;
   isRejecting: boolean;
   assestDetails: any;
+  attachments: any[];
 }
 
 /**
@@ -77,6 +78,7 @@ export default function useApprovalDetails({
   const [form, setForm] = useState<ApprovalForm | null>(null);
   const [loading, setLoading] = useState(true);
   const [assestDetails, setassestDetails] = useState();
+  const [attachments, setAttachments] = useState<any[]>([]);
   const [error, setError] = useState<Error | null>(null);
   const [comments, setComments] = useState<Comment[]>([]);
   const [newComment, setNewComment] = useState("");
@@ -296,6 +298,7 @@ export default function useApprovalDetails({
       if (formData && formData.id) {
         await fetchAssetDetails(formData.id);
         await fetchComments(formData.id);
+        await fetchAttachments(formData.id);
       }
 
     } catch (err) {
@@ -350,6 +353,23 @@ export default function useApprovalDetails({
       console.error("Error fetching comments:", error);
     } finally {
       setIsChatLoading(false);
+    }
+  };
+
+  // Fetch attachments for the form
+  const fetchAttachments = async (formId: number | string) => {
+    try {
+      const response = await api.get(`/approval-attachments?form_id=${formId}`);
+      console.log('Attachments response:', response.data);
+      
+      if (response.data && Array.isArray(response.data)) {
+        setAttachments(response.data);
+      } else {
+        setAttachments([]);
+      }
+    } catch (error) {
+      console.error("Error fetching attachments:", error);
+      setAttachments([]);
     }
   };
 
@@ -532,6 +552,7 @@ export default function useApprovalDetails({
     isChatLoading,
     isApproving,
     isRejecting,
-    assestDetails
+    assestDetails,
+    attachments
   };
 }
