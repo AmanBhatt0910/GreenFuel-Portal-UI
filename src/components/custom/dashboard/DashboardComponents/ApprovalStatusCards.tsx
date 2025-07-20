@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { 
   Clock, 
@@ -6,7 +6,8 @@ import {
   XCircle, 
   ChevronRight, 
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  Loader
 } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
 
@@ -84,6 +85,7 @@ interface StatusCardProps {
   color: string;
   trend?: number;
   progress?: number;
+  loading?: boolean;
 }
 
 const StatusCard: React.FC<StatusCardProps> = ({
@@ -93,7 +95,8 @@ const StatusCard: React.FC<StatusCardProps> = ({
   icon,
   color,
   trend = 0,
-  progress = 0
+  progress = 0,
+  loading = false
 }) => {
   // Determine trend icon and color
   const TrendIcon = trend > 0 ? TrendingUp : TrendingDown;
@@ -151,80 +154,133 @@ const StatusCard: React.FC<StatusCardProps> = ({
         
         <div className="flex flex-col space-y-4">
           <div className="flex items-end justify-between">
-            <motion.div 
-              className="text-3xl font-bold text-gray-900 dark:text-white"
-              initial={{ opacity: 0, scale: 0.5 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ 
-                delay: 0.4, 
-                type: "spring", 
-                stiffness: 100 
-              }}
-            >
-              {count}
-            </motion.div>
-            
-            {trend !== 0 && (
-              <div className={`flex items-center text-sm ${trendColor}`}>
-                <TrendIcon className="h-3 w-3 mr-1" />
-                <span>{trendText}</span>
+            {loading ? (
+              <div className="flex items-center justify-center w-full h-12">
+                <Loader className="animate-spin h-5 w-5 text-gray-400" />
               </div>
+            ) : (
+              <>
+                <motion.div 
+                  className="text-3xl font-bold text-gray-900 dark:text-white"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ 
+                    delay: 0.4, 
+                    type: "spring", 
+                    stiffness: 100 
+                  }}
+                >
+                  {count}
+                </motion.div>
+                
+                {trend !== 0 && (
+                  <div className={`flex items-center text-sm ${trendColor}`}>
+                    <TrendIcon className="h-3 w-3 mr-1" />
+                    <span>{trendText}</span>
+                  </div>
+                )}
+              </>
             )}
           </div>
           
           {/* Progress bar */}
-          <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-            <motion.div 
-              className={`h-full rounded-full ${classes.progress}`}
-              variants={progressVariants}
-              initial="hidden"
-              animate="visible"
-              custom={progress}
-            />
-          </div>
+          {!loading && (
+            <div className="h-1.5 w-full bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+              <motion.div 
+                className={`h-full rounded-full ${classes.progress}`}
+                variants={progressVariants}
+                initial="hidden"
+                animate="visible"
+                custom={progress}
+              />
+            </div>
+          )}
           
           {/* View details link */}
-          <div className="pt-2">
-            <a href="#" className={`text-sm font-medium ${classes.text} flex items-center hover:underline`}>
-              View Details
-              <ChevronRight className="h-3 w-3 ml-1" />
-            </a>
-          </div>
+          {!loading && (
+            <div className="pt-2">
+              <a href="#" className={`text-sm font-medium ${classes.text} flex items-center hover:underline`}>
+                View Details
+                <ChevronRight className="h-3 w-3 ml-1" />
+              </a>
+            </div>
+          )}
         </div>
       </div>
     </motion.div>
   );
 };
 
+interface YearlyStatsData {
+  month: string;
+  created: number;
+  approved: number;
+  rejected: number;
+}
+
+export interface YearlyStatsResponse {
+  year: number;
+  data: YearlyStatsData[];
+}
+
 interface ApprovalStatusCardsProps {
-  yearlyStats?: {
-    year: number;
-    data: {
-      month: string;
-      created: number;
-      approved: number;
-      rejected: number;
-    }[];
-  };
+  yearlyStats?: YearlyStatsResponse;
 }
 
 const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }) => {
+  const [stats, setStats] = useState<YearlyStatsResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const api = useAxios();
+  
+  useEffect(() => {
+    const fetchYearlyStats = async () => {
+      try {
+        setLoading(true);
+        const currentYear = new Date().getFullYear();
+        const response = await api.get<YearlyStatsResponse>(`/yearly-stats?year=${currentYear}`);
+        setStats(response.data);
+      } catch (error) {
+        console.error("Error fetching yearly stats:", error);
+        // Fallback to current year with empty data
+        setStats({
+          year: new Date().getFullYear(),
+          data: Array(12).fill(0).map((_, i) => ({
+            month: new Date(0, i).toLocaleString('default', { month: 'long' }),
+            created: 0,
+            approved: 0,
+            rejected: 0
+          }))
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    // Use passed data if available, otherwise fetch
+    if (yearlyStats) {
+      setStats(yearlyStats);
+      setLoading(false);
+    } else {
+      fetchYearlyStats();
+    }
+  }, [yearlyStats]);
+
   // Get current month
   const currentMonth = new Date().toLocaleString('default', { month: 'long' });
   
   // Find current month data
-  const currentMonthData = yearlyStats?.data.find(
+  const currentMonthData = stats?.data.find(
     month => month.month === currentMonth
   );
   
   // Calculate totals
-  const totalCreated = yearlyStats?.data.reduce(
+  const totalCreated = stats?.data.reduce(
     (sum, month) => sum + month.created, 0
   ) || 0;
-  const totalApproved = yearlyStats?.data.reduce(
+  const totalApproved = stats?.data.reduce(
     (sum, month) => sum + month.approved, 0
   ) || 0;
-  const totalRejected = yearlyStats?.data.reduce(
+  const totalRejected = stats?.data.reduce(
     (sum, month) => sum + month.rejected, 0
   ) || 0;
 
@@ -234,33 +290,53 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }
   const rejectionRate = totalCreated > 0 ? 
     Math.round((totalRejected / totalCreated) * 100) : 0;
   
+  // Calculate trends (month-over-month change)
+  const calculateTrend = (current: number, previous: number) => {
+    if (previous === 0) return current > 0 ? 100 : 0;
+    return Math.round(((current - previous) / previous) * 100);
+  };
+
+  // Find previous month data
+  const currentMonthIndex = new Date().getMonth();
+  const previousMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1;
+  const previousMonthData = stats?.data[previousMonthIndex];
+  
   // Create card data based on API response
   const cardData = [
     {
-      title: "Pending Approval",
-      count: 0,
-      description: "Requests awaiting review",
+      title: "Created This Month",
+      count: currentMonthData?.created || 0,
+      description: "Requests created this month",
       icon: <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
       color: "amber",
-      trend: 8,
-      progress: 65
+      trend: calculateTrend(
+        currentMonthData?.created || 0,
+        previousMonthData?.created || 0
+      ),
+      progress: Math.min(100, Math.round((currentMonthData?.created || 0) / 100))
     },
     {
-      title: "Approved Requests",
+      title: "Approved This Month",
       count: currentMonthData?.approved || 0,
       description: "Requests approved this month",
       icon: <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
       color: "green",
-      trend: approvalRate > 50 ? 12 : -5,
+      trend: calculateTrend(
+        currentMonthData?.approved || 0,
+        previousMonthData?.approved || 0
+      ),
       progress: approvalRate
     },
     {
-      title: "Rejected Requests",
+      title: "Rejected This Month",
       count: currentMonthData?.rejected || 0,
       description: "Requests rejected this month",
       icon: <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
       color: "red",
-      trend: rejectionRate > 20 ? -5 : 3,
+      trend: calculateTrend(
+        currentMonthData?.rejected || 0,
+        previousMonthData?.rejected || 0
+      ),
       progress: rejectionRate
     }
   ];
@@ -282,6 +358,7 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }
           color={card.color}
           trend={card.trend}
           progress={card.progress}
+          loading={loading}
         />
       ))}
     </motion.div>

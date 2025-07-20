@@ -78,7 +78,7 @@ const AppHeader = () => {
 
       <div className="flex items-center gap-3">
         <div className="relative">
-          <Button
+          {/* <Button
             variant="ghost"
             size="icon"
             className="relative text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full"
@@ -90,7 +90,7 @@ const AppHeader = () => {
                 {unreadCount}
               </Badge>
             )}
-          </Button>
+          </Button> */}
           
           {showNotifications && (
             <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 z-50">
