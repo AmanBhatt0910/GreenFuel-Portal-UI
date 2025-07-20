@@ -150,11 +150,10 @@ const ApprovalAccessPage = () => {
         const response = await api.get(`/departments/?business_unit=${formData.business_unit}`);
         setDepartments(response.data);
         
-        // Reset department selection when business unit changes
         setFormData(prev => ({
           ...prev,
           department: 0,
-          level: 1 // Reset level back to 1 when business unit changes
+          level: 1 
         }));
       } catch (error) {
         console.error('Error fetching departments:', error);
@@ -166,7 +165,6 @@ const ApprovalAccessPage = () => {
     fetchDepartments();
   }, [formData.business_unit]);
   
-  // Set the next level automatically when a department is selected
   useEffect(() => {
     if (!formData.department || formData.department === 0) return;
     
@@ -176,27 +174,21 @@ const ApprovalAccessPage = () => {
     );
     
     if (departmentApprovers.length > 0) {
-      // Find the highest level used for this department
       const highestLevel = Math.max(...departmentApprovers.map(a => a.level));
       console.log(`Department ${formData.department} has approvers with highest level: ${highestLevel}`);
       
-      // Set the level to the next available level
       setFormData(prev => ({
         ...prev,
         level: highestLevel + 1
       }));
     } else {
-      // If no approvers exist for this department, set level to 1
       setFormData(prev => ({
         ...prev,
         level: 1
       }));
     }
   }, [formData.department, approvers]);
-  
-  // Handle form submission
   const handleSubmit = async () => {
-    // Validate form
     if (!formData.user) {
       toast.error('Please select a user');
       return;
@@ -216,11 +208,9 @@ const ApprovalAccessPage = () => {
     try {
       const response = await api.post('/approver/', formData);
       
-      // Find user, business unit, and department details
       const selectedUser = users.find(u => u.id === formData.user);
       const selectedBusinessUnit = businessUnits.find(bu => bu.id === formData.business_unit);
       
-      // Get the actual department object with name
       const selectedDepartment = departments.find(dept => dept.id === formData.department);
       
       if (!selectedDepartment) {
@@ -275,7 +265,6 @@ const ApprovalAccessPage = () => {
     }
   };
   
-  // Handle removing an approver
   const handleRemoveApprover = async (id: number) => {
     if (!window.confirm('Are you sure you want to remove this approver?')) return;
     
@@ -283,7 +272,6 @@ const ApprovalAccessPage = () => {
     try {
       await api.delete(`/approver/${id}/`);
       
-      // Remove from state
       setApprovers(prev => prev.filter(a => a.id !== id));
       
       toast.success('Approver removed successfully');
@@ -295,13 +283,11 @@ const ApprovalAccessPage = () => {
     }
   };
   
-  // Filter users based on search term
   const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     (user.email && user.email.toLowerCase().includes(searchTerm.toLowerCase()))
   );
   
-  // Handle user selection
   const handleUserSelect = (userId: number) => {
     setFormData(prev => ({
       ...prev,

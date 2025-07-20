@@ -69,23 +69,24 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [updating, setUpdating] = useState<boolean>(false);
   const [userData, setUserData] = useState<UserInfoType | null>(null);
-  const [businessUnit, setBusinessUnit] = useState<BusinessUnitType | null>(null);
+  const [businessUnit, setBusinessUnit] = useState<BusinessUnitType | null>(
+    null
+  );
   const [department, setDepartment] = useState<DepartmentType | null>(null);
   const [designation, setDesignation] = useState<DesignationType | null>(null);
   const [businessUnits, setBusinessUnits] = useState<BusinessUnitType[]>([]);
   const [departments, setDepartments] = useState<DepartmentType[]>([]);
   const [designations, setDesignations] = useState<DesignationType[]>([]);
-  
+
   const api = useAxios();
 
-useEffect(() => {
-  const timeout = setTimeout(() => {
-    window.scrollTo(0, 0);
-  }, 100);
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      window.scrollTo(0, 0);
+    }, 100);
 
-  return () => clearTimeout(timeout);
-}, []);
-
+    return () => clearTimeout(timeout);
+  }, []);
 
   // Fetch user data
   const fetchUserData = async () => {
@@ -95,20 +96,20 @@ useEffect(() => {
       const data = response.data as UserInfoType;
       setUserData(data);
       setUserInfo(data);
-      
+
       // Fetch related data
       if (data.business_unit) {
         fetchBusinessUnit(data.business_unit);
       }
-      
+
       if (data.department) {
         fetchDepartment(data.department);
       }
-      
+
       if (data.designation) {
         fetchDesignation(data.designation);
       }
-      
+
       // Fetch all options for dropdowns
       fetchAllBusinessUnits();
       fetchAllDepartments();
@@ -130,7 +131,7 @@ useEffect(() => {
       console.error("Error fetching business unit:", error);
     }
   };
-  
+
   // Fetch department details
   const fetchDepartment = async (id: number | string): Promise<void> => {
     try {
@@ -140,7 +141,7 @@ useEffect(() => {
       console.error("Error fetching department:", error);
     }
   };
-  
+
   // Fetch designation details
   const fetchDesignation = async (id: number | string): Promise<void> => {
     try {
@@ -184,30 +185,39 @@ useEffect(() => {
   // Update user data
   const updateUserData = async (updatedData: Partial<UserInfoType>) => {
     if (!userData) return;
-    
+
     try {
       setUpdating(true);
       const response = await api.put(`/userInfo/${userData.id}/`, updatedData);
-      
+
       if (response.status === 200) {
         // Update local state with new data
         const updatedUserData = { ...userData, ...response.data };
         setUserData(updatedUserData);
         setUserInfo(updatedUserData);
-        
+
         // Refetch related data if those fields were updated
-        if (updatedData.business_unit && updatedData.business_unit !== userData.business_unit) {
+        if (
+          updatedData.business_unit &&
+          updatedData.business_unit !== userData.business_unit
+        ) {
           fetchBusinessUnit(updatedData.business_unit);
         }
-        
-        if (updatedData.department && updatedData.department !== userData.department) {
+
+        if (
+          updatedData.department &&
+          updatedData.department !== userData.department
+        ) {
           fetchDepartment(updatedData.department);
         }
-        
-        if (updatedData.designation && updatedData.designation !== userData.designation) {
+
+        if (
+          updatedData.designation &&
+          updatedData.designation !== userData.designation
+        ) {
           fetchDesignation(updatedData.designation);
         }
-        
+
         toast.success("Profile updated successfully");
       }
     } catch (error) {
@@ -234,16 +244,16 @@ useEffect(() => {
   return (
     <div className="container w-full py-6 space-y-8 p-4">
       <ProfileHeader userData={userData} />
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-6">
-          <PersonalInfoSection 
-            userData={userData} 
-            updateUserData={updateUserData} 
-            updating={updating} 
+          <PersonalInfoSection
+            userData={userData}
+            updateUserData={updateUserData}
+            updating={updating}
           />
-          
-          <WorkInfoSection 
+
+          <WorkInfoSection
             userData={userData}
             businessUnit={businessUnit}
             department={department}
@@ -255,18 +265,18 @@ useEffect(() => {
             updating={updating}
           />
         </div>
-        
+
         <div className="space-y-6">
-          <AddressInfoSection 
-            userData={userData} 
-            updateUserData={updateUserData} 
-            updating={updating} 
+          <AddressInfoSection
+            userData={userData}
+            updateUserData={updateUserData}
+            updating={updating}
           />
-          
-          <AccountInfoSection 
-            userData={userData} 
-            updateUserData={updateUserData} 
-            updating={updating} 
+
+          <AccountInfoSection
+            userData={userData}
+            updateUserData={updateUserData}
+            updating={updating}
           />
         </div>
       </div>

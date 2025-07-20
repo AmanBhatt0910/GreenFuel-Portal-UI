@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -108,14 +110,13 @@ const ProfileCardModern: React.FC<ProfileCardModernProps> = ({
       initial="initial"
       animate="animate"
       exit="exit"
-      layout
     >
-      {/* Decorative background elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <svg className="absolute -right-12 -top-12 w-64 h-64 text-indigo-100 dark:text-indigo-900/20 opacity-50" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      {/* Decorative background elements - with pointer-events-none */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <svg className="absolute -right-12 -top-12 w-64 h-64 text-indigo-100 dark:text-indigo-900/20 opacity-50 pointer-events-none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <path fill="currentColor" d="M39.5,-65.5C50.2,-55.7,57.6,-43.6,63.7,-30.9C69.8,-18.2,74.7,-5,74.4,8.2C74.1,21.5,68.6,34.8,60.3,46.3C51.9,57.8,40.6,67.4,27.7,72.5C14.8,77.6,0.4,78.1,-13.6,75.3C-27.6,72.5,-41.3,66.4,-52.6,56.9C-63.9,47.3,-72.9,34.2,-77.8,19.7C-82.7,5.1,-83.5,-10.9,-78.5,-24.7C-73.5,-38.5,-62.8,-50.1,-49.9,-59.1C-37,-68.1,-22,-74.4,-6.5,-75.3C9,-76.2,28.7,-75.4,39.5,-65.5Z" transform="translate(100 100)" />
         </svg>
-        <svg className="absolute -left-16 -bottom-16 w-64 h-64 text-indigo-100 dark:text-indigo-900/20 opacity-40" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+        <svg className="absolute -left-16 -bottom-16 w-64 h-64 text-indigo-100 dark:text-indigo-900/20 opacity-40 pointer-events-none" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
           <path fill="currentColor" d="M47.7,-73.2C59.9,-66.9,67.3,-51.3,69.5,-36.4C71.8,-21.6,68.9,-7.5,68.1,7.5C67.3,22.5,68.6,38.3,61.9,48.3C55.1,58.2,40.4,62.3,26.3,67.2C12.2,72.1,-1.2,77.8,-14.5,75.9C-27.8,73.9,-40.8,64.2,-50.2,52.7C-59.5,41.1,-65.1,27.7,-67.8,13.7C-70.6,-0.3,-70.4,-14.9,-64.5,-25.8C-58.6,-36.8,-46.9,-44.1,-35.5,-50.7C-24,-57.3,-12,-63.3,2.2,-66.6C16.5,-69.9,33,-79.6,47.7,-73.2Z" transform="translate(100 100)" />
         </svg>
       </div>
@@ -175,9 +176,9 @@ const ProfileCardModern: React.FC<ProfileCardModernProps> = ({
             }
           }}
         >
-          {/* Pulsing ring effect */}
+          {/* Pulsing ring effect - with pointer-events-none */}
           <motion.div 
-            className="absolute inset-0 rounded-full"
+            className="absolute inset-0 rounded-full pointer-events-none"
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ 
               opacity: [0, 0.2, 0],
@@ -435,15 +436,6 @@ const ProfileCardModern: React.FC<ProfileCardModernProps> = ({
                     </p>
                   </div>
                 </motion.div>
-
-                <motion.div 
-                  className="flex items-center"
-                  variants={childVariants}
-                >
-                  <div className="h-8 w-8 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center mr-3">
-                    <CreditCard className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
-                  </div>
-                </motion.div>
               </motion.div>
             </motion.div>
           )}
@@ -451,24 +443,39 @@ const ProfileCardModern: React.FC<ProfileCardModernProps> = ({
       </div>
 
       {/* Action Buttons */}
-      <div className="px-6 pb-6 mt-1">
-        <motion.button 
-          className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2.5 rounded-lg font-medium transition-all shadow-md"
-          whileHover={{ 
-            scale: 1.02,
-            boxShadow: "0 10px 15px -3px rgba(79, 70, 229, 0.3)",
-          }}
-          whileTap={{ scale: 0.98 }}
-          onClick={() => router.push("/dashboard/profile")}
+      <div className="px-6 pb-6 mt-1 relative z-30">
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ 
             opacity: 1, 
             y: 0,
             transition: { delay: 0.7 }
           }}
+          whileHover={{ 
+            scale: 1.02,
+            boxShadow: "0 10px 15px -3px rgba(79, 70, 229, 0.3)",
+          }}
+          whileTap={{ scale: 0.98 }}
+          className="relative z-30"
         >
-          View Full Profile
-        </motion.button>
+          <button 
+            className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white py-2.5 rounded-lg font-medium transition-all shadow-md cursor-pointer relative z-30"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              console.log("Profile button clicked!"); // Debug log
+              try {
+                router.push("/dashboard/profile");
+              } catch (error) {
+                console.error("Navigation error:", error);
+              }
+            }}
+            type="button"
+            style={{ pointerEvents: 'auto', zIndex: 30 }}
+          >
+            View Full Profile
+          </button>
+        </motion.div>
       </div>
     </motion.div>
   );

@@ -11,10 +11,15 @@ import {
   FileText,
   Home,
   Download,
+  AlertCircle,
+  X,
+  Info,
+  Package,
 } from "lucide-react";
 import Link from "next/link";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
+import { toast } from "@/lib/toast-util";
 
 // Import our custom components
 import {
@@ -85,10 +90,10 @@ const getInitialFormData = (): FormDataType => ({
   approvalCategory: "",
   approvalType: "",
   notifyTo: 0,
-  category: 0, 
+  category: 0,
   concerned_department: 0,
-  paybackmonth : "",
-  documentsSummary : "",
+  paybackmonth: "",
+  documentsSummary: "",
 });
 
 export default function AssetRequestForm() {
@@ -111,43 +116,29 @@ export default function AssetRequestForm() {
       try {
         const response = await api.get("/userInfo/");
         const userData = response.data;
-        console.log(userInfo)
+        console.log("User data received:", userData);
         setUser(userData);
 
-        const mergedUserData = {
-          name: userInfo?.name || userData?.name || "",
-          employeeCode: userInfo?.employee_code || userData?.employee_code || "",
-          
-          businessUnit: typeof userData?.business_unit === 'object' 
-            ? userData?.business_unit?.id || 0 
-            : userData?.business_unit || 0,
-          
-          department: typeof userData?.department === 'object' 
-            ? userData?.department?.id || 0 
-            : userData?.department || 0,
-          
-          designation: typeof userData?.designation === 'object' 
-            ? userData?.designation?.id || 0 
-            : userData?.designation || 0
-        };
         setFormData((prevData) => ({
           ...prevData,
-          employeeName: mergedUserData.name,
-          employeeCode: mergedUserData.employeeCode,
-          plant: mergedUserData.businessUnit,
-          initiateDept: mergedUserData.department,
-          designation: mergedUserData.designation
+          employeeName: userInfo?.name || userData?.name || "",
+          employeeCode:
+            userInfo?.employee_code || userData?.employee_code || "",
+          // Remove auto-selection - let user choose manually
+          // plant: 0,
+          // initiateDept: 0,
+          // designation: 0
         }));
       } catch (error) {
         console.error("Error fetching user data:", error);
       }
     };
-    
-    fetchData();
+
+    if (userInfo) {
+      fetchData();
+    }
   }, [userInfo]);
 
-
-  // State for asset management
   const [currentAsset, setCurrentAsset] = useState<AssetItem>({
     title: "",
     description: "",
@@ -160,16 +151,24 @@ export default function AssetRequestForm() {
     null
   );
 
-  // Handle form input changes
   const handleChange = (
     e: React.ChangeEvent<
       HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
     >
   ) => {
     const { name, value } = e.target;
-    
-    
-    if (["plant", "department", "designation", "notifyTo", "category", "concerned_department", "initiateDept"].includes(name)) {
+
+    if (
+      [
+        "plant",
+        "department",
+        "designation",
+        "notifyTo",
+        "category",
+        "concerned_department",
+        "initiateDept",
+      ].includes(name)
+    ) {
       const numValue = value === "" ? 0 : parseInt(value, 10);
       setFormData((prev) => ({
         ...prev,
@@ -200,7 +199,6 @@ export default function AssetRequestForm() {
     setCurrentAsset((prev) => {
       const newAsset = { ...prev, [key]: value };
 
-      // Calculate total when quantity or price changes
       if (key === "quantity" || key === "pricePerUnit") {
         const quantity = key === "quantity" ? Number(value) : prev.quantity;
         const pricePerUnit =
@@ -212,7 +210,6 @@ export default function AssetRequestForm() {
     });
   };
 
-  // Add asset to the list
   const addAssetItem = () => {
     if (!currentAsset.title.trim()) return;
 
@@ -238,7 +235,6 @@ export default function AssetRequestForm() {
     });
   };
 
-  // Remove asset from the list
   const removeAssetItem = (index: number) => {
     const updatedAssets = formData.assets.filter((_, i) => i !== index);
     const totalAmount = updatedAssets.reduce(
@@ -253,13 +249,11 @@ export default function AssetRequestForm() {
     }));
   };
 
-  // Start editing an asset
   const startEditingAsset = (index: number) => {
     setCurrentAsset(formData.assets[index]);
     setEditingAssetIndex(index);
   };
 
-  // Update asset being edited
   const updateEditedAsset = () => {
     if (editingAssetIndex === null) return;
 
@@ -289,7 +283,6 @@ export default function AssetRequestForm() {
     setEditingAssetIndex(null);
   };
 
-  // Cancel editing
   const cancelEditing = () => {
     setCurrentAsset({
       title: "",
@@ -325,9 +318,35 @@ export default function AssetRequestForm() {
     setCurrentStep((prev) => prev - 1);
   };
 
-  // Go to next step
   const goToNextStep = () => {
-    if (!isStepValid()) return;
+    if (!isStepValid()) {
+      switch (currentStep) {
+        case 0:
+          toast.warning(
+            "Please fill in all required employee information fields (Business Unit, Department, and Designation)."
+          );
+          break;
+        case 1:
+          toast.warning("Please add at least one asset to your request.");
+          break;
+        case 2:
+          toast.warning(
+            "Please complete all required fields: Request Category, Concerned Department, Budget Approval Category, Approval Type, Reason for Request, and Notify Request to."
+          );
+          break;
+        case 3:
+          toast.warning(
+            "Please agree to the company policy terms before submitting."
+          );
+          break;
+        default:
+          toast.warning(
+            "Please complete all required fields before proceeding."
+          );
+      }
+      return;
+    }
+
     if (currentStep === formSteps.length - 1) {
       handleSubmit();
       return;
@@ -340,11 +359,12 @@ export default function AssetRequestForm() {
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
+
       const formDataToSubmit = new FormData();
-      
-      let currentCategoryLevel = 1; 
-      let currentFormLevel = 0; 
-      
+
+      let currentCategoryLevel = 1;
+      let currentFormLevel = 0;
+
       if (!formData.category || formData.category === 0) {
         currentCategoryLevel = 0;
         currentFormLevel = 1;
@@ -355,13 +375,15 @@ export default function AssetRequestForm() {
         business_unit: formData.plant,
         department: formData.initiateDept,
         designation: formData.designation,
-        total: Number(formData.assetAmount),
+        total: Number(formData.assetAmount) || 0,
         reason: formData.reason,
         documentsSummary: formData.documentsSummary || "",
         paybackmonth: formData.paybackmonth || "",
         policy_agreement: formData.policyAgreement,
-        initiate_dept: formData.initiateDept ? String(formData.initiateDept) : "",
-        status: "pending", 
+        initiate_dept: formData.initiateDept
+          ? String(formData.initiateDept)
+          : "",
+        status: "pending",
         benefit_to_organisation: formData.benefitToOrg,
         approval_category: formData.approvalCategory,
         approval_type: formData.approvalType,
@@ -381,53 +403,93 @@ export default function AssetRequestForm() {
         })),
       };
 
-
       formDataToSubmit.append("user", String(submittingFormData.user || 0));
-      formDataToSubmit.append("business_unit", String(submittingFormData.business_unit));
-      formDataToSubmit.append("department", String(submittingFormData.department));
-      formDataToSubmit.append("designation", String(submittingFormData.designation));
+      formDataToSubmit.append(
+        "business_unit",
+        String(submittingFormData.business_unit)
+      );
+      formDataToSubmit.append(
+        "department",
+        String(submittingFormData.department)
+      );
+      formDataToSubmit.append(
+        "designation",
+        String(submittingFormData.designation)
+      );
       formDataToSubmit.append("total", String(submittingFormData.total));
       formDataToSubmit.append("reason", submittingFormData.reason);
-      formDataToSubmit.append("document_enclosed_summary", submittingFormData.documentsSummary || "");
-      formDataToSubmit.append("payback_period", submittingFormData.paybackmonth || "");
-      formDataToSubmit.append("policy_agreement", String(submittingFormData.policy_agreement));
-      formDataToSubmit.append("initiate_dept", submittingFormData.initiate_dept ? String(submittingFormData.initiate_dept) : "");
+      formDataToSubmit.append(
+        "document_enclosed_summary",
+        submittingFormData.documentsSummary || ""
+      );
+      formDataToSubmit.append(
+        "payback_period",
+        submittingFormData.paybackmonth || ""
+      );
+      formDataToSubmit.append(
+        "policy_agreement",
+        String(submittingFormData.policy_agreement)
+      );
+      formDataToSubmit.append(
+        "initiate_dept",
+        submittingFormData.initiate_dept
+          ? String(submittingFormData.initiate_dept)
+          : ""
+      );
       formDataToSubmit.append("status", "pending");
-      formDataToSubmit.append("benefit_to_organisation", submittingFormData.benefit_to_organisation);
-      formDataToSubmit.append("approval_category", submittingFormData.approval_category);
-      formDataToSubmit.append("approval_type", submittingFormData.approval_type);
-      formDataToSubmit.append("notify_to", String(submittingFormData.notify_to));
-      formDataToSubmit.append("form_category", String(submittingFormData.form_category));
-      formDataToSubmit.append("concerned_department", String(submittingFormData.concerned_department));
-      formDataToSubmit.append("current_category_level", String(submittingFormData.current_category_level));
-      formDataToSubmit.append("current_form_level", String(submittingFormData.current_form_level));
+      formDataToSubmit.append(
+        "benefit_to_organisation",
+        submittingFormData.benefit_to_organisation
+      );
+      formDataToSubmit.append(
+        "approval_category",
+        submittingFormData.approval_category
+      );
+      formDataToSubmit.append(
+        "approval_type",
+        submittingFormData.approval_type
+      );
+      formDataToSubmit.append(
+        "notify_to",
+        String(submittingFormData.notify_to)
+      );
+      formDataToSubmit.append(
+        "form_category",
+        String(submittingFormData.form_category)
+      );
+      formDataToSubmit.append(
+        "concerned_department",
+        String(submittingFormData.concerned_department)
+      );
+      formDataToSubmit.append(
+        "current_category_level",
+        String(submittingFormData.current_category_level)
+      );
+      formDataToSubmit.append(
+        "current_form_level",
+        String(submittingFormData.current_form_level)
+      );
       formDataToSubmit.append("rejected", String(submittingFormData.rejected));
-      formDataToSubmit.append("rejection_reason", String(submittingFormData.rejection_reason));
+      formDataToSubmit.append(
+        "rejection_reason",
+        String(submittingFormData.rejection_reason)
+      );
 
       submittingFormData.items.forEach((item: any) => {
         formDataToSubmit.append("items", JSON.stringify(item));
       });
-      
+
       if (formAttachments && formAttachments.length > 0) {
         formAttachments.forEach((file, index) => {
           formDataToSubmit.append(`form_attachments`, file);
         });
       }
-      
+
       if (assetAttachments && assetAttachments.length > 0) {
         assetAttachments.forEach((file, index) => {
           formDataToSubmit.append(`asset_attachments`, file);
         });
       }
-
-      for (let [key, value] of formDataToSubmit.entries()) {
-        if (value instanceof File) {
-          console.log(`${key}: File name = ${value.name}, size = ${value.size} bytes`);
-        } else {
-          console.log(`${key}:`, value);
-        }
-      }
-      
 
       const response = await api.post("approval-requests/", formDataToSubmit, {
         headers: {
@@ -439,13 +501,56 @@ export default function AssetRequestForm() {
         setBudgetId(response.data.budget_id);
         setIsSubmitting(false);
         setIsSubmitted(true);
+        toast.success("Asset request submitted successfully!");
         return;
       }
 
       setIsSubmitting(false);
       setIsSubmitted(false);
-    } catch (error) {
+      toast.error(`${response.data?.error || response.data?.message}`);
+    } catch (error: any) {
       console.error("Error submitting form:", error);
+
+      let errorMessage = "An unexpected error occurred. Please try again.";
+
+      if (error.response?.data) {
+        // Handle different types of error responses
+        const errorData = error.response.data;
+
+        if (typeof errorData === "string") {
+          errorMessage = errorData;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (
+          errorData.non_field_errors &&
+          Array.isArray(errorData.non_field_errors)
+        ) {
+          errorMessage = errorData.non_field_errors[0];
+        } else {
+          // Handle field-specific errors
+          const firstErrorKey = Object.keys(errorData)[0];
+          if (firstErrorKey && errorData[firstErrorKey]) {
+            const fieldError = errorData[firstErrorKey];
+            if (Array.isArray(fieldError)) {
+              errorMessage = fieldError[0];
+            } else if (typeof fieldError === "string") {
+              errorMessage = fieldError;
+            }
+          }
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      // Show the error toast with the extracted message
+      toast.error(errorMessage, {
+        duration: 5000,
+      });
+
       setIsSubmitting(false);
       setIsSubmitted(false);
     }
@@ -463,14 +568,34 @@ export default function AssetRequestForm() {
     setIsSubmitted(false);
   };
 
-  const isStepValid = () => {
+  const isStepValid = (): boolean => {
     switch (currentStep) {
       case 0:
-        return true;
+        return !!(
+          formData.plant &&
+          formData.plant !== 0 &&
+          formData.initiateDept &&
+          formData.initiateDept !== 0 &&
+          formData.designation &&
+          formData.designation !== 0
+        );
       case 1:
         return formData.assets.length > 0;
       case 2:
-        return formData.assets.length > 0 && formData.reason.trim() !== "";
+        return !!(
+          formData.assets.length > 0 &&
+          formData.reason.trim() !== "" &&
+          formData.category &&
+          formData.category !== 0 &&
+          formData.concerned_department &&
+          formData.concerned_department !== 0 &&
+          formData.approvalCategory &&
+          formData.approvalCategory.trim() !== "" &&
+          formData.approvalType &&
+          formData.approvalType.trim() !== "" &&
+          formData.notifyTo &&
+          formData.notifyTo !== 0
+        );
       case 3:
         return formData.policyAgreement;
       default:
@@ -479,14 +604,34 @@ export default function AssetRequestForm() {
   };
 
   // Check if a step is complete
-  const isStepComplete = (step: number) => {
+  const isStepComplete = (step: number): boolean => {
     switch (step) {
       case 0:
-        return true;
+        return !!(
+          formData.plant &&
+          formData.plant !== 0 &&
+          formData.initiateDept &&
+          formData.initiateDept !== 0 &&
+          formData.designation &&
+          formData.designation !== 0
+        );
       case 1:
         return formData.assets.length > 0;
       case 2:
-        return formData.assets.length > 0 && formData.reason.trim() !== "";
+        return !!(
+          formData.assets.length > 0 &&
+          formData.reason.trim() !== "" &&
+          formData.category &&
+          formData.category !== 0 &&
+          formData.concerned_department &&
+          formData.concerned_department !== 0 &&
+          formData.approvalCategory &&
+          formData.approvalCategory.trim() !== "" &&
+          formData.approvalType &&
+          formData.approvalType.trim() !== "" &&
+          formData.notifyTo &&
+          formData.notifyTo !== 0
+        );
       case 3:
         return formData.policyAgreement;
       default:
@@ -494,232 +639,249 @@ export default function AssetRequestForm() {
     }
   };
 
-// Push here
-const generatePDF = async (): Promise<void> => {
-  let businessUnitName: string = "N/A";
-  let departmentName: string = "N/A";
-  let designationName: string = "N/A";
-  
-  try {
-    if (formData.plant) {
-      const businessUnitResponse = await api.get(
-        `business-units/${formData.plant}/`
-      );
-      if (businessUnitResponse.data?.name) {
-        businessUnitName = businessUnitResponse.data.name;
+  // Push here
+  const generatePDF = async (): Promise<void> => {
+    let businessUnitName: string = "N/A";
+    let departmentName: string = "N/A";
+    let designationName: string = "N/A";
+
+    try {
+      if (formData.plant) {
+        const businessUnitResponse = await api.get(
+          `business-units/${formData.plant}/`
+        );
+        if (businessUnitResponse.data?.name) {
+          businessUnitName = businessUnitResponse.data.name;
+        }
       }
-    }
-    
-    if (formData.initiateDept) {
-      const departmentResponse = await api.get(
-        `/departments/${formData.initiateDept}/`
-      );
-      if (departmentResponse.data?.name) {
-        departmentName = departmentResponse.data.name;
+
+      if (formData.initiateDept) {
+        const departmentResponse = await api.get(
+          `/departments/${formData.initiateDept}/`
+        );
+        if (departmentResponse.data?.name) {
+          departmentName = departmentResponse.data.name;
+        }
       }
-    }
-    
-    if (formData.designation) {
-      const designationResponse = await api.get(
-        `/designations/${formData.designation}/`
-      );
-      if (designationResponse.data?.name) {
-        designationName = designationResponse.data.name;
+
+      if (formData.designation) {
+        const designationResponse = await api.get(
+          `/designations/${formData.designation}/`
+        );
+        if (designationResponse.data?.name) {
+          designationName = designationResponse.data.name;
+        }
       }
+    } catch (error) {
+      console.error("Error fetching entity names:", error);
     }
-  } catch (error) {
-    console.error("Error fetching entity names:", error);
-  }
 
-  const doc = new jsPDF({
-    orientation: "portrait",
-    unit: "mm",
-    format: "a4",
-  });
-
-  // Fixed color type definitions with explicit tuple types
-  const colors: {
-    primary: [number, number, number];
-    secondary: [number, number, number];
-    text: [number, number, number];
-    background: [number, number, number];
-    border: [number, number, number];
-  } = {
-    primary: [44, 62, 80],
-    secondary: [52, 152, 219],
-    text: [51, 51, 51],
-    background: [245, 245, 245],
-    border: [221, 221, 221]
-  };
-
-  // Header Section
-  try {
-    const imgData: string = "/green.png"; 
-    doc.addImage(imgData, "PNG", 14, 10, 35, 15);
-  } catch (error) {
-    doc.setFontSize(18);
-    doc.setFillColor(...colors.primary);
-    doc.setFont("helvetica", "bold");
-    doc.text("GREEN CORP", 14, 20);
-  }
-
-  // Title Section
-  doc.setFontSize(20);
-  doc.setTextColor(...colors.primary);
-  doc.setFont("helvetica", "bold");
-  doc.text("ASSET REQUEST", 105, 25, { align: "center" });
-
-  // Subtitle
-  doc.setFontSize(12);
-  doc.setTextColor(...colors.secondary);
-  doc.text(`Request #${budgetId}`, 105, 33, { align: "center" });
-
-  // Divider Line
-  doc.setDrawColor(...colors.border);
-  doc.setLineWidth(0.5);
-  doc.line(14, 38, 196, 38);
-
-  // Metadata
-  doc.setFontSize(10);
-  doc.setTextColor(...colors.text);
-  doc.setFont("helvetica", "normal");
-  doc.text(`Generated: ${format(new Date(), "MMMM dd, yyyy")}`, 14, 45);
-  doc.text("CONFIDENTIAL", 196, 45, { align: "right" });
-
-  // Introduction
-  doc.setFontSize(10);
-  const introText = "This document contains a formal request for company assets...";
-  const splitIntro = doc.splitTextToSize(introText, 180);
-  doc.text(splitIntro, 14, 55);
-
-  let y: number = 55 + splitIntro.length * 5 + 10;
-
-  // Requestor Information Section
-  const addSectionHeader = (title: string, y: number) => {
-    doc.setFillColor(...colors.background);
-    doc.rect(14, y, 182, 10, "F");
-    doc.setFontSize(12);
-    doc.setTextColor(...colors.primary);
-    doc.setFont("helvetica", "bold");
-    doc.text(title, 14, y + 7);
-  };
-
-  addSectionHeader("REQUESTOR INFORMATION", y);
-  y += 15;
-
-  // Requestor Info Card
-  doc.setFillColor(255, 255, 255);
-  doc.setDrawColor(...colors.border);
-  doc.roundedRect(14, y, 182, 40, 3, 3, "S");
-
-  const addInfoRow = (label: string, value: string, x: number, yOffset: number) => {
-    doc.setFontSize(10);
-    doc.setTextColor(100, 100, 100);
-    doc.text(label, x, y + yOffset);
-    doc.setFontSize(10);
-    doc.setTextColor(...colors.text);
-    doc.text(value, x + 35, y + yOffset);
-  };
-
-  addInfoRow("Name:", formData.employeeName, 20, 8);
-  addInfoRow("Employee ID:", formData.employeeCode, 20, 16);
-  addInfoRow("Department:", departmentName, 20, 24);
-  addInfoRow("Business Unit:", businessUnitName, 110, 8);
-  addInfoRow("Designation:", designationName, 110, 16);
-  addInfoRow("Status:", "Pending Approval", 110, 24);
-
-  y += 45;
-
-  // Asset Summary Section
-  addSectionHeader("ASSET SUMMARY", y);
-  y += 15;
-
-  if (formData.assets?.length) {
-    autoTable(doc, {
-      startY: y,
-      head: [["Asset", "Description", "SAP Code", "Qty", "Unit Price", "Total"]],
-      body: formData.assets.map(asset => [
-        asset.title,
-        asset.description || "-",
-        asset.sapItemCode || "N/A",
-        asset.quantity,
-        formatCurrency(asset.pricePerUnit),
-        formatCurrency(asset.total)
-      ]),
-      theme: "grid",
-      styles: {
-        fontSize: 9,
-        cellPadding: 4,
-        lineColor: colors.border,
-        textColor: colors.text
-      },
-      headStyles: {
-        fillColor: colors.primary,
-        textColor: 255,
-        fontSize: 10
-      },
-      columnStyles: {
-        3: { halign: "right" },
-        4: { halign: "right" },
-        5: { halign: "right" }
-      },
-      foot: [
-        ["", "", "", "", "Total:", formatCurrency(formData.assetAmount)]
-      ]
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: "a4",
     });
 
-    y = (doc as any).lastAutoTable.finalY + 10;
-  } else {
+    // Fixed color type definitions with explicit tuple types
+    const colors: {
+      primary: [number, number, number];
+      secondary: [number, number, number];
+      text: [number, number, number];
+      background: [number, number, number];
+      border: [number, number, number];
+    } = {
+      primary: [44, 62, 80],
+      secondary: [52, 152, 219],
+      text: [51, 51, 51],
+      background: [245, 245, 245],
+      border: [221, 221, 221],
+    };
+
+    // Header Section
+    try {
+      const imgData: string = "/green.png";
+      doc.addImage(imgData, "PNG", 14, 10, 35, 15);
+    } catch (error) {
+      doc.setFontSize(18);
+      doc.setFillColor(...colors.primary);
+      doc.setFont("helvetica", "bold");
+      doc.text("GREEN CORP", 14, 20);
+    }
+
+    // Title Section
+    doc.setFontSize(20);
+    doc.setTextColor(...colors.primary);
+    doc.setFont("helvetica", "bold");
+    doc.text("ASSET REQUEST", 105, 25, { align: "center" });
+
+    // Subtitle
+    doc.setFontSize(12);
+    doc.setTextColor(...colors.secondary);
+    doc.text(`Request #${budgetId}`, 105, 33, { align: "center" });
+
+    // Divider Line
+    doc.setDrawColor(...colors.border);
+    doc.setLineWidth(0.5);
+    doc.line(14, 38, 196, 38);
+
+    // Metadata
     doc.setFontSize(10);
     doc.setTextColor(...colors.text);
-    doc.text("No assets requested", 14, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Generated: ${format(new Date(), "MMMM dd, yyyy")}`, 14, 45);
+    doc.text("CONFIDENTIAL", 196, 45, { align: "right" });
+
+    // Introduction
+    doc.setFontSize(10);
+    const introText =
+      "This document contains a formal request for company assets...";
+    const splitIntro = doc.splitTextToSize(introText, 180);
+    doc.text(splitIntro, 14, 55);
+
+    let y: number = 55 + splitIntro.length * 5 + 10;
+
+    // Requestor Information Section
+    const addSectionHeader = (title: string, y: number) => {
+      doc.setFillColor(...colors.background);
+      doc.rect(14, y, 182, 10, "F");
+      doc.setFontSize(12);
+      doc.setTextColor(...colors.primary);
+      doc.setFont("helvetica", "bold");
+      doc.text(title, 14, y + 7);
+    };
+
+    addSectionHeader("REQUESTOR INFORMATION", y);
     y += 15;
-  }
 
-  // Justification Section
-  addSectionHeader("BUSINESS JUSTIFICATION", y);
-  y += 15;
+    // Requestor Info Card
+    doc.setFillColor(255, 255, 255);
+    doc.setDrawColor(...colors.border);
+    doc.roundedRect(14, y, 182, 40, 3, 3, "S");
 
-  doc.setFontSize(10);
-  doc.setTextColor(...colors.text);
-  const splitReason = doc.splitTextToSize(formData.reason || "No justification provided", 180);
-  doc.text(splitReason, 14, y);
-  y += splitReason.length * 5 + 15;
+    const addInfoRow = (
+      label: string,
+      value: string,
+      x: number,
+      yOffset: number
+    ) => {
+      doc.setFontSize(10);
+      doc.setTextColor(100, 100, 100);
+      doc.text(label, x, y + yOffset);
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.text);
+      doc.text(value, x + 35, y + yOffset);
+    };
 
-  // Policy Agreement Section
-  addSectionHeader("POLICY AGREEMENT", y);
-  y += 15;
+    addInfoRow("Name:", formData.employeeName, 20, 8);
+    addInfoRow("Employee ID:", formData.employeeCode, 20, 16);
+    addInfoRow("Department:", departmentName, 20, 24);
+    addInfoRow("Business Unit:", businessUnitName, 110, 8);
+    addInfoRow("Designation:", designationName, 110, 16);
+    addInfoRow("Status:", "Pending Approval", 110, 24);
 
-  doc.setFontSize(10);
-  doc.setTextColor(...colors.text);
-  const policyText = "The requestor has acknowledged and agreed to comply with all company policies...";
-  const splitPolicy = doc.splitTextToSize(policyText, 180);
-  doc.text(splitPolicy, 14, y);
+    y += 45;
 
-  // Footer
-  const pageCount = doc.getNumberOfPages();
-  for (let i = 1; i <= pageCount; i++) {
-    doc.setPage(i);
-    doc.setFontSize(8);
+    // Asset Summary Section
+    addSectionHeader("ASSET SUMMARY", y);
+    y += 15;
+
+    if (formData.assets?.length) {
+      autoTable(doc, {
+        startY: y,
+        head: [
+          ["Asset", "Description", "SAP Code", "Qty", "Unit Price", "Total"],
+        ],
+        body: formData.assets.map((asset) => [
+          asset.title,
+          asset.description || "-",
+          asset.sapItemCode || "N/A",
+          asset.quantity,
+          formatCurrency(Number(asset.pricePerUnit) || 0),
+          formatCurrency(Number(asset.total) || 0),
+        ]),
+        theme: "grid",
+        styles: {
+          fontSize: 9,
+          cellPadding: 4,
+          lineColor: colors.border,
+          textColor: colors.text,
+        },
+        headStyles: {
+          fillColor: colors.primary,
+          textColor: 255,
+          fontSize: 10,
+        },
+        columnStyles: {
+          3: { halign: "right" },
+          4: { halign: "right" },
+          5: { halign: "right" },
+        },
+        foot: [
+          [
+            "",
+            "",
+            "",
+            "",
+            "Total:",
+            formatCurrency(Number(formData.assetAmount) || 0),
+          ],
+        ],
+      });
+
+      y = (doc as any).lastAutoTable.finalY + 10;
+    } else {
+      doc.setFontSize(10);
+      doc.setTextColor(...colors.text);
+      doc.text("No assets requested", 14, y);
+      y += 15;
+    }
+
+    // Justification Section
+    addSectionHeader("BUSINESS JUSTIFICATION", y);
+    y += 15;
+
+    doc.setFontSize(10);
     doc.setTextColor(...colors.text);
-    doc.text(`Page ${i} of ${pageCount}`, 196, 287, { align: "right" });
-    doc.text("Confidential Document", 14, 287);
+    const splitReason = doc.splitTextToSize(
+      formData.reason || "No justification provided",
+      180
+    );
+    doc.text(splitReason, 14, y);
+    y += splitReason.length * 5 + 15;
+
+    // Policy Agreement Section
+    addSectionHeader("POLICY AGREEMENT", y);
+    y += 15;
+
+    doc.setFontSize(10);
+    doc.setTextColor(...colors.text);
+    const policyText =
+      "The requestor has acknowledged and agreed to comply with all company policies...";
+    const splitPolicy = doc.splitTextToSize(policyText, 180);
+    doc.text(splitPolicy, 14, y);
+
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(...colors.text);
+      doc.text(`Page ${i} of ${pageCount}`, 196, 287, { align: "right" });
+      doc.text("Confidential Document", 14, 287);
+    }
+
+    doc.save(`Asset_Request_${budgetId}.pdf`);
+  };
+
+  function formatCurrency(amount: number | string): string {
+    const numAmount =
+      typeof amount === "string" ? parseFloat(amount) || 0 : amount;
+    
+    // Use a simple approach that works better with PDF generation
+    const formattedNumber = numAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    return `Rs. ${formattedNumber}`;
   }
 
-  doc.save(`Asset_Request_${budgetId}.pdf`);
-};
-
-  
-  // Format currency with proper thousand separators
-  function formatCurrency(amount: number): string {
-    return new Intl.NumberFormat('en-IN', {
-      style: 'currency',
-      currency: 'INR',
-      maximumFractionDigits: 0
-    }).format(amount);
-  }
-
-  // Render form step content
   const renderFormStep = () => {
     switch (currentStep) {
       case 0:
@@ -814,265 +976,616 @@ const generatePDF = async (): Promise<void> => {
   };
 
   return (
-    <div className="container py-4 mx-auto max-w-[95%] bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950">
-      <CustomBreadcrumb
-        items={[
-          { label: "Dashboard", href: "/dashboard" },
-          { label: "Forms", href: "/dashboard/form" },
-        ]}
-      />
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-green-50 dark:from-gray-950 dark:via-gray-900 dark:to-green-950/20">
+      <div className="container py-6 mx-auto max-w-[95%]">
+        <CustomBreadcrumb
+          items={[
+            { label: "Dashboard", href: "/dashboard" },
+            { label: "Forms", href: "/dashboard/form" },
+          ]}
+        />
 
-      {isSubmitted ? (
-        <div className="flex flex-col items-center justify-center max-w-4xl mx-auto p-6 rounded-xl bg-gradient-to-b from-white to-green-50 dark:from-gray-800 dark:to-green-900/40 shadow-lg border border-green-100 dark:border-green-900/50">
-          <div className="relative mb-8">
-            <div className="absolute inset-0 bg-green-400/20 dark:bg-green-500/10 rounded-full animate-ping opacity-75"></div>
-            <div className="relative flex items-center justify-center w-24 h-24 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-800/40 dark:to-green-700/40 rounded-full shadow-inner">
-              <Check
-                className="h-12 w-12 text-green-600 dark:text-green-400"
-                strokeWidth={3}
-              />
-            </div>
-          </div>
-
-          <h2 className="text-3xl font-bold mb-3 text-gray-900 dark:text-white text-center">
-            Asset Request Submitted Successfully
-          </h2>
-
-          <div className="flex items-center mb-6 bg-green-50 dark:bg-green-900/20 px-4 py-2 rounded-lg">
-            <FileCheck className="h-5 w-5 mr-2 text-green-600 dark:text-green-400" />
-            <p className="text-sm font-medium text-green-800 dark:text-green-300">
-              Request #{budgetId}
-            </p>
-          </div>
-
-          <p className="text-gray-600 dark:text-gray-300 mb-8 text-center max-w-2xl">
-            Thank you for submitting your asset request. The request has been
-            logged in our system and is now pending approval. You can track the
-            status of your request using the reference number above.
-          </p>
-
-          {/* Simple request summary card */}
-          <div className="w-full bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 mb-8 border border-gray-100 dark:border-gray-700">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 border-b border-gray-200 dark:border-gray-700 pb-2">
-              Request Overview
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Requestor
-                </p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {formData.employeeName}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Submission Date
-                </p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {format(new Date(), "MMMM dd, yyyy")}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  Total Request Value
-                </p>
-                <p className="font-medium text-gray-900 dark:text-white">
-                  {formatCurrency(Number(formData.assetAmount))}
-                </p>
+        {isSubmitted ? (
+          <div className="flex flex-col items-center justify-center max-w-5xl mx-auto mt-8">
+            <div className="relative mb-10">
+              <div className="absolute inset-0 bg-green-400/20 dark:bg-green-500/10 rounded-full animate-ping opacity-75"></div>
+              <div className="absolute inset-2 bg-green-300/30 dark:bg-green-600/20 rounded-full animate-pulse opacity-50"></div>
+              <div className="relative flex items-center justify-center w-28 h-28 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-800/40 dark:to-green-700/40 rounded-full shadow-xl border border-green-200 dark:border-green-700">
+                <Check
+                  className="h-14 w-14 text-green-600 dark:text-green-400"
+                  strokeWidth={3}
+                />
               </div>
             </div>
 
-            <Button
-              onClick={generatePDF}
-              className="w-full bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white"
-            >
-              <Download className="h-4 w-4 mr-2" />
-              View Complete Summary (PDF)
-            </Button>
-          </div>
-
-          <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-xl">
-            <Button
-              onClick={resetForm}
-              className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md transition-all duration-200 flex items-center justify-center"
-            >
-              <FileCheck className="h-4 w-4 mr-2" />
-              Submit Another Request
-            </Button>
-
-            <Link href="/dashboard">
-              <Button
-                variant="outline"
-                className="border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all duration-200 flex items-center justify-center"
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Dashboard
-              </Button>
-            </Link>
-          </div>
-        </div>
-      ) : (
-        <div className="mt-4">
-          <div className="flex flex-col md:flex-row gap-6 md:items-center justify-between mb-6">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-                Asset Request Form
-              </h1>
-              <p className="text-green-700 dark:text-green-400 text-sm font-medium mt-1">
-                Complete all required fields to submit your asset request
+            <div className="text-center mb-8">
+              <h2 className="text-4xl font-bold mb-4 bg-gradient-to-r from-green-600 to-emerald-600 dark:from-green-400 dark:to-emerald-400 bg-clip-text text-transparent">
+                Asset Request Submitted Successfully
+              </h2>
+              <div className="flex items-center justify-center mb-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 px-6 py-3 rounded-full border border-green-200 dark:border-green-800 shadow-sm">
+                <FileCheck className="h-5 w-5 mr-3 text-green-600 dark:text-green-400" />
+                <span className="text-lg font-semibold text-green-800 dark:text-green-300">
+                  Request #{budgetId}
+                </span>
+              </div>
+              <p className="text-lg text-gray-600 dark:text-gray-300 max-w-3xl leading-relaxed">
+                Thank you for submitting your asset request. The request has
+                been logged in our system and is now pending approval. You can
+                track the status of your request using the reference number
+                above.
               </p>
             </div>
-            <div className="flex space-x-2">
+
+            <div className="w-full max-w-4xl bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 mb-10 border border-gray-100 dark:border-gray-700 backdrop-blur-sm">
+              <div className="flex items-center mb-6">
+                <div className="w-1 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full mr-4"></div>
+                <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Request Overview
+                </h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 p-4 rounded-xl border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">
+                    Requestor
+                  </p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {formData.employeeName}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    ID: {formData.employeeCode}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 p-4 rounded-xl border border-purple-200 dark:border-purple-800">
+                  <p className="text-sm font-medium text-purple-600 dark:text-purple-400 mb-1">
+                    Submission Date
+                  </p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">
+                    {format(new Date(), "MMM dd, yyyy")}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {format(new Date(), "h:mm a")}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-emerald-50 to-green-50 dark:from-emerald-900/20 dark:to-green-900/20 p-4 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                  <p className="text-sm font-medium text-emerald-600 dark:text-emerald-400 mb-1">
+                    Total Request Value
+                  </p>
+                  <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                    {formatCurrency(Number(formData.assetAmount) || 0)}
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    {formData.assets.length} item
+                    {formData.assets.length !== 1 ? "s" : ""}
+                  </p>
+                </div>
+              </div>
+
               <Button
-                variant="outline"
-                className="border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900/20 dark:hover:text-green-400"
-                asChild
+                onClick={generatePDF}
+                className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-800 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl"
               >
-                <Link href="/dashboard/requests">
-                  <FileText className="mr-2 h-4 w-4" />
-                  View My Requests
-                </Link>
-              </Button>
-              <Button
-                variant="outline"
-                className="border-green-200 hover:bg-green-50 hover:text-green-700 dark:border-green-800 dark:hover:bg-green-900/20 dark:hover:text-green-400"
-                asChild
-              >
-                <Link href="/dashboard">
-                  <Home className="mr-2 h-4 w-4" />
-                  Back to Dashboard
-                </Link>
+                <Download className="h-5 w-5 mr-3" />
+                Download Complete Summary (PDF)
               </Button>
             </div>
+
+            <div className="flex flex-col sm:flex-row justify-center gap-4 w-full max-w-2xl">
+              <Button
+                onClick={resetForm}
+                className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white py-4 px-8 rounded-xl font-semibold text-lg shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center"
+              >
+                <FileCheck className="h-5 w-5 mr-3" />
+                Submit Another Request
+              </Button>
+
+              <Link href="/dashboard">
+                <Button
+                  variant="outline"
+                  className="border-2 border-gray-300 dark:border-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 dark:hover:from-gray-800 dark:hover:to-gray-700 py-4 px-8 rounded-xl font-semibold text-lg transition-all duration-300 flex items-center justify-center hover:border-gray-400 dark:hover:border-gray-500"
+                >
+                  <ArrowLeft className="h-5 w-5 mr-3" />
+                  Back to Dashboard
+                </Button>
+              </Link>
+            </div>
           </div>
-
-          <div className="bg-gradient-to-br from-white to-green-50 dark:bg-gray-950 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <div className="grid grid-cols-12 min-h-[700px]">
-              {/* Sidebar */}
-              <div className="col-span-12 p-6 md:col-span-4 lg:col-span-3 bg-gradient-to-br from-green-50 to-green-100 dark:from-gray-900 dark:to-gray-900 border-r border-gray-200 dark:border-gray-700">
-                <div className="sticky top-6">
-                  {/* Form Title */}
-                  <div className="mb-8">
-                    <h1 className="text-xl font-bold text-gray-900   dark:text-white mb-1">
-                      Request Form Tracker
-                    </h1>
-                    {/* <p className="text-sm text-green-700 dark:text-green-400">
-                      Complete all sections to submit your request
-                    </p> */}
-                  </div>
-
-                  {/* Steps */}
-                  <div className="space-y-2 mb-8">
-                    {formSteps.map((step, index) => (
-                      <SidebarItem
-                        key={step.id}
-                        step={step}
-                        index={index}
-                        currentStep={currentStep}
-                        onClick={() => handleStepClick(index)}
-                        completed={isStepComplete(index)}
-                        className={
-                          index === currentStep
-                            ? "border-green-500 dark:border-green-500 text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20"
-                            : ""
-                        }
-                      />
-                    ))}
+        ) : (
+          <div className="mt-8">
+            <div className="flex flex-col lg:flex-row gap-8 lg:items-center justify-between mb-8 p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-lg border border-gray-100 dark:border-gray-700">
+              <div className="flex-1">
+                <div className="flex items-center mb-3">
+                  <div className="w-1 h-8 bg-gradient-to-b from-green-500 to-emerald-500 rounded-full mr-4"></div>
+                  <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 dark:from-white dark:to-gray-200 bg-clip-text text-transparent">
+                    Asset Request Form
+                  </h1>
+                </div>
+                <p className="text-lg text-green-700 dark:text-green-400 font-medium ml-5">
+                  Complete all required fields to submit your asset request
+                </p>
+                <div className="flex items-center mt-3 ml-5">
+                  <div className="flex items-center bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full border border-green-200 dark:border-green-800">
+                    <Leaf className="h-4 w-4 mr-2 text-green-500 dark:text-green-400" />
+                    <span className="text-sm font-medium text-green-700 dark:text-green-300">
+                      Step {currentStep + 1} of {formSteps.length}:{" "}
+                      {formSteps[currentStep].title}
+                    </span>
                   </div>
                 </div>
               </div>
 
-              {/* Main content */}
-              <div className="col-span-12 md:col-span-8 lg:col-span-9 p-8 dark:bg-gray-900">
-                <form className="max-w-3xl mx-auto ">
-                  <AnimatePresence mode="wait" custom={direction}>
-                    {renderFormStep()}
-                  </AnimatePresence>
+              <div className="flex flex-wrap gap-3">
+                <Button
+                  variant="outline"
+                  className="border-2 border-green-200 hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 hover:text-green-700 dark:border-green-800 dark:hover:from-green-900/20 dark:hover:to-emerald-900/20 dark:hover:text-green-400 transition-all duration-300 font-semibold"
+                  asChild
+                >
+                  <Link href="/dashboard/requests">
+                    <FileText className="mr-2 h-4 w-4" />
+                    View My Requests
+                  </Link>
+                </Button>
+                <Button
+                  variant="outline"
+                  className="border-2 border-blue-200 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 dark:border-blue-800 dark:hover:from-blue-900/20 dark:hover:to-indigo-900/20 dark:hover:text-blue-400 transition-all duration-300 font-semibold"
+                  asChild
+                >
+                  <Link href="/dashboard">
+                    <Home className="mr-2 h-4 w-4" />
+                    Back to Dashboard
+                  </Link>
+                </Button>
+              </div>
+            </div>
 
-                  {/* Navigation buttons */}
-                  <div className="flex justify-between mt-8 pt-4 border-t border-gray-200 dark:border-gray-700">
-                    <Button
-                      type="button"
-                      onClick={goToPreviousStep}
-                      disabled={currentStep === 0}
-                      className={`bg-gray-200 text-gray-800 hover:bg-gray-300 dark:bg-gray-700 dark:text-gray-200 dark:hover:bg-gray-600 ${
-                        currentStep === 0 ? "opacity-50 cursor-not-allowed" : ""
-                      }`}
-                    >
-                      <ArrowLeft className="h-4 w-4 mr-2" />
-                      Previous
-                    </Button>
-
-                    <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center bg-green-50 dark:bg-green-900/20 px-3 py-1 rounded-full border border-green-100 dark:border-green-800/30">
-                      <Leaf className="h-3.5 w-3.5 mr-1.5 text-green-500 dark:text-green-400" />
-                      Step {currentStep + 1} of {formSteps.length}:{" "}
-                      {formSteps[currentStep].title}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700 overflow-hidden backdrop-blur-sm">
+              <div className="grid grid-cols-12 min-h-[700px]">
+                <div className="col-span-12 p-8 md:col-span-4 lg:col-span-3 bg-gradient-to-br from-slate-50 via-gray-50 to-green-50 dark:from-gray-900 dark:via-gray-800 dark:to-green-900/20 border-r border-gray-200 dark:border-gray-700">
+                  <div className="sticky top-6">
+                    <div className="mb-10">
+                      <div className="flex items-center mb-4">
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                          <FileCheck className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                            Request Tracker
+                          </h2>
+                        </div>
+                      </div>
+                      <p className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                        Complete all sections to submit your request. Track your
+                        progress below.
+                      </p>
                     </div>
 
-                    {currentStep < formSteps.length - 1 ? (
-                      <Button
-                        type="button"
-                        onClick={goToNextStep}
-                        disabled={!isStepValid()}
-                        className={`bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white ${
-                          !isStepValid() ? "opacity-50 cursor-not-allowed" : ""
-                        }`}
-                      >
-                        Next
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    ) : (
-                      <Button
-                        type="button"
-                        onClick={handleSubmit}
-                        disabled={!isStepValid() || isSubmitting}
-                        className={`bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800 text-white ${
-                          !isStepValid() || isSubmitting
-                            ? "opacity-50 cursor-not-allowed"
-                            : ""
-                        }`}
-                      >
-                        {isSubmitting ? (
-                          <>
-                            <svg
-                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                              xmlns="http://www.w3.org/2000/svg"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                            >
-                              <circle
-                                className="opacity-25"
-                                cx="12"
-                                cy="12"
-                                r="10"
-                                stroke="currentColor"
-                                strokeWidth="4"
-                              ></circle>
-                              <path
-                                className="opacity-75"
-                                fill="currentColor"
-                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                              ></path>
-                            </svg>
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            Submit Request
-                            <Check className="h-4 w-4 ml-2" />
-                          </>
+                    <div className="space-y-3 mb-10">
+                      {formSteps.map((step, index) => (
+                        <SidebarItem
+                          key={step.id}
+                          step={step}
+                          index={index}
+                          currentStep={currentStep}
+                          onClick={() => handleStepClick(index)}
+                          completed={isStepComplete(index)}
+                          className={
+                            index === currentStep
+                              ? "border-2 border-green-500 dark:border-green-400 text-green-700 dark:text-green-400 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 shadow-lg transform scale-105"
+                              : isStepComplete(index)
+                              ? "border-2 border-green-300 dark:border-green-600 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 hover:shadow-md transition-all duration-200"
+                              : "border border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md transition-all duration-200"
+                          }
+                        />
+                      ))}
+                    </div>
+
+                    {/* Step Requirements Section */}
+                    <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/20 dark:via-indigo-900/20 dark:to-purple-900/20 rounded-xl p-6 border border-blue-200 dark:border-blue-800 shadow-lg">
+                      <div className="flex items-center mb-4">
+                        <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center mr-3 shadow-md">
+                          <AlertCircle className="h-4 w-4 text-white" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                          Step Requirements
+                        </h3>
+                      </div>
+
+                      <div className="space-y-3">
+                        {currentStep === 0 && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-3">
+                              Employee Information Required:
+                            </h4>
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm">
+                                {formData.plant && formData.plant !== 0 ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.plant && formData.plant !== 0
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Business Unit / Plant
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                {formData.initiateDept &&
+                                formData.initiateDept !== 0 ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.initiateDept &&
+                                    formData.initiateDept !== 0
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Department
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                {formData.designation &&
+                                formData.designation !== 0 ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.designation &&
+                                    formData.designation !== 0
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Designation
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         )}
-                      </Button>
-                    )}
+
+                        {currentStep === 1 && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-3">
+                              Asset Selection Required:
+                            </h4>
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm">
+                                {formData.assets.length > 0 ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.assets.length > 0
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Add at least one asset (
+                                  {formData.assets.length} added)
+                                </span>
+                              </div>
+                              {formData.assets.length > 0 && (
+                                <div className="ml-6 mt-2 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800">
+                                  <div className="text-xs text-green-700 dark:text-green-400 font-medium mb-1">
+                                    Assets Added:
+                                  </div>
+                                  <div className="space-y-1">
+                                    {formData.assets
+                                      .slice(0, 3)
+                                      .map((asset, index) => (
+                                        <div
+                                          key={index}
+                                          className="text-xs text-green-600 dark:text-green-300 flex items-center"
+                                        >
+                                          <Package className="h-3 w-3 mr-2 flex-shrink-0" />
+                                          <span className="truncate">
+                                            {asset.title} (Qty: {asset.quantity}
+                                            )
+                                          </span>
+                                        </div>
+                                      ))}
+                                    {formData.assets.length > 3 && (
+                                      <div className="text-xs text-green-500 dark:text-green-400 italic">
+                                        +{formData.assets.length - 3} more
+                                        assets
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="mt-2 pt-2 border-t border-green-200 dark:border-green-800">
+                                    <div className="text-xs text-green-700 dark:text-green-400 font-semibold">
+                                      Total Estimated Value: ₹
+                                      {formData.assets
+                                        .reduce(
+                                          (sum, asset) => sum + asset.total,
+                                          0
+                                        )
+                                        .toLocaleString()}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {currentStep === 2 && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-3">
+                              Asset Details Required:
+                            </h4>
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm">
+                                {formData.assets.length > 0 ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.assets.length > 0
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Assets selected
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                {formData.category &&
+                                formData.category !== 0 ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.category && formData.category !== 0
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Request Category
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                {formData.concerned_department &&
+                                formData.concerned_department !== 0 ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.concerned_department &&
+                                    formData.concerned_department !== 0
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Concerned Department
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                {formData.approvalCategory &&
+                                formData.approvalCategory.trim() !== "" ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.approvalCategory &&
+                                    formData.approvalCategory.trim() !== ""
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Budget Approval Category
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                {formData.approvalType &&
+                                formData.approvalType.trim() !== "" ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.approvalType &&
+                                    formData.approvalType.trim() !== ""
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Approval Type
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                {formData.reason &&
+                                formData.reason.trim() !== "" ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.reason &&
+                                    formData.reason.trim() !== ""
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Reason for Request
+                                </span>
+                              </div>
+                              <div className="flex items-center text-sm">
+                                {formData.notifyTo &&
+                                formData.notifyTo !== 0 ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.notifyTo && formData.notifyTo !== 0
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Notify Request to
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        {currentStep === 3 && (
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-medium text-blue-700 dark:text-blue-400 mb-3">
+                              Final Confirmation Required:
+                            </h4>
+                            <div className="space-y-2">
+                              <div className="flex items-center text-sm">
+                                {formData.policyAgreement ? (
+                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                ) : (
+                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                )}
+                                <span
+                                  className={
+                                    formData.policyAgreement
+                                      ? "text-green-700 dark:text-green-400"
+                                      : "text-gray-600 dark:text-gray-400"
+                                  }
+                                >
+                                  Policy agreement
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="mt-4 pt-3 border-t border-blue-200 dark:border-blue-800">
+                          <div className="text-xs text-blue-600 dark:text-blue-400 flex items-center">
+                            <Info className="h-3 w-3 mr-1" />
+                            Complete all requirements to proceed to the next
+                            step
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </form>
+                </div>
+
+                <div className="col-span-12 md:col-span-8 lg:col-span-9 p-8 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900">
+                  <form className="max-w-4xl mx-auto">
+                    <AnimatePresence mode="wait" custom={direction}>
+                      {renderFormStep()}
+                    </AnimatePresence>
+
+                    <div className="flex justify-between items-center mt-10 pt-6 border-t-2 border-gray-200 dark:border-gray-700">
+                      <Button
+                        type="button"
+                        onClick={goToPreviousStep}
+                        disabled={currentStep === 0}
+                        className={`bg-gradient-to-r from-gray-200 to-gray-300 text-gray-800 hover:from-gray-300 hover:to-gray-400 dark:from-gray-700 dark:to-gray-600 dark:text-gray-200 dark:hover:from-gray-600 dark:hover:to-gray-500 py-3 px-6 rounded-xl font-semibold transition-all duration-300 shadow-lg ${
+                          currentStep === 0
+                            ? "opacity-50 cursor-not-allowed"
+                            : "hover:shadow-xl hover:scale-105"
+                        }`}
+                      >
+                        <ArrowLeft className="h-4 w-4 mr-2" />
+                        Previous
+                      </Button>
+
+                      <div className="text-sm text-gray-500 dark:text-gray-400 flex items-center bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/30 dark:to-emerald-900/30 px-6 py-2 rounded-full border-2 border-green-200 dark:border-green-800 shadow-sm">
+                        <Leaf className="h-4 w-4 mr-2 text-green-500 dark:text-green-400" />
+                        <span className="font-medium">
+                          Step {currentStep + 1} of {formSteps.length}:{" "}
+                          {formSteps[currentStep].title}
+                        </span>
+                      </div>
+
+                      {currentStep < formSteps.length - 1 ? (
+                        <Button
+                          type="button"
+                          onClick={goToNextStep}
+                          disabled={!isStepValid()}
+                          className={`bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-6 rounded-xl font-semibold transition-all duration-300 shadow-lg ${
+                            !isStepValid()
+                              ? "opacity-50 cursor-not-allowed"
+                              : "hover:shadow-xl hover:scale-105"
+                          }`}
+                        >
+                          Next
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      ) : (
+                        <Button
+                          type="button"
+                          onClick={handleSubmit}
+                          disabled={!isStepValid() || isSubmitting}
+                          className={`bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white py-3 px-8 rounded-xl font-bold text-lg transition-all duration-300 shadow-lg ${
+                            !isStepValid() || isSubmitting
+                              ? "opacity-50 cursor-not-allowed"
+                              : "hover:shadow-xl hover:scale-105"
+                          }`}
+                        >
+                          {isSubmitting ? (
+                            <>
+                              <svg
+                                className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                xmlns="http://www.w3.org/2000/svg"
+                                fill="none"
+                                viewBox="0 0 24 24"
+                              >
+                                <circle
+                                  className="opacity-25"
+                                  cx="12"
+                                  cy="12"
+                                  r="10"
+                                  stroke="currentColor"
+                                  strokeWidth="4"
+                                ></circle>
+                                <path
+                                  className="opacity-75"
+                                  fill="currentColor"
+                                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                ></path>
+                              </svg>
+                              Processing Request...
+                            </>
+                          ) : (
+                            <>
+                              Submit Request
+                              <Check className="h-5 w-5 ml-2" />
+                            </>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  </form>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

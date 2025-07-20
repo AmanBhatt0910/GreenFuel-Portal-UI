@@ -1,5 +1,5 @@
-import React, { useContext, useEffect, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useContext, useEffect, useState, useMemo } from "react";
+import { motion } from "framer-motion";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { slideVariants } from "./animations";
@@ -40,7 +40,7 @@ interface Designation {
   department: number;
 }
 
-export const EmployeeInformationStep: React.FC<FormStepProps> = ({
+export const EmployeeInformationStep: React.FC<FormStepProps> = React.memo(({
   formData,
   handleChange,
   handleCheckboxChange,
@@ -48,170 +48,87 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
 }) => {
   const api = useAxios();
   const { userInfo } = useContext(GFContext);
+
   const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [designations, setDesignations] = useState<Designation[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
-  const [loadingDesignations, setLoadingDesignations] =
-    useState<boolean>(false);
-  const [hasPrefilledData, setHasPrefilledData] = useState<boolean>(false);
+  const [loadingDepts, setLoadingDepts] = useState<boolean>(false);
+  const [loadingDesigs, setLoadingDesigs] = useState<boolean>(false);
+  const [date, setDate] = useState<Date>(() => {
+    // Initialize with form data date or current date
+    return formData.date ? new Date(formData.date) : new Date();
+  });
 
   const handleSelectChange = (name: string, value: string) => {
     console.log(`Dropdown selection changed: ${name} = ${value}`);
-    handleChange({
-      target: {
-        name,
-        value,
-      },
-    } as React.ChangeEvent<HTMLSelectElement>);
+    
+    // Create a batch update object to minimize re-renders
+    const updates: any = {};
+    updates[name] = value;
+    
+    // Reset dependent dropdowns when parent changes
+    if (name === "plant") {
+      // Only reset if changing to a different business unit
+      if (value !== formData.plant?.toString()) {
+        updates.initiateDept = "0";
+        updates.designation = "0";
+      }
+    } else if (name === "initiateDept") {
+      // Only reset designation if changing to a different department
+      if (value !== formData.initiateDept?.toString()) {
+        updates.designation = "0";
+      }
+    }
+    
+    // Apply all updates at once
+    Object.keys(updates).forEach(key => {
+      handleChange({
+        target: { name: key, value: updates[key] },
+      } as React.ChangeEvent<HTMLSelectElement>);
+    });
   };
 
+  // Fetch business units on component mount
   useEffect(() => {
     const fetchBusinessUnits = async () => {
       setLoading(true);
       try {
         const response = await api.get("business-units/");
-
         setBusinessUnits(response.data);
-
-        if (formData.plant && formData.plant !== 0) {
-          try {
-            const deptResponse = await api.get(
-              `/departments/?business_unit=${formData.plant}`
-            );
-
-            setDepartments(deptResponse.data);
-
-            if (formData.initiateDept && formData.initiateDept !== 0) {
-              const desigResponse = await api.get(
-                `/designations/?department=${formData.initiateDept}`
-              );
-
-              setDesignations(desigResponse.data);
-            }
-          } catch (error) {
-            console.error("Error fetching data for prefilled values:", error);
-          }
-        }
       } catch (error) {
         console.error("Error fetching business units:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchBusinessUnits();
   }, []);
 
+  // Fetch departments when business unit changes
   useEffect(() => {
-    if (!userInfo || hasPrefilledData || businessUnits.length === 0) return;
-    const userUpdates: { [key: string]: any } = {};
-
-    const userData = userInfo as any;
-
-    if (userData.business_unit && !formData.plant) {
-      userUpdates.plant = userData.business_unit;
+    if (!formData.plant || formData.plant === 0) {
+      setDepartments([]);
+      return;
     }
-
-    if (userData.department && !formData.initiateDept) {
-      userUpdates.initiateDept = userData.department;
-    }
-
-    if (userData.designation && !formData.designation) {
-      userUpdates.designation = userData.designation;
-    }
-
-    if (Object.keys(userUpdates).length > 0) {
-      console.log("Prefilling form data with user info:", userUpdates);
-
-      if (userData.name && !formData.employeeName) {
-        handleChange({
-          target: {
-            name: "employeeName",
-            value: userData.name,
-          },
-        } as React.ChangeEvent<HTMLInputElement>);
-      }
-
-      if (userData.employee_code && !formData.employeeCode) {
-        handleChange({
-          target: {
-            name: "employeeCode",
-            value: userData.employee_code,
-          },
-        } as React.ChangeEvent<HTMLInputElement>);
-      }
-
-      if (userUpdates.plant) {
-        handleSelectChange("plant", userUpdates.plant.toString());
-
-        setTimeout(() => {
-          if (userUpdates.initiateDept) {
-            handleSelectChange(
-              "initiateDept",
-              userUpdates.initiateDept.toString()
-            );
-
-            setTimeout(() => {
-              if (userUpdates.designation) {
-                handleSelectChange(
-                  "designation",
-                  userUpdates.designation.toString()
-                );
-              }
-            }, 300);
-          }
-        }, 300);
-      }
-
-      setHasPrefilledData(true);
-    }
-  }, [
-    userInfo,
-    businessUnits,
-    hasPrefilledData,
-    formData.plant,
-    formData.initiateDept,
-    formData.designation,
-    formData.employeeName,
-    formData.employeeCode,
-  ]);
-
-  useEffect(() => {
-    if (!formData.plant || formData.plant === 0) return;
 
     const fetchDepartments = async () => {
-      setLoading(true);
+      setLoadingDepts(true);
       try {
-        const response = await api.get(
-          `/departments/?business_unit=${formData.plant}`
-        );
-
+        const response = await api.get(`/departments/?business_unit=${formData.plant}`);
         setDepartments(response.data);
-
-        if (formData.initiateDept && formData.initiateDept !== 0) {
-          const departmentExists = response.data.some(
-            (dept: Department) =>
-              dept.id.toString() === formData.initiateDept.toString()
-          );
-
-          if (!departmentExists) {
-            handleSelectChange("initiateDept", "0");
-            handleSelectChange("designation", "0");
-          }
-        }
       } catch (error) {
         console.error("Error fetching departments:", error);
+        setDepartments([]);
       } finally {
-        setLoading(false);
+        setLoadingDepts(false);
       }
     };
 
-    if (!loading) {
-      fetchDepartments();
-    }
+    fetchDepartments();
   }, [formData.plant]);
 
+  // Fetch designations when department changes
   useEffect(() => {
     if (!formData.initiateDept || formData.initiateDept === 0) {
       setDesignations([]);
@@ -219,312 +136,224 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = ({
     }
 
     const fetchDesignations = async () => {
-      setLoadingDesignations(true);
+      setLoadingDesigs(true);
       try {
-        const response = await api.get(
-          `/designations/?department=${formData.initiateDept}`
-        );
-
+        const response = await api.get(`/designations/?department=${formData.initiateDept}`);
         setDesignations(response.data);
-
-        if (formData.designation && formData.designation !== 0) {
-          const designationExists = response.data.some(
-            (desig: Designation) =>
-              desig.id.toString() === formData.designation.toString()
-          );
-
-          if (!designationExists) {
-            handleSelectChange("designation", "0");
-          }
-        }
       } catch (error) {
         console.error("Error fetching designations:", error);
         setDesignations([]);
       } finally {
-        setLoadingDesignations(false);
+        setLoadingDesigs(false);
       }
     };
 
-    if (!loadingDesignations) {
-      fetchDesignations();
-    }
+    fetchDesignations();
   }, [formData.initiateDept]);
 
+  // Memoize the select options to prevent re-renders
+  const businessUnitOptions = useMemo(() => 
+    businessUnits.map((unit) => (
+      <SelectItem key={unit.id} value={unit.id.toString()}>
+        {unit.name}
+      </SelectItem>
+    )), [businessUnits]
+  );
+
+  const departmentOptions = useMemo(() => 
+    departments.map((dept) => (
+      <SelectItem key={dept.id} value={dept.id.toString()}>
+        {dept.name}
+      </SelectItem>
+    )), [departments]
+  );
+
+  const designationOptions = useMemo(() => 
+    designations.map((desig) => (
+      <SelectItem key={desig.id} value={desig.id.toString()}>
+        {desig.name}
+      </SelectItem>
+    )), [designations]
+  );
+
+  // Sync date state with form data
   useEffect(() => {
-    const findAndLogSelectedItem = () => {
-      if (formData.plant && formData.plant !== 0 && businessUnits.length > 0) {
-        const selectedBusinessUnit = businessUnits.find(
-          (bu) => bu.id === Number(formData.plant)
-        );
-      }
-
-      if (
-        formData.initiateDept &&
-        formData.initiateDept !== 0 &&
-        departments.length > 0
-      ) {
-        const selectedDepartment = departments.find(
-          (dept) => dept.id === Number(formData.initiateDept)
-        );
-      }
-
-      if (
-        formData.designation &&
-        formData.designation !== 0 &&
-        designations.length > 0
-      ) {
-        const selectedDesignation = designations.find(
-          (desig) => desig.id === Number(formData.designation)
-        );
-      }
-    };
-
-    const timeoutId = setTimeout(() => {
-      findAndLogSelectedItem();
-    }, 100);
-
-    return () => clearTimeout(timeoutId);
-  }, [formData, businessUnits, departments, designations]);
-
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.1,
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 24,
-      },
-    },
-  };
+    if (formData.date) {
+      const formDate = new Date(formData.date);
+      setDate(formDate);
+    }
+  }, [formData.date]);
 
   return (
     <motion.div
-      key="step1"
       custom={direction}
       variants={slideVariants}
-      initial="hidden"
-      animate="visible"
+      initial="enter"
+      animate="center"
       exit="exit"
       className="space-y-6"
     >
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="space-y-1 mb-6 bg-white p-6 rounded-lg shadow-sm"
-      >
-        <h3 className="text-lg font-medium text-gray-900">Requestor Summary</h3>
-        <p className="text-sm text-gray-500">
-          Please fill in your requestor details
-        </p>
-      </motion.div>
 
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="grid grid-cols-1 md:grid-cols-2 gap-6"
-      >
-        <motion.div variants={itemVariants} className="space-y-2">
-          <Label htmlFor="employeeName" className="text-gray-700">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Employee Name */}
+        <div className="space-y-2">
+          <Label htmlFor="employeeName" className="text-sm font-medium">
             Employee Name
           </Label>
           <Input
             id="employeeName"
             name="employeeName"
-            placeholder="Enter your name"
-            value={formData.employeeName || ""}
+            value={formData.employeeName}
             onChange={handleChange}
-            required
+            placeholder="Enter employee name"
+            className="border-gray-300 focus:border-blue-500"
             disabled
-            className="bg-white border-gray-200 focus:border-blue-500"
           />
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants} className="space-y-2">
-          <Label htmlFor="employeeCode" className="text-gray-700">
+        {/* Employee Code */}
+        <div className="space-y-2">
+          <Label htmlFor="employeeCode" className="text-sm font-medium">
             Employee Code
           </Label>
           <Input
             id="employeeCode"
             name="employeeCode"
-            placeholder="Enter your employee code"
-            value={formData.employeeCode || ""}
+            value={formData.employeeCode}
             onChange={handleChange}
-            required
+            placeholder="Enter employee code"
+            className="border-gray-300 focus:border-blue-500"
             disabled
-            className="bg-white border-gray-200 focus:border-blue-500"
           />
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants} className="space-y-2">
-          <Label htmlFor="plant" className="text-gray-700">
-            Business Unit / Plant
+        {/* Business Unit / Plant */}
+        <div className="space-y-2">
+          <Label htmlFor="plant" className="text-sm font-medium">
+            Business Unit / Plant <span className="text-red-500">*</span>
           </Label>
           <Select
-            value={formData.plant ? formData.plant.toString() : "0"}
+            value={formData.plant ? formData.plant.toString() : ""}
             onValueChange={(value) => handleSelectChange("plant", value)}
           >
-            <SelectTrigger className="bg-white border-gray-200 text-gray-700">
-              <SelectValue
-                placeholder={loading ? "Loading..." : "Select Business Unit"}
-              />
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select Business Unit" />
             </SelectTrigger>
-            <SelectContent className="bg-white">
-              <SelectItem value="0" disabled className="text-gray-400">
-                Select Business Unit
-              </SelectItem>
-              {businessUnits.map((bu) => (
-                <SelectItem
-                  key={bu.id}
-                  value={bu.id.toString()}
-                  className="text-gray-700"
-                >
-                  {bu.name}
-                </SelectItem>
-              ))}
+            <SelectContent>
+              {businessUnitOptions}
             </SelectContent>
           </Select>
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants} className="space-y-2">
-          <Label htmlFor="initiateDept" className="text-gray-700">
-            Initiate Department
+        {/* Initiate Department */}
+        <div className="space-y-2">
+          <Label htmlFor="initiateDept" className="text-sm font-medium">
+            Initiate Department <span className="text-red-500">*</span>
           </Label>
           <Select
-            value={
-              formData.initiateDept ? formData.initiateDept.toString() : "0"
-            }
+            value={formData.initiateDept ? formData.initiateDept.toString() : ""}
             onValueChange={(value) => handleSelectChange("initiateDept", value)}
+            disabled={!formData.plant || formData.plant === 0}
           >
-            <SelectTrigger className="bg-white border-gray-200 text-gray-700">
-              <SelectValue
+            <SelectTrigger className="w-full">
+              <SelectValue 
                 placeholder={
-                  loading
-                    ? "Loading..."
-                    : !formData.plant || formData.plant.toString() === "0"
-                    ? "Select Business Unit first"
-                    : "Select Department"
-                }
+                  loadingDepts 
+                    ? "Loading departments..." 
+                    : !formData.plant || formData.plant === 0 
+                      ? "Select Business Unit First" 
+                      : "Select Department"
+                } 
               />
             </SelectTrigger>
-            <SelectContent className="bg-white">
-              <SelectItem value="0" disabled className="text-gray-400">
-                Select Department
-              </SelectItem>
-              {departments.map((dept) => (
-                <SelectItem
-                  key={dept.id}
-                  value={dept.id.toString()}
-                  className="text-gray-700"
-                >
-                  {dept.name}
-                </SelectItem>
-              ))}
+            <SelectContent>
+              {departmentOptions}
             </SelectContent>
           </Select>
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants} className="space-y-2">
-          <Label htmlFor="designation" className="text-gray-700">
-            Designation
+        {/* Designation */}
+        <div className="space-y-2">
+          <Label htmlFor="designation" className="text-sm font-medium">
+            Designation <span className="text-red-500">*</span>
           </Label>
           <Select
-            value={formData.designation ? formData.designation.toString() : "0"}
+            value={formData.designation ? formData.designation.toString() : ""}
             onValueChange={(value) => handleSelectChange("designation", value)}
+            disabled={!formData.initiateDept || formData.initiateDept === 0}
           >
-            <SelectTrigger className="bg-white border-gray-200 text-gray-700">
-              <SelectValue
+            <SelectTrigger className="w-full">
+              <SelectValue 
                 placeholder={
-                  loadingDesignations
-                    ? "Loading Designations..."
-                    : !formData.initiateDept ||
-                      formData.initiateDept.toString() === "0"
-                    ? "Select Department first"
-                    : designations.length === 0
-                    ? "No designations available"
-                    : "Select Designation"
-                }
+                  loadingDesigs 
+                    ? "Loading designations..." 
+                    : !formData.initiateDept || formData.initiateDept === 0 
+                      ? "Select Department First" 
+                      : "Select Designation"
+                } 
               />
             </SelectTrigger>
-            <SelectContent className="bg-white">
-              <SelectItem value="0" disabled className="text-gray-400">
-                Select Designation
-              </SelectItem>
-              {designations.map((designation) => (
-                <SelectItem
-                  key={designation.id}
-                  value={designation.id.toString()}
-                  className="text-gray-700"
-                >
-                  {designation.name}
-                </SelectItem>
-              ))}
-              {!loadingDesignations &&
-                formData.initiateDept &&
-                designations.length === 0 && (
-                  <div className="px-2 py-1 text-sm text-gray-500">
-                    No designations available
-                  </div>
-                )}
+            <SelectContent>
+              {designationOptions}
             </SelectContent>
           </Select>
-        </motion.div>
+        </div>
 
-        <motion.div variants={itemVariants} className="space-y-2">
-          <Label htmlFor="date" className="text-gray-700">
+        {/* Date */}
+        <div className="space-y-2">
+          <Label htmlFor="date" className="text-sm font-medium">
             Date
           </Label>
           <Popover>
             <PopoverTrigger asChild>
-              <button
-                id="date"
-                disabled
-                className={cn(
-                  "w-full flex items-center justify-between rounded-md border border-gray-200 bg-white px-3 py-2 text-left text-sm text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-50 h-10"
-                )}
-              >
-                {formData.date ? (
-                  format(new Date(formData.date), "PPP")
-                ) : (
-                  <span>Select date</span>
-                )}
-                <CalendarIcon className="h-4 w-4 opacity-50" />
-              </button>
+              <div className="relative">
+                <Input
+                  id="date"
+                  name="date"
+                  value={date ? format(date, "PPP") : ""}
+                  placeholder="Select date"
+                  className="border-gray-300 focus:border-blue-500 cursor-pointer pr-10"
+                  readOnly
+                />
+                <CalendarIcon className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              </div>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 bg-white" align="start">
+            <PopoverContent className="w-auto p-0" align="start">
               <Calendar
                 mode="single"
-                selected={formData.date ? new Date(formData.date) : undefined}
-                onSelect={(date) => {
-                  if (date) {
+                selected={date}
+                onSelect={(selectedDate) => {
+                  if (selectedDate) {
+                    setDate(selectedDate);
                     handleChange({
                       target: {
                         name: "date",
-                        value: format(date, "yyyy-MM-dd"),
+                        value: format(selectedDate, "yyyy-MM-dd"),
                       },
                     } as React.ChangeEvent<HTMLInputElement>);
                   }
                 }}
-                disabled
                 initialFocus
               />
             </PopoverContent>
           </Popover>
-        </motion.div>
-      </motion.div>
+        </div>
+      </div>
+
+      {(loading || loadingDepts || loadingDesigs) && (
+        <div className="flex justify-center items-center py-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-600"></div>
+          <span className="ml-2 text-xs text-gray-500">
+            Loading...
+          </span>
+        </div>
+      )}
+
+      <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800">
+        <p className="text-sm text-yellow-800 dark:text-yellow-200">
+          <strong>Note:</strong> Please select your Business Unit first, then Department, and finally your Designation. Each field depends on the previous selection.
+        </p>
+      </div>
     </motion.div>
   );
-};
+});

@@ -366,39 +366,6 @@ const FormStatisticsChart: React.FC<FormStatisticsChartProps> = ({
             </motion.div>
           </div>
           
-          {/* Approval rate gauge */}
-          <motion.div 
-            className="mt-6 p-4 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-900 rounded-lg border border-gray-100 dark:border-gray-700"
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            whileHover={{ boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)" }}
-          >
-            <div className="flex justify-between mb-2">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Approval Rate</h4>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{approvalRate.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <motion.div 
-                className="bg-gradient-to-r from-green-500 to-blue-500 h-2.5 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: `${approvalRate}%` }}
-                transition={{ duration: 1, delay: 0.3 }}
-              ></motion.div>
-            </div>
-            <div className="flex justify-between mt-2">
-              <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">Rejection Rate</h4>
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{rejectionRate.toFixed(1)}%</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-              <motion.div 
-                className="bg-gradient-to-r from-red-500 to-orange-400 h-2.5 rounded-full"
-                initial={{ width: "0%" }}
-                animate={{ width: `${rejectionRate}%` }}
-                transition={{ duration: 1, delay: 0.4 }}
-              ></motion.div>
-            </div>
-          </motion.div>
         </div>
       </motion.div>
     </div>

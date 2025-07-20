@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { slideVariants } from "./animations";
 import { AssetDetailsProps } from "./types";
 import { ChevronDown, Search, X, Check, FileIcon, Upload } from "lucide-react";
@@ -333,11 +334,11 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
       className="space-y-6 max-w-4xl mx-auto"
     >
       {/* Header */}
-      <div className="border-b border-gray-200 dark:border-gray-700 pb-4 mb-6">
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
+      <div className="mb-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
           Asset Details
         </h3>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           Verify your asset list and provide additional details
         </p>
       </div>
@@ -347,84 +348,59 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="mb-8"
+        className="mb-6"
       >
-        <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">
+        <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">
           1. Asset Summary
         </h4>
 
         {formData.assets.length > 0 ? (
-          <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden shadow-sm">
-            <table className="w-full min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <table className="w-full">
               <thead className="bg-gray-50 dark:bg-gray-800">
                 <tr>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Asset Title
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Description
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Quantity
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Price/Unit
                   </th>
-                  <th
-                    scope="col"
-                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider"
-                  >
+                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Total
                   </th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
                 {formData.assets.map((asset, index) => (
-                  <tr
-                    key={index}
-                    className={
-                      index % 2 === 0
-                        ? "bg-white dark:bg-gray-900"
-                        : "bg-gray-50 dark:bg-gray-800"
-                    }
-                  >
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                  <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                       {asset.title}
                     </td>
-                    <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-300">
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300">
                       {asset.description}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-center">
                       {asset.quantity}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-300 text-right">
                       ₹{asset.pricePerUnit}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white text-right">
                       ₹{asset.total}
                     </td>
                   </tr>
                 ))}
-                <tr className="bg-gray-50 dark:bg-gray-800 font-medium">
-                  <td
-                    colSpan={4}
-                    className="px-6 py-4 text-right text-sm text-gray-900 dark:text-white"
-                  >
+                <tr className="bg-gray-100 dark:bg-gray-800 font-medium border-t-2 border-gray-200 dark:border-gray-700">
+                  <td colSpan={4} className="px-4 py-3 text-right text-sm text-gray-900 dark:text-white">
                     Total
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900 dark:text-white">
+                  <td className="px-4 py-3 text-sm font-bold text-gray-900 dark:text-white text-right">
                     ₹{formData.assetAmount}
                   </td>
                 </tr>
@@ -433,14 +409,13 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
           </div>
         ) : (
           <div className="text-center p-6 border border-gray-200 dark:border-gray-700 rounded-lg bg-gray-50 dark:bg-gray-800">
-            <p className="text-gray-500 dark:text-gray-400">
-              No assets have been added yet. Please go back and add at least one
-              asset.
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
+              No assets have been added yet. Please go back and add at least one asset.
             </p>
             <Button
               type="button"
               onClick={() => navigateToStep(1)}
-              className="mt-4 bg-gray-600 text-white hover:bg-gray-700"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               Go Back to Asset Selection
             </Button>
@@ -453,26 +428,26 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
-        className="mb-8"
+        className="mb-6"
       >
-        <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">
+        <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">
           2. Request Classification
         </h4>
 
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Category */}
             <div className="space-y-2">
-              <Label htmlFor="category" className="text-sm font-medium">
+              <Label htmlFor="category" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Request Category <span className="text-red-500">*</span>
               </Label>
               <div className="relative" ref={categoryDropdownRef}>
                 <div
-                  className={`h-10 w-full rounded-md border ${
+                  className={`h-10 w-full rounded border ${
                     isCategoryOpen
-                      ? "border-gray-600 ring-1 ring-gray-400 dark:ring-gray-600"
-                      : "border-gray-300 dark:border-gray-700"
-                  } bg-white px-3 py-2 flex items-center justify-between cursor-pointer focus:outline-none hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-150 dark:bg-gray-800 dark:text-gray-200`}
+                      ? "border-gray-400 ring-1 ring-blue-200"
+                      : "border-gray-300 dark:border-gray-600"
+                  } bg-white px-3 py-2 flex items-center justify-between cursor-pointer hover:border-gray-400 transition-colors dark:bg-gray-800 dark:text-gray-200`}
                   onClick={() => setIsCategoryOpen(!isCategoryOpen)}
                 >
                   <div className="flex items-center w-full">
@@ -570,19 +545,16 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
 
             {/* Department */}
             <div className="space-y-2">
-              <Label
-                htmlFor="concerned_department"
-                className="text-sm font-medium"
-              >
+              <Label htmlFor="concerned_department" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Concerned Department <span className="text-red-500">*</span>
               </Label>
               <div className="relative" ref={departmentDropdownRef}>
                 <div
-                  className={`h-10 w-full rounded-md border ${
+                  className={`h-10 w-full rounded border ${
                     isDepartmentOpen
-                      ? "border-gray-600 ring-1 ring-gray-400 dark:ring-gray-600"
-                      : "border-gray-300 dark:border-gray-700"
-                  } bg-white px-3 py-2 flex items-center justify-between cursor-pointer focus:outline-none hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-150 dark:bg-gray-800 dark:text-gray-200`}
+                      ? "border-gray-400 ring-1 ring-blue-200"
+                      : "border-gray-300 dark:border-gray-600"
+                  } bg-white px-3 py-2 flex items-center justify-between cursor-pointer hover:border-gray-400 transition-colors dark:bg-gray-800 dark:text-gray-200`}
                   onClick={() => setIsDepartmentOpen(!isDepartmentOpen)}
                 >
                   <div className="flex items-center w-full">
@@ -682,44 +654,56 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
 
             {/* Approval Category */}
             <div className="space-y-2">
-              <Label htmlFor="approvalCategory" className="text-sm font-medium">
+              <Label htmlFor="approvalCategory" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Budget Approval Category <span className="text-red-500">*</span>
               </Label>
-              <select
-                id="approvalCategory"
-                name="approvalCategory"
+              <Select
                 value={formData.approvalCategory || ""}
-                onChange={handleChange}
-                className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                onValueChange={(value) => {
+                  const event = {
+                    target: { name: "approvalCategory", value }
+                  } as React.ChangeEvent<HTMLSelectElement>;
+                  handleChange(event);
+                }}
               >
-                <option value="">Select Budget Approval Category</option>
-                {approvalCategories.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full h-10 border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-200 focus:border-blue-400">
+                  <SelectValue placeholder="Select Budget Approval Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {approvalCategories.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Approval Type */}
             <div className="space-y-2">
-              <Label htmlFor="approvalType" className="text-sm font-medium">
+              <Label htmlFor="approvalType" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Approval Type <span className="text-red-500">*</span>
               </Label>
-              <select
-                id="approvalType"
-                name="approvalType"
+              <Select
                 value={formData.approvalType || ""}
-                onChange={handleChange}
-                className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                onValueChange={(value) => {
+                  const event = {
+                    target: { name: "approvalType", value }
+                  } as React.ChangeEvent<HTMLSelectElement>;
+                  handleChange(event);
+                }}
               >
-                <option value="">Select Approval Type</option>
-                {approvalTypes.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full h-10 border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-200 focus:border-blue-400">
+                  <SelectValue placeholder="Select Approval Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {approvalTypes.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
@@ -730,17 +714,17 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
-        className="mb-8"
+        className="mb-6"
       >
-        <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">
+        <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">
           3. Request Details
         </h4>
 
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 gap-5">
+        <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <div className="space-y-4">
             {/* Reason */}
             <div className="space-y-2">
-              <Label htmlFor="reason" className="text-sm font-medium">
+              <Label htmlFor="reason" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Reason for Request <span className="text-red-500">*</span>
               </Label>
               <Textarea
@@ -750,22 +734,22 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                 value={formData.reason || ""}
                 onChange={handleChange}
                 rows={4}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               />
             </div>
 
             {/* Notify To */}
             <div className="space-y-2">
-              <Label htmlFor="notifyTo" className="text-sm font-medium">
+              <Label htmlFor="notifyTo" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Notify Request to <span className="text-red-500">*</span>
               </Label>
               <div className="relative" ref={dropdownRef}>
                 <div
-                  className={`h-10 w-full rounded-md border ${
+                  className={`h-10 w-full rounded border ${
                     isOpen
-                      ? "border-gray-600 ring-1 ring-gray-400 dark:ring-gray-600"
-                      : "border-gray-300 dark:border-gray-700"
-                  } bg-white px-3 py-2 flex items-center justify-between cursor-pointer focus:outline-none hover:border-gray-400 dark:hover:border-gray-600 transition-all duration-150 dark:bg-gray-800 dark:text-gray-200`}
+                      ? "border-gray-400 ring-1 ring-blue-200"
+                      : "border-gray-300 dark:border-gray-600"
+                  } bg-white px-3 py-2 flex items-center justify-between cursor-pointer hover:border-gray-400 transition-colors dark:bg-gray-800 dark:text-gray-200`}
                   onClick={() => setIsOpen(!isOpen)}
                 >
                   <div className="flex items-center w-full">
@@ -859,20 +843,20 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.3 }}
-        className="mb-8"
+        className="mb-6"
       >
-        <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">
+        <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">
           4. Attachments
         </h4>
 
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Form Attachments */}
             <div className="space-y-3">
-              <Label htmlFor="formAttachments" className="text-sm font-medium">
+              <Label htmlFor="formAttachments" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Request Form Attachments
               </Label>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-900 transition-colors hover:border-gray-400 dark:hover:border-gray-600">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800 transition-colors hover:border-gray-400 dark:hover:border-gray-500">
                 <div className="flex flex-col items-center justify-center text-center">
                   <Upload className="h-6 w-6 text-gray-400 mb-2" />
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -881,7 +865,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                   <div className="mt-2 relative">
                     <label
                       htmlFor="form-attachments-uploader"
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 cursor-pointer"
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium rounded text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
                     >
                       <span>Browse files</span>
                       <input
@@ -937,10 +921,10 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
 
             {/* Asset Attachments */}
             <div className="space-y-3">
-              <Label htmlFor="assetAttachments" className="text-sm font-medium">
+              <Label htmlFor="assetAttachments" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Asset Attachments
               </Label>
-              <div className="border-2 border-dashed border-gray-300 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-900 transition-colors hover:border-gray-400 dark:hover:border-gray-600">
+              <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-4 bg-gray-50 dark:bg-gray-800 transition-colors hover:border-gray-400 dark:hover:border-gray-500">
                 <div className="flex flex-col items-center justify-center text-center">
                   <Upload className="h-6 w-6 text-gray-400 mb-2" />
                   <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -949,7 +933,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                   <div className="mt-2 relative">
                     <label
                       htmlFor="asset-attachments-uploader"
-                      className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700 cursor-pointer"
+                      className="inline-flex items-center px-4 py-2 text-sm font-medium rounded text-white bg-blue-600 hover:bg-blue-700 cursor-pointer"
                     >
                       <span>Browse files</span>
                       <input
@@ -1006,58 +990,77 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
         </div>
       </motion.div>
 
-      <div>
-        <div className="space-y-2">
-          <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">
-            5. Benefit to Organization
-          </h4>
-          <Textarea
-            id="benefitToOrg"
-            name="benefitToOrg"
-            value={formData.benefitToOrg || ""}
-            onChange={handleChange}
-            placeholder="Please explain how this request benefits the organization"
-            className="min-h-32 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+      {/* Benefit to Organization */}
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3, delay: 0.4 }}
+        className="mb-6"
+      >
+        <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">
+          5. Benefit to Organization
+        </h4>
+        <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <div className="space-y-2">
+            <Label htmlFor="benefitToOrg" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              Organizational Benefits
+            </Label>
+            <Textarea
+              id="benefitToOrg"
+              name="benefitToOrg"
+              value={formData.benefitToOrg || ""}
+              onChange={handleChange}
+              placeholder="Please explain how this request benefits the organization"
+              rows={4}
+              className="w-full rounded border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+            />
+          </div>
         </div>
-      </div>
+      </motion.div>
 
-<motion.div
+      {/* Additional Information */}
+      <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.2 }}
         className="mb-8"
       >
-        <h4 className="text-md font-medium text-gray-800 dark:text-gray-200 mb-3">
+        <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">
           6. Additional Information
         </h4>
 
-        <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-5 border border-gray-200 dark:border-gray-700">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {/* Payback Month Select */}
+        <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Payback Year Select */}
             <div className="space-y-2">
-              <Label htmlFor="paybackmonth" className="text-sm font-medium">
-                Payback Month
+              <Label htmlFor="paybackmonth" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Payback Year
               </Label>
-              <select
-                id="paybackmonth"
-                name="paybackmonth"
+              <Select
                 value={formData.paybackmonth || ""}
-                onChange={handleChange}
-                className="h-10 w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                onValueChange={(value) => {
+                  const event = {
+                    target: { name: "paybackmonth", value }
+                  } as React.ChangeEvent<HTMLSelectElement>;
+                  handleChange(event);
+                }}
               >
-                <option value="">Select Payback Month</option>
-                {paybackPeriodOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="w-full h-10 border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-200 focus:border-blue-400">
+                  <SelectValue placeholder="Select Payback Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {paybackPeriodOptions.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Document Enclosed Summary Textarea */}
             <div className="space-y-2">
-              <Label htmlFor="documentsSummary" className="text-sm font-medium">
+              <Label htmlFor="documentsSummary" className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Document Enclosed Summary
               </Label>
               <Textarea
@@ -1067,7 +1070,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                 onChange={handleChange}
                 placeholder="Enter document enclosed summary"
                 rows={4}
-                className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-gray-500 focus:border-gray-500 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+                className="w-full rounded border border-gray-300 bg-white px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-200 focus:border-blue-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
               />
             </div>
           </div>
