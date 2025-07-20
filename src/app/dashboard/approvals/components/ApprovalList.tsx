@@ -33,7 +33,7 @@ export default function ApprovalList({ forms, onViewDetails }: ApprovalListProps
           <div className="flex justify-between items-start mb-2">
             <div>
               <div className="font-medium text-gray-900 dark:text-white">
-                {form.id}
+                {form.budget_id || form.id}
               </div>
               <div className="mt-1">
                 <div className="text-sm font-medium">{form.user_name || form.user}</div>

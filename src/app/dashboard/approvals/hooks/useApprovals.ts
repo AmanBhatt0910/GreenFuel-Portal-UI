@@ -159,7 +159,15 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
       const rawData = response.data ;
       
       const enrichedData = await enrichApprovalData(rawData);
-      setForms(enrichedData);
+      
+      // Sort by newest first (by date)
+      const sortedData = enrichedData.sort((a, b) => {
+        const dateA = new Date(a.date);
+        const dateB = new Date(b.date);
+        return dateB.getTime() - dateA.getTime(); // Newest first
+      });
+      
+      setForms(sortedData);
     } catch (err) {
       console.error("Error fetching approvals:", err);
       setError(err instanceof Error ? err : new Error('Failed to fetch approvals'));
@@ -184,7 +192,7 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     const search = searchTerm.toLowerCase();
     const searchMatch =
       searchTerm === "" ||
-      form.id.toLowerCase().includes(search) ||
+      (form.budget_id?.toLowerCase() || form.id.toLowerCase()).includes(search) ||
       (form.user_name?.toLowerCase() || String(form.user).toLowerCase()).includes(search) ||
       (form.department_name?.toLowerCase() || String(form.department).toLowerCase()).includes(search) ||
       form.approval_category.toLowerCase().includes(search);

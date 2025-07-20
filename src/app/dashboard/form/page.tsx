@@ -331,7 +331,7 @@ export default function AssetRequestForm() {
           break;
         case 2:
           toast.warning(
-            "Please complete all required fields: Request Category, Concerned Department, Budget Approval Category, Approval Type, Reason for Request, and Notify Request to."
+            "Please complete all required fields: Request Category, Concerned Department, Budget Approval Category, Approval Type, and Reason for Request."
           );
           break;
         case 3:
@@ -609,9 +609,7 @@ export default function AssetRequestForm() {
           formData.approvalCategory &&
           formData.approvalCategory.trim() !== "" &&
           formData.approvalType &&
-          formData.approvalType.trim() !== "" &&
-          formData.notifyTo &&
-          formData.notifyTo !== 0
+          formData.approvalType.trim() !== ""
         );
       case 3:
         return formData.policyAgreement;
@@ -645,9 +643,7 @@ export default function AssetRequestForm() {
           formData.approvalCategory &&
           formData.approvalCategory.trim() !== "" &&
           formData.approvalType &&
-          formData.approvalType.trim() !== "" &&
-          formData.notifyTo &&
-          formData.notifyTo !== 0
+          formData.approvalType.trim() !== ""
         );
       case 3:
         return formData.policyAgreement;
@@ -1451,20 +1447,19 @@ export default function AssetRequestForm() {
                                 </span>
                               </div>
                               <div className="flex items-center text-sm">
-                                {formData.notifyTo &&
-                                formData.notifyTo !== 0 ? (
-                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                                {formData.notifyTo ? (
+                                  <Check className="h-4 w-4 text-blue-500 mr-2 flex-shrink-0" />
                                 ) : (
-                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                                  <Info className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
                                 )}
                                 <span
                                   className={
-                                    formData.notifyTo && formData.notifyTo !== 0
-                                      ? "text-green-700 dark:text-green-400"
-                                      : "text-gray-600 dark:text-gray-400"
+                                    formData.notifyTo
+                                      ? "text-blue-700 dark:text-blue-400"
+                                      : "text-gray-500 dark:text-gray-500"
                                   }
                                 >
-                                  Notify Request to
+                                  Notify Request to (Optional)
                                 </span>
                               </div>
                             </div>

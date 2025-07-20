@@ -738,10 +738,10 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
               />
             </div>
 
-            {/* Notify To */}
+            {/* Notify To - Optional */}
             <div className="space-y-2">
               <Label htmlFor="notifyTo" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Notify Request to <span className="text-red-500">*</span>
+                Notify Request to
               </Label>
               <div className="relative" ref={dropdownRef}>
                 <div
@@ -773,7 +773,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                       </div>
                     ) : (
                       <span className="text-sm text-gray-500 dark:text-gray-400">
-                        Select user to notify
+                        Select user to notify (optional)
                       </span>
                     )}
                   </div>
@@ -831,7 +831,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                 )}
               </div>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                The selected user will be notified about this request
+                Optional: The selected user will be notified about this request
               </p>
             </div>
           </div>

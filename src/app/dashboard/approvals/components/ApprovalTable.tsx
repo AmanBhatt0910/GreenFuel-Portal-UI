@@ -36,7 +36,7 @@ export default function ApprovalTable({ forms, onViewDetails }: ApprovalTablePro
       <Table>
         <TableHeader>
           <TableRow className="bg-gray-50 dark:bg-gray-800/50">
-            <TableHead className="w-[130px]">Request ID</TableHead>
+            <TableHead className="w-[130px]">Budget ID</TableHead>
             <TableHead className="w-[220px]">Requester</TableHead>
             <TableHead className="w-[180px]">Department</TableHead>
             <TableHead className="w-[150px]">Category</TableHead>
@@ -52,7 +52,7 @@ export default function ApprovalTable({ forms, onViewDetails }: ApprovalTablePro
               className="hover:bg-gray-50 dark:hover:bg-gray-800/50"
             >
               <TableCell className="font-medium text-gray-900 dark:text-white">
-                {form.id}
+                {form.budget_id || form.id}
               </TableCell>
               <TableCell>
                 <div className="space-y-1">
