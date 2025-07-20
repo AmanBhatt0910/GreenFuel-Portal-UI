@@ -40,12 +40,11 @@ export const FooterLinks: React.FC<FooterLinksProps> = ({ links }) => {
       >
         {links.map((link, index) => (
           <motion.div key={index} variants={itemVariants}>
-            <Link 
-              href={link.href}
+            <div
               className="text-sm text-gray-600 hover:text-[#243B55] dark:text-gray-400 dark:hover:text-gray-200 transition-colors duration-200"
             >
               {link.label}
-            </Link>
+            </div>
           </motion.div>
         ))}
       </motion.div>
