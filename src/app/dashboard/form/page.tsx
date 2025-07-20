@@ -566,6 +566,24 @@ export default function AssetRequestForm() {
     setFormData(initialData);
     setCurrentStep(0);
     setIsSubmitted(false);
+    
+    // Reset file attachments
+    setFormAttachments([]);
+    setAssetAttachments([]);
+    
+    // Reset current asset form
+    setCurrentAsset({
+      title: "",
+      description: "",
+      quantity: 1,
+      pricePerUnit: 0,
+      total: 0,
+      sapItemCode: "",
+    });
+    setEditingAssetIndex(null);
+    
+    // Reset budget ID
+    setBudgetId(null);
   };
 
   const isStepValid = (): boolean => {
