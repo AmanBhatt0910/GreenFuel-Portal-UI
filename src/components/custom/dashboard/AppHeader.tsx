@@ -38,8 +38,9 @@ const AppHeader = () => {
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
-      localStorage.removeItem("authToken");
-      window.location.href = "/";
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("userInfo");
+      window.location.href = "/logout";
     }
   };
 
