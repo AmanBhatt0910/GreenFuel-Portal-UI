@@ -331,7 +331,7 @@ export default function AssetRequestForm() {
           break;
         case 2:
           toast.warning(
-            "Please complete all required fields: Request Category, Concerned Department, Budget Approval Category, Approval Type, and Reason for Request."
+            "Please complete all required fields: Request Category, Concerned Department, Budget Approval Category, and Reason for Request."
           );
           break;
         case 3:

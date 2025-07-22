@@ -21,12 +21,6 @@ const approvalCategories = [
   { value: "Other", label: "Other" },
 ];
 
-const approvalTypes = [
-  { value: "Capex", label: "Capex" },
-  { value: "Opex", label: "Opex" },
-  { value: "Service", label: "Service" },
-];
-
 export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   formData,
   handleChange,
@@ -671,33 +665,6 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   {approvalCategories.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Approval Type */}
-            <div className="space-y-2">
-              <Label htmlFor="approvalType" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Approval Type <span className="text-red-500">*</span>
-              </Label>
-              <Select
-                value={formData.approvalType || ""}
-                onValueChange={(value) => {
-                  const event = {
-                    target: { name: "approvalType", value }
-                  } as React.ChangeEvent<HTMLSelectElement>;
-                  handleChange(event);
-                }}
-              >
-                <SelectTrigger className="w-full h-10 border-gray-300 dark:border-gray-600 focus:ring-1 focus:ring-blue-200 focus:border-blue-400">
-                  <SelectValue placeholder="Select Approval Type" />
-                </SelectTrigger>
-                <SelectContent>
-                  {approvalTypes.map((option) => (
                     <SelectItem key={option.value} value={option.value}>
                       {option.label}
                     </SelectItem>
