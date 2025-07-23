@@ -33,6 +33,8 @@ import RequestDetailsSection from "./components/RequestDetails/Detail";
 import BasicInfoSection from "./components/RequestDetails/BasicDetail";
 import OrganizationalSection from "./components/RequestDetails/Organization";
 
+import useAxios from "@/app/hooks/use-axios";
+
 const LoadingIndicator: React.FC = () => (
   <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-sky-50">
     <div className="text-center">
@@ -71,6 +73,7 @@ const NotFoundAlert: React.FC = React.memo(() => (
 NotFoundAlert.displayName = "NotFoundAlert";
 
 const RequestDetailsPage: React.FC = () => {
+  const api = useAxios();
   const params = useParams();
   const requestId = params.id as string;
 
@@ -106,20 +109,18 @@ const RequestDetailsPage: React.FC = () => {
   }
 
   useEffect(() => {
-    if (currentTab === "comments" && request?.id) {
-      const markChatsAsRead = async () => {
+    const markChatsAsRead = async () => {
+      if (currentTab === "comments" && request?.id) {
         try {
-          await fetch(`http://api.sugamgreenfuel.in/chats/${request.id}/`, {
-            method: "PUT",
-          });
-          console.log("Chats marked as read for form:", request.id);
+          await api.put(`/chats/${request.id}/`);
+          console.log("Marked chats as read with Axios");
         } catch (err) {
-          console.error("Failed to mark chat as read", err);
+          console.error("Failed to mark chat as read:", err);
         }
-      };
+      }
+    };
 
-      markChatsAsRead();
-    }
+    markChatsAsRead();
   }, [currentTab, request?.id]);
   
   return (

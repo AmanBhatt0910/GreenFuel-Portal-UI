@@ -72,20 +72,31 @@ const BudgetRequestsList = () => {
     const fetchRequestsData = async () => {
       try {
         setLoading(true);
+
         const response = await api.get(`/approval-requests/`);
         const fetchedRequests = response.data;
 
         const enrichedRequests = await Promise.all(
           fetchedRequests.map(async (req: BudgetRequest) => {
             try {
-              const chatResp = await fetch(
-                `http://api.sugamgreenfuel.in/chats?form_id=${req.id}&unread=true`
-              );
-              const data = await chatResp.json();
-              return { ...req, has_unread_chat: data.unread_chat === true };
+              const unreadResponse = await api.get(`/chats`, {
+                params: {
+                  form_id: req.id,
+                  unread: true,
+                },
+              });
+
+              const isUnread = unreadResponse.data?.unread_chat === true;
+              return {
+                ...req,
+                has_unread_chat: isUnread,
+              };
             } catch (e) {
-              console.error("Error checking unread chat for form:", req.id, e);
-              return { ...req, has_unread_chat: false };
+              console.error(`Error checking unread chat for form ${req.id}`, e);
+              return {
+                ...req,
+                has_unread_chat: false,
+              };
             }
           })
         );
@@ -93,7 +104,6 @@ const BudgetRequestsList = () => {
         setRequests(enrichedRequests);
         setFilteredRequests(enrichedRequests);
 
-        // Fetch current user
         try {
           const userResponse = await api.get("/userInfo/");
           if (userResponse.data && userResponse.data.id) {
@@ -103,7 +113,6 @@ const BudgetRequestsList = () => {
           console.error("Error fetching current user:", userError);
         }
 
-        // Fetch related entities
         await fetchRelatedData();
       } catch (error) {
         console.error("Error fetching requests data:", error);
@@ -117,13 +126,13 @@ const BudgetRequestsList = () => {
     fetchRequestsData();
   }, []);
 
+
   useEffect(()=>{
     window.scrollTo(0, 0);
   },[])
 
   const fetchRelatedData = async () => {
     try {
-      // Fetch business units
       const businessUnitsResponse = await api.get("business-units/");
       if (businessUnitsResponse.data) {
         setBusinessUnits(businessUnitsResponse.data);
@@ -405,7 +414,10 @@ const BudgetRequestsList = () => {
                               {request.budget_id}
                             </h3>
                             {request.has_unread_chat && (
-                              <span className="ml-1 h-2 w-2 bg-red-500 rounded-full animate-pulse" title="Unread chat" />
+                              <span
+                                className="ml-1 h-2 w-2 bg-red-500 rounded-full animate-pulse"
+                                title="Unread chat"
+                              />
                             )}
                           </div>
                           {getStatusBadge(request)}
