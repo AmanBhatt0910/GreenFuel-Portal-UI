@@ -417,8 +417,15 @@ const BudgetRequestsList = () => {
       {/* Budget Requests List */}
       <div className="bg-white rounded-lg border border-blue-100 shadow-sm overflow-hidden">
       <div className="p-4 border-b border-blue-100">
-          <div className="text-xl font-semibold text-blue-700">
-            Budget Requests ({filteredRequests.length})
+          <div className="flex justify-between items-end px-4 pb-2">
+            <div>
+              <h2 className="text-2xl font-bold text-blue-800 tracking-tight">
+                Budget Requests
+              </h2>
+              <p className="text-sm text-blue-500/80 mt-1">
+                Showing {filteredRequests.length} total request{filteredRequests.length !== 1 ? "s" : ""}.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -437,78 +444,78 @@ const BudgetRequestsList = () => {
               Object.entries(groupByMonth(filteredRequests))
                 .sort((a, b) => new Date(b[1][0].date).getTime() - new Date(a[1][0].date).getTime())
                 .map(([month, monthRequests]) => (
-                  <details key={month} open className="border-b border-blue-100 px-3 py-2 bg-blue-50/30">
-                    <summary className="cursor-pointer text-lg font-semibold text-blue-700 flex items-center justify-between group">
-                      <span>{month} ({monthRequests.length})</span>
-                      <ChevronDown className="w-4 h-4 text-blue-400 group-open:rotate-180 transition-transform" />
-                    </summary>
+                  <section className="px-3 py-2 rounded-lg border border-blue-100 bg-white shadow-sm mb-6">
+                    <details key={month} open className="border-b border-blue-100 px-3 py-2 bg-blue-50/30">
+                      <summary className="cursor-pointer text-md font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-2 rounded-md flex items-center justify-between group shadow-sm mt-6 mb-2 border border-blue-100">
+                        <span>{month} ({monthRequests.length})</span>
+                        <ChevronDown className="w-4 h-4 text-blue-400 group-open:rotate-180 transition-transform" />
+                      </summary>
 
-                    <div className="space-y-4 mt-4 transition-all">
-                      {monthRequests.map((request) => (
-                        <div
-                          key={request.id}
-                          className="p-4 bg-white hover:bg-blue-50 rounded-lg border border-blue-100 shadow-sm transition-all cursor-pointer"
-                          onClick={() => toggleRowExpansion(request.id)}
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="text-blue-700 font-semibold text-base tracking-tight">
-                                  {request.budget_id}
-                                </h3>
+                      <div className="space-y-4 mt-4 transition-all">
+                        {monthRequests.map((request) => (
+                          <div
+                            key={request.id}
+                            className="p-4 bg-white hover:bg-blue-50 rounded-lg border border-blue-100 shadow-sm transition-all cursor-pointer"
+                            onClick={() => toggleRowExpansion(request.id)}
+                          >
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h3 className="text-blue-800 font-semibold text-base mb-0.5 tracking-tight">
+                                    {request.budget_id}
+                                  </h3>
 
-                                {request.has_unread_chat && (
-                                  <span title="Unread chat" className="px-2 py-0.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-full flex items-center gap-1">
-                                    <MessageSquare className="w-3 h-3" />
-                                    Unread
-                                  </span>
-                                )}
-                              </div>
-
-                              <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
-                                {request.reason}
-                              </p>
-                            </div>
-
-                            <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-                              <div className="flex items-center text-sm text-blue-600">
-                                <Calendar className="w-4 h-4 mr-1.5 text-blue-400" />
-                                {formatDate(request.date)}
-                              </div>
-                              <span className="text-sm text-green-700 font-medium">{formatCurrency(request.total)}</span>
-                              {getStatusBadge(request)}
-                            </div>
-                          </div>
-
-                          {/* expanded row content */}
-                          {expandedRows.includes(request.id) && (
-                            <div className="mt-4 p-4 bg-blue-50/20 border-t border-blue-100 rounded-b-lg">
-                              <p className="text-sm text-blue-900 font-medium">
-                                Business Unit: {getBusinessUnitName(request.business_unit)} | Department: {getDepartmentName(request.department)} | Requested by {getUserName(request.user)}
-                              </p>
-                              {request.benefit_to_organisation && (
-                                <div className="mt-3">
-                                  <h4 className="text-sm font-medium text-blue-600 mb-1">Benefit to Organisation</h4>
-                                  <p className="text-sm text-gray-700 bg-blue-50 rounded-md p-3 border border-blue-100">
-                                    {request.benefit_to_organisation}
-                                  </p>
+                                  {request.has_unread_chat && (
+                                    <span title="Unread chat" className="px-2 py-0.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-full flex items-center gap-1">
+                                      <MessageSquare className="w-3 h-3" />
+                                      Unread
+                                    </span>
+                                  )}
                                 </div>
-                              )}
-                              <div className="mt-4 text-right">
-                                <Link
-                                  href={`/dashboard/requests/${request.id}${currentUserId ? `?userId=${currentUserId}` : ""}`}
-                                >
-                                  <Button size="sm" variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                                    View Details
-                                  </Button>
-                                </Link>
+
+                                <p className="text-xs text-gray-600 line-clamp-1">{request.reason}</p>
+                              </div>
+
+                              <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                                <div className="flex items-center text-sm text-blue-600">
+                                  <Calendar className="w-4 h-4 mr-1.5 text-blue-400" />
+                                  {formatDate(request.date)}
+                                </div>
+                                <span className="text-sm text-green-700 font-medium">{formatCurrency(request.total)}</span>
+                                {getStatusBadge(request)}
                               </div>
                             </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </details>
+
+                            {/* expanded row content */}
+                            {expandedRows.includes(request.id) && (
+                              <div className="mt-4 p-4 bg-blue-50/20 border-t border-blue-100 rounded-b-lg">
+                                <p className="text-sm text-blue-900 font-medium">
+                                  Business Unit: {getBusinessUnitName(request.business_unit)} | Department: {getDepartmentName(request.department)} | Requested by {getUserName(request.user)}
+                                </p>
+                                {request.benefit_to_organisation && (
+                                  <div className="mt-3">
+                                    <h4 className="text-sm font-medium text-blue-600 mb-1">Benefit to Organisation</h4>
+                                    <p className="text-sm text-gray-700 bg-blue-50 rounded-md p-3 border border-blue-100">
+                                      {request.benefit_to_organisation}
+                                    </p>
+                                  </div>
+                                )}
+                                <div className="mt-4 text-right">
+                                  <Link
+                                    href={`/dashboard/requests/${request.id}${currentUserId ? `?userId=${currentUserId}` : ""}`}
+                                  >
+                                    <Button size="sm" variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                                      View Details
+                                    </Button>
+                                  </Link>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </details>
+                  </section>
                 ))
             )}
           </CardContent>
