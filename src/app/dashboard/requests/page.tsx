@@ -49,6 +49,7 @@ interface BudgetRequest {
   notify_to: number;
 
   has_unread_chat?: boolean;
+  pending_approver_name?: string;
 }
 
 interface EntityInfo {
@@ -79,6 +80,9 @@ const BudgetRequestsList = () => {
 
         const enrichedRequests = await Promise.all(
           fetchedRequests.map(async (req) => {
+            let hasUnreadChat = false;
+            let pendingApproverName = undefined;
+
             try {
               const unreadRes = await api.get("/chats", {
                 params: {
@@ -86,18 +90,32 @@ const BudgetRequestsList = () => {
                   unread: true,
                 },
               });
-
-              return {
-                ...req,
-                has_unread_chat: unreadRes?.data?.unread_chat === true,
-              };
+              hasUnreadChat = unreadRes?.data?.unread_chat === true;
             } catch (error) {
-              console.error(`Error fetching unread status for form ID ${req.id}`, error);
-              return {
-                ...req,
-                has_unread_chat: false,
-              };
+              console.error(`Can't fetch unread chat for request ${req.id}`, error);
             }
+
+            try {
+              if (!req.rejected && req.current_status?.toLowerCase() === "pending") {
+                const approverRes = await api.get("/approver", {
+                  params: {
+                    business_unit: req.business_unit,
+                    department: req.department,
+                    level: req.current_form_level,
+                  },
+                });
+
+                pendingApproverName = approverRes?.data?.user?.name || undefined;
+              }
+            } catch (error) {
+              console.error(`Can't fetch approver for request ${req.id}`, error);
+            }
+
+            return {
+              ...req,
+              has_unread_chat: hasUnreadChat,
+              pending_approver_name: pendingApproverName,
+            };
           })
         );
 
@@ -257,7 +275,9 @@ const BudgetRequestsList = () => {
             className="bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800 flex items-center"
           >
             <Clock className="h-3 w-3 mr-1" />
-            Pending (Level {request.current_form_level}/{request.form_max_level})
+            {request.pending_approver_name
+              ? `Pending - ${request.pending_approver_name}`
+              : `Pending (Level ${request.current_form_level}/${request.form_max_level})`}
           </Badge>
         );
       default:
@@ -272,7 +292,6 @@ const BudgetRequestsList = () => {
     }
   };
 
-  // Category color mapping
   const getCategoryColor = (category: string) => {
     const categoryMap: Record<string, string> = {
       Training: "text-purple-600 dark:text-purple-400",
