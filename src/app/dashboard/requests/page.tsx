@@ -1,5 +1,6 @@
 "use client";
 
+
 import React, { useEffect, useState } from "react";
 import {
   Card,
@@ -26,6 +27,7 @@ import useAxios from "@/app/hooks/use-axios";
 import CustomBreadcrumb from "@/components/custom/CustomBreadcrumb";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { MessageSquare } from "lucide-react";
 
 // Interface for budget request data
 interface BudgetRequest {
@@ -407,17 +409,22 @@ const BudgetRequestsList = () => {
                     <div className="flex flex-col sm:flex-row justify-between">
                       <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-2">
                             <h3 className="font-medium text-blue-700 dark:text-blue-400">
                               {request.budget_id}
                             </h3>
+
                             {request.has_unread_chat && (
-                              <span
-                                className="ml-1 h-2 w-2 bg-red-500 rounded-full animate-pulse"
+                              <span 
+                                className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-medium rounded-full border border-red-300 flex items-center gap-1"
                                 title="Unread chat"
-                              />
+                              >
+                                <MessageSquare className="w-3 h-3" />
+                                Unread
+                              </span>
                             )}
                           </div>
+
                           {getStatusBadge(request)}
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
