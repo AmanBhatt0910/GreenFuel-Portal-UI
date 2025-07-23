@@ -128,7 +128,7 @@ export default function AssetRequestForm() {
       try {
         const response = await api.get("/userInfo/");
         const userData = response.data;
-        console.log("User data received:", userData);
+        
         setUser(userData);
 
         setFormData((prevData) => ({
@@ -449,7 +449,7 @@ export default function AssetRequestForm() {
         status: "pending",
         benefit_to_organisation: formData.benefitToOrg,
         approval_category: formData.approvalCategory,
-        notify_to: formData.notifyTo,
+        notify_to: formData.notifyTo && formData.notifyTo !== 0 ? formData.notifyTo : null,
         form_category: formData.category,
         concerned_department: formData.concerned_department,
         current_category_level: currentCategoryLevel,
@@ -507,10 +507,15 @@ export default function AssetRequestForm() {
         "approval_category",
         submittingFormData.approval_category
       );
-      formDataToSubmit.append(
-        "notify_to",
-        String(submittingFormData.notify_to)
-      );
+      
+      // Only append notify_to if it has a valid value
+      if (submittingFormData.notify_to !== null && submittingFormData.notify_to !== 0) {
+        formDataToSubmit.append(
+          "notify_to",
+          String(submittingFormData.notify_to)
+        );
+      }
+      
       formDataToSubmit.append(
         "form_category",
         String(submittingFormData.form_category)
@@ -570,10 +575,12 @@ export default function AssetRequestForm() {
       console.error("Error submitting form:", error);
 
       let errorMessage = "An unexpected error occurred. Please try again.";
+      let errorDetails = "";
 
       if (error.response?.data) {
         // Handle different types of error responses
         const errorData = error.response.data;
+        console.error("Error response data:", errorData);
 
         if (typeof errorData === "string") {
           errorMessage = errorData;
@@ -590,23 +597,44 @@ export default function AssetRequestForm() {
           errorMessage = errorData.non_field_errors[0];
         } else {
           // Handle field-specific errors
-          const firstErrorKey = Object.keys(errorData)[0];
-          if (firstErrorKey && errorData[firstErrorKey]) {
-            const fieldError = errorData[firstErrorKey];
-            if (Array.isArray(fieldError)) {
-              errorMessage = fieldError[0];
-            } else if (typeof fieldError === "string") {
-              errorMessage = fieldError;
+          const fieldErrors = [];
+          for (const [field, errors] of Object.entries(errorData)) {
+            if (Array.isArray(errors)) {
+              fieldErrors.push(`${field}: ${errors.join(", ")}`);
+            } else if (typeof errors === "string") {
+              fieldErrors.push(`${field}: ${errors}`);
             }
+          }
+          
+          if (fieldErrors.length > 0) {
+            errorMessage = "Please fix the following errors:";
+            errorDetails = fieldErrors.join("; ");
           }
         }
       } else if (error.message) {
         errorMessage = error.message;
       }
 
+      // Determine the error type for better user feedback
+      if (error.response?.status === 400) {
+        if (!errorMessage.includes("fix the following errors")) {
+          errorMessage = "Invalid data submitted. " + errorMessage;
+        }
+      } else if (error.response?.status === 401) {
+        errorMessage = "You are not authorized to submit this request. Please log in again.";
+      } else if (error.response?.status === 403) {
+        errorMessage = "You don't have permission to submit this request.";
+      } else if (error.response?.status === 500) {
+        errorMessage = "Server error occurred. Please try again later.";
+      }
+
       // Show the error toast with the extracted message
-      toast.error(errorMessage, {
-        duration: 5000,
+      const fullErrorMessage = errorDetails ? `${errorMessage}\n${errorDetails}` : errorMessage;
+      toast.error(fullErrorMessage, {
+        duration: 8000,
+        style: {
+          maxWidth: '500px',
+        },
       });
 
       setIsSubmitting(false);
