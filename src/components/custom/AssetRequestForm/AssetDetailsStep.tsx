@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { slideVariants } from "./animations";
 import { AssetDetailsProps } from "./types";
-import { ChevronDown, Search, X, Check, FileIcon, Upload } from "lucide-react";
+import { ChevronDown, Search, X, Check, FileIcon, Upload, AlertCircle } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
 
 // Dummy data for dropdowns
@@ -21,6 +21,20 @@ const approvalCategories = [
   { value: "Other", label: "Other" },
 ];
 
+interface AssetDetailsPropsExtended extends AssetDetailsProps {
+  remainingBudget: number | null;
+  budgetError: string;
+}
+
+interface AssetItem {
+  title: string;
+  description: string;
+  quantity: number;
+  pricePerUnit: number;
+  total: number;
+  sapItemCode: string;
+}
+
 export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   formData,
   handleChange,
@@ -31,6 +45,8 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   setFormAttachments,
   assetAttachments,
   setAssetAttachments,
+  remainingBudget,
+  budgetError,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
@@ -46,6 +62,15 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   const categoryDropdownRef = useRef<HTMLDivElement>(null);
   const departmentDropdownRef = useRef<HTMLDivElement>(null);
   const api = useAxios();
+
+  const totalAmount = Number(formData.assetAmount) || 0;
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
 
   // Find the selected user's name for display
   const selectedUser = user.find(
@@ -371,7 +396,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-200 dark:divide-gray-700">
-                {formData.assets.map((asset, index) => (
+                {formData.assets.map((asset: AssetItem, index: number) => (
                   <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-800">
                     <td className="px-4 py-3 text-sm font-medium text-gray-900 dark:text-white">
                       {asset.title}
@@ -416,6 +441,58 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
           </div>
         )}
       </motion.div>
+
+      {(remainingBudget !== null || budgetError) && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.05 }}
+          className="mb-6"
+        >
+          <h4 className="text-base font-medium text-gray-800 dark:text-gray-200 mb-3">
+            Budget Information
+          </h4>
+
+          <div className="bg-white border border-gray-200 dark:border-gray-700 rounded-lg p-6">
+            {budgetError ? (
+              <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                <div className="flex items-center text-red-700 dark:text-red-300">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  <span className="font-medium">{budgetError}</span>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">Remaining Budget</p>
+                  <p className="text-xl font-bold text-blue-800 dark:text-blue-200">
+                    {formatCurrency(remainingBudget!)}
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-1">Requested Amount</p>
+                  <p className="text-xl font-bold text-emerald-800 dark:text-emerald-200">
+                    {formatCurrency(totalAmount)}
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {remainingBudget !== null && totalAmount > remainingBudget && (
+              <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                <div className="flex items-center text-yellow-700 dark:text-yellow-300">
+                  <AlertCircle className="h-5 w-5 mr-2" />
+                  <span className="font-medium">
+                    Warning: Request amount exceeds remaining budget by{' '}
+                    {formatCurrency(totalAmount - remainingBudget)}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      )}
 
       {/* Request Classification Section */}
       <motion.div

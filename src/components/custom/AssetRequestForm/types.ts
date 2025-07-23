@@ -118,12 +118,17 @@ export interface AssetTableProps {
 }
 
 export interface AssetDetailsProps extends FormStepProps {
+  formData: any;
+  handleChange: (e: React.ChangeEvent<any>) => void;
+  direction: number;
   navigateToStep: (step: number) => void;
   user: any[];
   formAttachments: File[];
   setFormAttachments: React.Dispatch<React.SetStateAction<File[]>>;
   assetAttachments: File[];
   setAssetAttachments: React.Dispatch<React.SetStateAction<File[]>>;
+  remainingBudget: number | null;
+  budgetError: string;
 }
 
 export interface FormNavigationProps {

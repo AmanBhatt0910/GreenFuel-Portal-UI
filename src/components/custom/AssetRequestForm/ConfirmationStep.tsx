@@ -5,11 +5,19 @@ import { slideVariants } from "./animations";
 import { FormStepProps } from "./types";
 import { Check, ChevronDown, ChevronUp } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
+import { AlertCircle } from "lucide-react";
 
-export const ConfirmationStep: React.FC<FormStepProps> = ({
+interface ConfirmationStepProps extends FormStepProps {
+  remainingBudget: number | null;
+  budgetError: string;
+}
+
+export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
   formData,
   handleCheckboxChange,
   direction,
+  remainingBudget,
+  budgetError,
 }) => {
   const [departmentName, setDepartmentName] = useState("Loading...");
   const [businessUnitName, setBusinessUnitName] = useState("Loading...");
@@ -262,6 +270,55 @@ export const ConfirmationStep: React.FC<FormStepProps> = ({
           </>
         )}
       </div>
+
+      {(remainingBudget !== null || budgetError) && (
+        <div className="space-y-4">
+          <h5 className="text-sm font-medium text-gray-700 dark:text-gray-300 border-b border-gray-200 dark:border-gray-700 pb-2 mb-3">
+            Budget Information
+          </h5>
+          
+          {budgetError ? (
+            <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+              <div className="flex items-center text-red-700 dark:text-red-300">
+                <AlertCircle className="h-5 w-5 mr-2" />
+                <span className="font-medium">{budgetError}</span>
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                  <p className="text-sm text-blue-700 dark:text-blue-300 mb-1">Remaining Budget</p>
+                  <p className="text-xl font-bold text-blue-800 dark:text-blue-200">
+                    {formatCurrency(remainingBudget!.toString())}
+                  </p>
+                </div>
+                
+                <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg border border-emerald-200 dark:border-emerald-800">
+                  <p className="text-sm text-emerald-700 dark:text-emerald-300 mb-1">Requested Amount</p>
+                  <p className="text-xl font-bold text-emerald-800 dark:text-emerald-200">
+                    {formatCurrency(formData.assetAmount)}
+                  </p>
+                </div>
+              </div>
+              
+              {remainingBudget! < Number(formData.assetAmount) && (
+                <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg border border-red-200 dark:border-red-800">
+                  <div className="flex items-center text-red-700 dark:text-red-300">
+                    <AlertCircle className="h-5 w-5 mr-2" />
+                    <span className="font-medium">
+                      Warning: Request amount exceeds remaining budget by{' '}
+                      {formatCurrency(
+                        (Number(formData.assetAmount) - remainingBudget!).toString()
+                      )}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       <div className="px-4 py-3 bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-800 rounded-lg">
         <div className="flex">

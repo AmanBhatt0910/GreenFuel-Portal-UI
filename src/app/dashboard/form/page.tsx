@@ -44,6 +44,15 @@ declare module "jspdf" {
   }
 }
 
+interface BudgetAllocation {
+  id: number;
+  budget: string;
+  remaining_budget: string;
+  business_unit: number;
+  department: number;
+  category: number;
+}
+
 // Form steps with enhanced descriptions
 const formSteps = [
   {
@@ -107,6 +116,9 @@ export default function AssetRequestForm() {
   const [budgetId, setBudgetId] = useState<any>(null);
   const [formAttachments, setFormAttachments] = useState<File[]>([]);
   const [assetAttachments, setAssetAttachments] = useState<File[]>([]);
+  const [budgetAllocations, setBudgetAllocations] = useState<BudgetAllocation[]>([]);
+  const [remainingBudget, setRemainingBudget] = useState<number | null>(null);
+  const [budgetError, setBudgetError] = useState<string>("");
 
   const api = useAxios();
   const { generatePDF: generateAssetPDF, isGenerating: isPDFGenerating, error: pdfError } = useAssetRequestPDF();
@@ -138,6 +150,40 @@ export default function AssetRequestForm() {
       fetchData();
     }
   }, [userInfo]);
+
+  useEffect(() => {
+    const fetchBudgetAllocations = async () => {
+      try {
+        const response = await api.get("/budget-allocation/?all=true");
+        setBudgetAllocations(response.data);
+      } catch (error) {
+        console.error("Error fetching budget allocations:", error);
+      }
+    };
+
+    fetchBudgetAllocations();
+  }, []);
+
+  useEffect(() => {
+    if (formData.plant && formData.initiateDept && formData.category && budgetAllocations.length > 0) {
+      const allocation = budgetAllocations.find(
+        (a) => 
+          a.business_unit === formData.plant && 
+          a.department === formData.initiateDept && 
+          a.category === formData.category
+      );
+
+      if (allocation) {
+        setRemainingBudget(Number(allocation.remaining_budget));
+        setBudgetError("");
+      } else {
+        setRemainingBudget(null);
+        setBudgetError("No budget allocation found for this combination");
+      }
+    } else {
+      setRemainingBudget(null);
+    }
+  }, [formData.plant, formData.initiateDept, formData.category, budgetAllocations]);
 
   const [currentAsset, setCurrentAsset] = useState<AssetItem>({
     title: "",
@@ -330,9 +376,17 @@ export default function AssetRequestForm() {
           toast.warning("Please add at least one asset to your request.");
           break;
         case 2:
-          toast.warning(
-            "Please complete all required fields: Request Category, Concerned Department, Budget Approval Category, and Reason for Request."
-          );
+          const totalAmount = Number(formData.assetAmount) || 0;
+          
+          if (remainingBudget !== null && totalAmount > remainingBudget) {
+            toast.warning(
+              `Request amount exceeds remaining budget by ${formatCurrency(totalAmount - remainingBudget)}`
+            );
+          } else {
+            toast.warning(
+              "Please complete all required fields: Request Category, Concerned Department, Budget Approval Category, and Reason for Request."
+            );
+          }
           break;
         case 3:
           toast.warning(
@@ -357,6 +411,15 @@ export default function AssetRequestForm() {
 
   // Submit the form
   const handleSubmit = async () => {
+    const totalAmount = Number(formData.assetAmount) || 0;
+
+    if (remainingBudget !== null && totalAmount > remainingBudget) {
+      toast.error("Request amount exceeds remaining budget");
+      setIsSubmitting(false);
+      return;
+    }
+
+
     try {
       setIsSubmitting(true);
 
@@ -594,6 +657,9 @@ export default function AssetRequestForm() {
       case 1:
         return formData.assets.length > 0;
       case 2:
+        const totalAmount = Number(formData.assetAmount) || 0;
+        const isBudgetValid = remainingBudget === null || totalAmount <= remainingBudget;
+        
         return !!(
           formData.assets.length > 0 &&
           formData.reason.trim() !== "" &&
@@ -602,7 +668,8 @@ export default function AssetRequestForm() {
           formData.concerned_department &&
           formData.concerned_department !== 0 &&
           formData.approvalCategory &&
-          formData.approvalCategory.trim() !== ""
+          formData.approvalCategory.trim() !== "" &&
+          isBudgetValid
         );
       case 3:
         return formData.policyAgreement;
@@ -772,6 +839,8 @@ export default function AssetRequestForm() {
               setFormAttachments={setFormAttachments}
               assetAttachments={assetAttachments}
               setAssetAttachments={setAssetAttachments}
+              remainingBudget={remainingBudget}
+              budgetError={budgetError}
             />
           </motion.div>
         );
@@ -790,6 +859,8 @@ export default function AssetRequestForm() {
               direction={direction}
               handleChange={handleChange}
               handleCheckboxChange={handleCheckboxChange}
+              remainingBudget={remainingBudget}
+              budgetError={budgetError}
             />
           </motion.div>
         );
