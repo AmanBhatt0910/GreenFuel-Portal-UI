@@ -481,7 +481,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
             
             {remainingBudget !== null && totalAmount > remainingBudget && (
               <div className="mt-4 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800">
-                <div className="flex items-center text-yellow-700 dark:text-yellow-300">
+                <div className="flex items-center text-red-700 dark:text-yellow-300">
                   <AlertCircle className="h-5 w-5 mr-2" />
                   <span className="font-medium">
                     Warning: Request amount exceeds remaining budget by{' '}
