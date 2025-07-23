@@ -33,6 +33,8 @@ import RequestDetailsSection from "./components/RequestDetails/Detail";
 import BasicInfoSection from "./components/RequestDetails/BasicDetail";
 import OrganizationalSection from "./components/RequestDetails/Organization";
 
+import useAxios from "@/app/hooks/use-axios";
+
 const LoadingIndicator: React.FC = () => (
   <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-white to-sky-50">
     <div className="text-center">
@@ -71,6 +73,7 @@ const NotFoundAlert: React.FC = React.memo(() => (
 NotFoundAlert.displayName = "NotFoundAlert";
 
 const RequestDetailsPage: React.FC = () => {
+  const api = useAxios();
   const params = useParams();
   const requestId = params.id as string;
 
@@ -104,6 +107,21 @@ const RequestDetailsPage: React.FC = () => {
   if (!request) {
     return <NotFoundAlert />;
   }
+
+  useEffect(() => {
+    const markChatsAsRead = async () => {
+      if (currentTab === "comments" && request?.id) {
+        try {
+          await api.put(`/chats/${request.id}/`);
+          console.log("Marked chats as read with Axios");
+        } catch (err) {
+          console.error("Failed to mark chat as read:", err);
+        }
+      }
+    };
+
+    markChatsAsRead();
+  }, [currentTab, request?.id]);
   
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">

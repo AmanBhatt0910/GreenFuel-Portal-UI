@@ -45,6 +45,8 @@ interface BudgetRequest {
   business_unit: number;
   department: number;
   notify_to: number;
+
+  has_unread_chat?: boolean;
 }
 
 interface EntityInfo {
@@ -65,38 +67,63 @@ const BudgetRequestsList = () => {
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-  useEffect(() => {
-    const fetchRequestsData = async () => {
-      try {
-        setLoading(true);
-        const response = await api.get(`/approval-requests/`);
-        console.log(response)
-        setRequests(response.data);
-        setFilteredRequests(response.data);
+useEffect(() => {
+  const fetchRequestsData = async () => {
+    try {
+      setLoading(true);
 
-        // Fetch current user ID
-        try {
-          const userResponse = await api.get("/userInfo/");
-          if (userResponse.data && userResponse.data.id) {
-            setCurrentUserId(userResponse.data.id);
+      const response = await api.get(`/approval-requests/`);
+      const fetchedRequests: BudgetRequest[] = response.data;
+
+      const enrichedRequests = await Promise.all(
+        fetchedRequests.map(async (req) => {
+          try {
+            const unreadRes = await api.get("/chats", {
+              params: {
+                form_id: req.id,
+                unread: true,
+              },
+            });
+
+            return {
+              ...req,
+              has_unread_chat: unreadRes?.data?.unread_chat === true,
+            };
+          } catch (error) {
+            console.error(`Error fetching unread status for form ID ${req.id}`, error);
+            return {
+              ...req,
+              has_unread_chat: false,
+            };
           }
-        } catch (userError) {
-          console.error("Error fetching current user:", userError);
+        })
+      );
+
+      setRequests(enrichedRequests);
+      setFilteredRequests(enrichedRequests);
+
+      try {
+        const userRes = await api.get("/userInfo/");
+        if (userRes.data?.id) {
+          setCurrentUserId(userRes.data.id);
         }
-
-        // Fetch related data for display
-        await fetchRelatedData();
-      } catch (error) {
-        console.error("Error fetching requests data:", error);
-        setRequests([]);
-        setFilteredRequests([]);
-      } finally {
-        setLoading(false);
+      } catch (userError) {
+        console.error("Error fetching user info", userError);
       }
-    };
 
-    fetchRequestsData();
-  }, []);
+      await fetchRelatedData();
+    } catch (mainError) {
+      console.error("Error loading budget requests:", mainError);
+      setRequests([]);
+      setFilteredRequests([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchRequestsData();
+}, []);
+
 
   useEffect(()=>{
     window.scrollTo(0, 0);
@@ -104,7 +131,6 @@ const BudgetRequestsList = () => {
 
   const fetchRelatedData = async () => {
     try {
-      // Fetch business units
       const businessUnitsResponse = await api.get("business-units/");
       if (businessUnitsResponse.data) {
         setBusinessUnits(businessUnitsResponse.data);
@@ -381,9 +407,17 @@ const BudgetRequestsList = () => {
                     <div className="flex flex-col sm:flex-row justify-between">
                       <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                          <h3 className="font-medium text-blue-700 dark:text-blue-400">
-                            {request.budget_id}
-                          </h3>
+                          <div className="flex items-center gap-1">
+                            <h3 className="font-medium text-blue-700 dark:text-blue-400">
+                              {request.budget_id}
+                            </h3>
+                            {request.has_unread_chat && (
+                              <span
+                                className="ml-1 h-2 w-2 bg-red-500 rounded-full animate-pulse"
+                                title="Unread chat"
+                              />
+                            )}
+                          </div>
                           {getStatusBadge(request)}
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
