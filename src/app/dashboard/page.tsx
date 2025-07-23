@@ -371,7 +371,6 @@ const DashboardPage: React.FC = () => {
         current_status: request.current_status || request.status || "Pending",
         budget_id: request.budget_id || `BUD-${request.id}`,
         approval_category: request.approval_category || "N/A",
-        approval_type: request.approval_type || "N/A",
         current_form_level: request.current_form_level || 1,
         form_max_level: request.form_max_level || 3
       })) as RequestType[];

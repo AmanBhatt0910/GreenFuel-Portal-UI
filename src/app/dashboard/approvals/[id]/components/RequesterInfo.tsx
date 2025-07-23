@@ -194,6 +194,7 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
   // Information rows definition - this makes it easy to maintain and modify
   const infoRows = [
     // { key: "Designation", value: enrichedForm.designation_name || "Not specified" },
+    { key: "Employee ID", value: enrichedForm.employee_code || "Not available" },
     { key: "Department", value: enrichedForm.department_name || "Not specified" },
     { key: "Business Unit", value: enrichedForm.business_unit_name || "Not specified" },
     { key: "Concerned Dept", value: concernedDepartmentDisplay() },

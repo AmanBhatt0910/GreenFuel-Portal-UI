@@ -251,14 +251,10 @@ export const ConfirmationStep: React.FC<FormStepProps> = ({
                   <p className="text-gray-500 dark:text-gray-400 text-xs">Benefit to Organization</p>
                   <p className="text-gray-900 dark:text-white mt-1">{formData.benefitToOrg}</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="text-sm">
                   <div>
                     <p className="text-gray-500 dark:text-gray-400 text-xs">Approval Category</p>
                     <p className="font-medium text-gray-900 dark:text-white">{formData.approvalCategory}</p>
-                  </div>
-                  <div>
-                    <p className="text-gray-500 dark:text-gray-400 text-xs">Approval Type</p>
-                    <p className="font-medium text-gray-900 dark:text-white">{formData.approvalType}</p>
                   </div>
                 </div>
               </div>

@@ -115,10 +115,12 @@ export default function useApprovalDetails({
     try {
       const response = await api.get(`/userInfo/${userId}/`);
       const userData = response.data;
+      console.log('User data from API:', userData); // Debug log
       const userInfo: UserInfo = {
         id: userId,
         name: userData.name || userData.username || `User ${userId}`,
         email: userData.email || "No email available",
+        employee_code: userData.employee_code || userData.emp_code || userData.employeeCode,
       };
 
       // Update cache
@@ -134,6 +136,7 @@ export default function useApprovalDetails({
         id: userId,
         name: `User ${userId}`,
         email: "No email available",
+        employee_code: undefined,
       };
     }
   };
@@ -262,6 +265,7 @@ export default function useApprovalDetails({
         ...form,
         user_name: user.name,
         user_email: user.email,
+        employee_code: user.employee_code,
         department_name: department.name,
         business_unit_name: businessUnit.name,
         designation_name: designation.name,

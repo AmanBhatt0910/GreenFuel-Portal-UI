@@ -131,7 +131,6 @@ const filterPanelVariants = {
   }
 };
 
-// Types definition
 export interface RequestType {
   id: number;
   budget_id: string;
@@ -142,7 +141,6 @@ export interface RequestType {
   status: "pending" | "approved" | "rejected";
   benefit_to_organisation?: string;
   approval_category: string;
-  approval_type: string;
   current_form_level: number;
   form_max_level: number;
   rejected: boolean;
@@ -208,8 +206,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
     .filter(request => {
       const matchesSearch = 
         request.budget_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.approval_category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        request.approval_type.toLowerCase().includes(searchTerm.toLowerCase());
+        request.approval_category.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesCategory = categoryFilter ? request.approval_category === categoryFilter : true;
       const matchesStatus = statusFilter ? request.current_status.toLowerCase() === statusFilter.toLowerCase() : true;
@@ -437,11 +434,6 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                 </div>
               </th>
               <th className="py-3 px-4 text-left">
-                <div className="flex items-center space-x-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-                  <span>Type</span>
-                </div>
-              </th>
-              <th className="py-3 px-4 text-left">
                 <div 
                   className="flex items-center space-x-1 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer"
                   onClick={() => toggleSort("level")}
@@ -532,11 +524,6 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                       <div className="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200">
                         {request.approval_category}
                       </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <span className="text-sm text-gray-600 dark:text-gray-300">
-                        {request.approval_type}
-                      </span>
                     </td>
                     <td className="py-4 px-4">
                       <div className="flex items-center">

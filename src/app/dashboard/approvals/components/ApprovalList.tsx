@@ -1,8 +1,10 @@
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, FileDown } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { ApprovalForm, EnrichedApprovalForm } from './interfaces';
+import { Button } from '@/components/ui/button';
+import { EnrichedApprovalForm } from './interfaces';
 import { getStatusColor, formatDate } from './utils';
+import { generateApprovalPDF } from '@/lib/pdf-generator';
 
 interface ApprovalListProps {
   forms: EnrichedApprovalForm[];
@@ -21,6 +23,8 @@ export default function ApprovalList({ forms, onViewDetails }: ApprovalListProps
     }
     return null;
   };
+
+
 
   return (
     <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
@@ -54,10 +58,7 @@ export default function ApprovalList({ forms, onViewDetails }: ApprovalListProps
               <div>{form.approval_category}</div>
               <div className="text-xs text-gray-400 mt-1">{form.formatted_date || formatDate(form.date)}</div>
             </div>
-            <div className="flex items-center text-blue-600">
-              <span className="mr-1">View details</span>
-              <ExternalLink className="h-3 w-3" />
-            </div>
+            
           </div>
         </div>
       ))}

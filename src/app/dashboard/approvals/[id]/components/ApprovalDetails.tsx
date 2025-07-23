@@ -1,8 +1,10 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { numberToWords } from '@/app/dashboard/approvals/components/utils';
-import { InfoIcon, BarChart2, Package, IndianRupee, Calendar, FileText, Activity, Target, Download, MessageSquare, CheckCircle, XCircle } from 'lucide-react';
+import { InfoIcon, BarChart2, Package, IndianRupee, Calendar, FileText, Activity, Target, Download, MessageSquare, CheckCircle, XCircle, FileDown } from 'lucide-react';
 import AssetDetailsTable from '@/app/dashboard/approvals/components/AssetDetailsTable';
+import { generateApprovalPDF } from '@/lib/pdf-generator';
 
 interface ApprovalDetailsProps {
   enrichedForm: any;
@@ -72,6 +74,25 @@ export default function ApprovalDetails({
     }
   };
 
+  const handleGeneratePDF = async () => {
+    try {
+     
+      const pdfData = {
+        ...enrichedForm,
+        assetDetails: assestDetail || []
+      };
+
+      await generateApprovalPDF(
+        pdfData,
+        enrichedForm.budget_id || enrichedForm.id
+      );
+      
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+      alert('Failed to generate PDF. Please try again.');
+    }
+  };
+
   if (loading || !enrichedForm) {
     return (
       <Card className="mb-6">
@@ -104,10 +125,21 @@ export default function ApprovalDetails({
         <Card className="mb-6 overflow-hidden">
           <div className="bg-gradient-to-r from-green-500 to-emerald-600 h-1.5" />
           <CardHeader className="bg-green-50 dark:bg-green-900/10 border-b">
-            <CardTitle className="text-xl flex items-center text-green-800 dark:text-green-400">
-              <IndianRupee className="h-5 w-5 mr-2" />
-              Budget Information
-            </CardTitle>
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-xl flex items-center text-green-800 dark:text-green-400">
+                <IndianRupee className="h-5 w-5 mr-2" />
+                Budget Information
+              </CardTitle>
+              <Button
+                onClick={handleGeneratePDF}
+                size="sm"
+                variant="outline"
+                className="border-green-300 text-green-700 hover:bg-green-50 dark:border-green-700 dark:text-green-400 dark:hover:bg-green-900/20"
+              >
+                <FileDown className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
+            </div>
           </CardHeader>
           <CardContent className="space-y-4 pt-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -145,8 +177,8 @@ export default function ApprovalDetails({
             {/* Additional Info Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-3 border border-gray-100 dark:border-gray-900/20 rounded-lg bg-gray-50/50 dark:bg-gray-900/5">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Approval Type:</span>
-                <p className="text-sm font-semibold">{enrichedForm.approval_type || "Not specified"}</p>
+                <span className="text-xs text-gray-500 dark:text-gray-400">Category:</span>
+                <p className="text-sm font-semibold">{enrichedForm.approval_category || "Not specified"}</p>
               </div>
               
               {enrichedForm.payback_period && (

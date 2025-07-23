@@ -37,7 +37,6 @@ interface BudgetRequest {
   current_status: string;
   benefit_to_organisation: string;
   approval_category: string;
-  approval_type: string;
   current_form_level: number;
   form_max_level: number;
   rejected: boolean;
@@ -435,14 +434,6 @@ const BudgetRequestsList = () => {
                                   )}`}
                                 >
                                   {request.approval_category}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-2 pr-4 font-medium text-blue-600/70 dark:text-blue-400/80">
-                                  Type:
-                                </td>
-                                <td className="py-2 text-teal-600 dark:text-teal-400">
-                                  {request.approval_type}
                                 </td>
                               </tr>
                               <tr>

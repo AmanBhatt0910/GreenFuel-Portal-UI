@@ -23,7 +23,6 @@ export interface FormData {
   currentStatus: string;
   benefitToOrg: string;
   approvalCategory: string;
-  approvalType: string;
   notifyTo: number;
   category: number;
   concerned_department: number;
@@ -43,7 +42,6 @@ export interface SubmittingFormData {
   items: SubmittingAssetItem[];    // Changed from 'items' to match your data
   benefit_to_organisation: string; // Using UK spelling as in your data
   approval_category: string;
-  approval_type: string;
   notify_to: number | null;        // Changed from string to number to match your data
   form_category: number;           // Changed from category to form_category
   concerned_department: number;    // Added field for concerned department
@@ -76,7 +74,6 @@ export interface BudgetRequest {
   current_status: string;
   benefit_to_organisation: string;
   approval_category: string;
-  approval_type: string;
   current_level: number;
   max_level: number;
   rejected: boolean;

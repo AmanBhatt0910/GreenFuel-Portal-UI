@@ -62,7 +62,6 @@ export interface RequestType {
   status: "pending" | "approved" | "rejected";
   benefit_to_organisation: string;
   approval_category: string;
-  approval_type: string;
   current_form_level: number;
   form_max_level: number;
   rejected: boolean;

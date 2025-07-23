@@ -17,9 +17,9 @@ import {
   Package,
 } from "lucide-react";
 import Link from "next/link";
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
 import { toast } from "@/lib/toast-util";
+import { generateAssetRequestPDF, RequestorInfo, formatCurrency } from "@/lib/pdf-generator";
+import { useAssetRequestPDF } from "@/lib/pdf-hooks";
 
 // Import our custom components
 import {
@@ -88,7 +88,6 @@ const getInitialFormData = (): FormDataType => ({
   currentStatus: "",
   benefitToOrg: "",
   approvalCategory: "",
-  approvalType: "",
   notifyTo: 0,
   category: 0,
   concerned_department: 0,
@@ -110,6 +109,7 @@ export default function AssetRequestForm() {
   const [assetAttachments, setAssetAttachments] = useState<File[]>([]);
 
   const api = useAxios();
+  const { generatePDF: generateAssetPDF, isGenerating: isPDFGenerating, error: pdfError } = useAssetRequestPDF();
 
   useEffect(() => {
     const fetchData = async () => {
@@ -386,7 +386,6 @@ export default function AssetRequestForm() {
         status: "pending",
         benefit_to_organisation: formData.benefitToOrg,
         approval_category: formData.approvalCategory,
-        approval_type: formData.approvalType,
         notify_to: formData.notifyTo,
         form_category: formData.category,
         concerned_department: formData.concerned_department,
@@ -444,10 +443,6 @@ export default function AssetRequestForm() {
       formDataToSubmit.append(
         "approval_category",
         submittingFormData.approval_category
-      );
-      formDataToSubmit.append(
-        "approval_type",
-        submittingFormData.approval_type
       );
       formDataToSubmit.append(
         "notify_to",
@@ -607,9 +602,7 @@ export default function AssetRequestForm() {
           formData.concerned_department &&
           formData.concerned_department !== 0 &&
           formData.approvalCategory &&
-          formData.approvalCategory.trim() !== "" &&
-          formData.approvalType &&
-          formData.approvalType.trim() !== ""
+          formData.approvalCategory.trim() !== ""
         );
       case 3:
         return formData.policyAgreement;
@@ -641,9 +634,7 @@ export default function AssetRequestForm() {
           formData.concerned_department &&
           formData.concerned_department !== 0 &&
           formData.approvalCategory &&
-          formData.approvalCategory.trim() !== "" &&
-          formData.approvalType &&
-          formData.approvalType.trim() !== ""
+          formData.approvalCategory.trim() !== ""
         );
       case 3:
         return formData.policyAgreement;
@@ -652,7 +643,7 @@ export default function AssetRequestForm() {
     }
   };
 
-  // Push here
+  // Generate PDF using the utility function
   const generatePDF = async (): Promise<void> => {
     let businessUnitName: string = "N/A";
     let departmentName: string = "N/A";
@@ -689,211 +680,30 @@ export default function AssetRequestForm() {
       console.error("Error fetching entity names:", error);
     }
 
-    const doc = new jsPDF({
-      orientation: "portrait",
-      unit: "mm",
-      format: "a4",
-    });
-
-    // Fixed color type definitions with explicit tuple types
-    const colors: {
-      primary: [number, number, number];
-      secondary: [number, number, number];
-      text: [number, number, number];
-      background: [number, number, number];
-      border: [number, number, number];
-    } = {
-      primary: [44, 62, 80],
-      secondary: [52, 152, 219],
-      text: [51, 51, 51],
-      background: [245, 245, 245],
-      border: [221, 221, 221],
+    const requestorInfo: RequestorInfo = {
+      employeeName: formData.employeeName,
+      employeeCode: formData.employeeCode,
+      businessUnitName,
+      departmentName,
+      designationName,
     };
 
-    // Header Section
     try {
-      const imgData: string = "/green.png";
-      doc.addImage(imgData, "PNG", 14, 10, 35, 15);
-    } catch (error) {
-      doc.setFontSize(18);
-      doc.setFillColor(...colors.primary);
-      doc.setFont("helvetica", "bold");
-      doc.text("GREEN CORP", 14, 20);
-    }
-
-    // Title Section
-    doc.setFontSize(20);
-    doc.setTextColor(...colors.primary);
-    doc.setFont("helvetica", "bold");
-    doc.text("ASSET REQUEST", 105, 25, { align: "center" });
-
-    // Subtitle
-    doc.setFontSize(12);
-    doc.setTextColor(...colors.secondary);
-    doc.text(`Request #${budgetId}`, 105, 33, { align: "center" });
-
-    // Divider Line
-    doc.setDrawColor(...colors.border);
-    doc.setLineWidth(0.5);
-    doc.line(14, 38, 196, 38);
-
-    // Metadata
-    doc.setFontSize(10);
-    doc.setTextColor(...colors.text);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Generated: ${format(new Date(), "MMMM dd, yyyy")}`, 14, 45);
-    doc.text("CONFIDENTIAL", 196, 45, { align: "right" });
-
-    // Introduction
-    doc.setFontSize(10);
-    const introText =
-      "This document contains a formal request for company assets...";
-    const splitIntro = doc.splitTextToSize(introText, 180);
-    doc.text(splitIntro, 14, 55);
-
-    let y: number = 55 + splitIntro.length * 5 + 10;
-
-    // Requestor Information Section
-    const addSectionHeader = (title: string, y: number) => {
-      doc.setFillColor(...colors.background);
-      doc.rect(14, y, 182, 10, "F");
-      doc.setFontSize(12);
-      doc.setTextColor(...colors.primary);
-      doc.setFont("helvetica", "bold");
-      doc.text(title, 14, y + 7);
-    };
-
-    addSectionHeader("REQUESTOR INFORMATION", y);
-    y += 15;
-
-    // Requestor Info Card
-    doc.setFillColor(255, 255, 255);
-    doc.setDrawColor(...colors.border);
-    doc.roundedRect(14, y, 182, 40, 3, 3, "S");
-
-    const addInfoRow = (
-      label: string,
-      value: string,
-      x: number,
-      yOffset: number
-    ) => {
-      doc.setFontSize(10);
-      doc.setTextColor(100, 100, 100);
-      doc.text(label, x, y + yOffset);
-      doc.setFontSize(10);
-      doc.setTextColor(...colors.text);
-      doc.text(value, x + 35, y + yOffset);
-    };
-
-    addInfoRow("Name:", formData.employeeName, 20, 8);
-    addInfoRow("Employee ID:", formData.employeeCode, 20, 16);
-    addInfoRow("Department:", departmentName, 20, 24);
-    addInfoRow("Business Unit:", businessUnitName, 110, 8);
-    addInfoRow("Designation:", designationName, 110, 16);
-    addInfoRow("Status:", "Pending Approval", 110, 24);
-
-    y += 45;
-
-    // Asset Summary Section
-    addSectionHeader("ASSET SUMMARY", y);
-    y += 15;
-
-    if (formData.assets?.length) {
-      autoTable(doc, {
-        startY: y,
-        head: [
-          ["Asset", "Description", "SAP Code", "Qty", "Unit Price", "Total"],
-        ],
-        body: formData.assets.map((asset) => [
-          asset.title,
-          asset.description || "-",
-          asset.sapItemCode || "N/A",
-          asset.quantity,
-          formatCurrency(Number(asset.pricePerUnit) || 0),
-          formatCurrency(Number(asset.total) || 0),
-        ]),
-        theme: "grid",
-        styles: {
-          fontSize: 9,
-          cellPadding: 4,
-          lineColor: colors.border,
-          textColor: colors.text,
-        },
-        headStyles: {
-          fillColor: colors.primary,
-          textColor: 255,
-          fontSize: 10,
-        },
-        columnStyles: {
-          3: { halign: "right" },
-          4: { halign: "right" },
-          5: { halign: "right" },
-        },
-        foot: [
-          [
-            "",
-            "",
-            "",
-            "",
-            "Total:",
-            formatCurrency(Number(formData.assetAmount) || 0),
-          ],
-        ],
+      await generateAssetPDF({
+        budgetId: budgetId || "PENDING",
+        requestorInfo,
+        assets: formData.assets,
+        totalAmount: formData.assetAmount,
+        reason: formData.reason,
+        documentType: "Asset Request",
+        status: "Pending Approval",
       });
-
-      y = (doc as any).lastAutoTable.finalY + 10;
-    } else {
-      doc.setFontSize(10);
-      doc.setTextColor(...colors.text);
-      doc.text("No assets requested", 14, y);
-      y += 15;
+      
+      toast.success("PDF generated successfully!");
+    } catch (error) {
+      toast.error("Failed to generate PDF. Please try again.");
     }
-
-    // Justification Section
-    addSectionHeader("BUSINESS JUSTIFICATION", y);
-    y += 15;
-
-    doc.setFontSize(10);
-    doc.setTextColor(...colors.text);
-    const splitReason = doc.splitTextToSize(
-      formData.reason || "No justification provided",
-      180
-    );
-    doc.text(splitReason, 14, y);
-    y += splitReason.length * 5 + 15;
-
-    // Policy Agreement Section
-    addSectionHeader("POLICY AGREEMENT", y);
-    y += 15;
-
-    doc.setFontSize(10);
-    doc.setTextColor(...colors.text);
-    const policyText =
-      "The requestor has acknowledged and agreed to comply with all company policies...";
-    const splitPolicy = doc.splitTextToSize(policyText, 180);
-    doc.text(splitPolicy, 14, y);
-
-    // Footer
-    const pageCount = doc.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
-      doc.setPage(i);
-      doc.setFontSize(8);
-      doc.setTextColor(...colors.text);
-      doc.text(`Page ${i} of ${pageCount}`, 196, 287, { align: "right" });
-      doc.text("Confidential Document", 14, 287);
-    }
-
-    doc.save(`Asset_Request_${budgetId}.pdf`);
   };
-
-  function formatCurrency(amount: number | string): string {
-    const numAmount =
-      typeof amount === "string" ? parseFloat(amount) || 0 : amount;
-    
-    // Use a simple approach that works better with PDF generation
-    const formattedNumber = numAmount.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    return `Rs. ${formattedNumber}`;
-  }
 
   const renderFormStep = () => {
     switch (currentStep) {
@@ -1078,10 +888,39 @@ export default function AssetRequestForm() {
 
               <Button
                 onClick={generatePDF}
-                className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-800 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl"
+                disabled={isPDFGenerating}
+                className="w-full bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:via-purple-700 hover:to-indigo-800 text-white py-4 rounded-xl font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Download className="h-5 w-5 mr-3" />
-                Download Complete Summary (PDF)
+                {isPDFGenerating ? (
+                  <>
+                    <svg
+                      className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      ></circle>
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    Generating PDF...
+                  </>
+                ) : (
+                  <>
+                    <Download className="h-5 w-5 mr-3" />
+                    Download Complete Summary (PDF)
+                  </>
+                )}
               </Button>
             </div>
 
@@ -1408,24 +1247,6 @@ export default function AssetRequestForm() {
                                   }
                                 >
                                   Budget Approval Category
-                                </span>
-                              </div>
-                              <div className="flex items-center text-sm">
-                                {formData.approvalType &&
-                                formData.approvalType.trim() !== "" ? (
-                                  <Check className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
-                                ) : (
-                                  <X className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
-                                )}
-                                <span
-                                  className={
-                                    formData.approvalType &&
-                                    formData.approvalType.trim() !== ""
-                                      ? "text-green-700 dark:text-green-400"
-                                      : "text-gray-600 dark:text-gray-400"
-                                  }
-                                >
-                                  Approval Type
                                 </span>
                               </div>
                               <div className="flex items-center text-sm">

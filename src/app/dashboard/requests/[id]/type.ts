@@ -8,7 +8,6 @@ export interface BudgetRequest {
   current_status: string;
   benefit_to_organisation: string;
   approval_category: string;
-  approval_type: string;
   current_level: number;
   max_level: number;
   rejected: boolean;

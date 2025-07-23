@@ -3,6 +3,7 @@ export interface UserInfo {
   id: number;
   name: string;
   email: string;
+  employee_code?: string;
 }
 
 // Department information
@@ -38,7 +39,6 @@ export interface ApprovalForm {
   status: string;
   benefit_to_organisation: string;
   approval_category: string;
-  approval_type: string;
   notify_to: string | number;
   current_form_level: number;
   form_max_level: number;

@@ -43,10 +43,6 @@ const BasicInfoSection: React.FC<{ request: any }> = React.memo(({ request }) =>
           </p>
         </div>
         <div className="bg-white p-3 rounded-md border border-sky-100">
-          <p className="text-sm font-medium text-sky-700">Approval Type</p>
-          <p className="text-base text-gray-900 mt-1">{request.approval_type}</p>
-        </div>
-        <div className="bg-white p-3 rounded-md border border-sky-100">
           <p className="text-sm font-medium text-sky-700">Approval Category</p>
           <p className="text-base text-gray-900 mt-1">{request.approval_category}</p>
         </div>

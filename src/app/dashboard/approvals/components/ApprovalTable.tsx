@@ -1,5 +1,5 @@
 import React from 'react';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, FileDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/table';
 import { ApprovalForm, EnrichedApprovalForm } from './interfaces';
 import { getStatusColor, formatDate } from './utils';
+import { generateApprovalPDF } from '@/lib/pdf-generator';
 
 interface ApprovalTableProps {
   forms: EnrichedApprovalForm[];
@@ -42,7 +43,7 @@ export default function ApprovalTable({ forms, onViewDetails }: ApprovalTablePro
             <TableHead className="w-[150px]">Category</TableHead>
             <TableHead className="w-[180px]">Date</TableHead>
             <TableHead className="w-[110px]">Status</TableHead>
-            <TableHead className="w-[100px] text-right">Actions</TableHead>
+            <TableHead className="w-[140px] text-right">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -74,15 +75,17 @@ export default function ApprovalTable({ forms, onViewDetails }: ApprovalTablePro
                 </Badge>
               </TableCell>
               <TableCell className="text-right">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="h-8 px-2 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:border-blue-900/30 dark:hover:bg-blue-900/20"
-                  onClick={() => onViewDetails(form.id)}
-                >
-                  <ExternalLink className="h-3.5 w-3.5 mr-1" />
-                  View
-                </Button>
+                <div className="flex gap-1 justify-end">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-8 px-2 text-blue-600 border-blue-200 hover:bg-blue-50 hover:text-blue-700 dark:text-blue-400 dark:border-blue-900/30 dark:hover:bg-blue-900/20"
+                    onClick={() => onViewDetails(form.id)}
+                  >
+                    <ExternalLink className="h-3.5 w-3.5 mr-1" />
+                    View
+                  </Button>
+                </div>
               </TableCell>
             </TableRow>
           ))}
