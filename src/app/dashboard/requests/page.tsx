@@ -318,6 +318,23 @@ const BudgetRequestsList = () => {
     );
   }
 
+  const groupByMonth = (items: BudgetRequest[]) => {
+    const grouped: Record<string, BudgetRequest[]> = {};
+
+    items.forEach((item) => {
+      const date = new Date(item.date);
+      const monthYear = date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "long",
+      });
+
+      if (!grouped[monthYear]) grouped[monthYear] = [];
+      grouped[monthYear].push(item);
+    });
+
+    return grouped;
+  };
+
   return (
     <div className="container mx-auto py-8 max-w-7xl sm:px-6">
       <CustomBreadcrumb
@@ -405,171 +422,96 @@ const BudgetRequestsList = () => {
           </div>
         </div>
 
-        <CardContent className="p-0">
-          {filteredRequests.length === 0 ? (
-            <div className="text-center py-16">
-            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-              <Search className="h-8 w-8 text-blue-400" />
-            </div>
-            <h3 className="text-lg font-medium mb-1 text-blue-700">No requests found</h3>
-            <p className="text-sm text-blue-500/70 max-w-md mx-auto">
-              Try adjusting your search or filters to find what you're looking for
-            </p>
-          </div>
+          <CardContent className="p-0">
+            {filteredRequests.length === 0 ? (
+              <div className="text-center py-16">
+                <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                  <Search className="h-8 w-8 text-blue-400" />
+                </div>
+                <h3 className="text-lg font-medium mb-1 text-blue-700">No requests found</h3>
+                <p className="text-sm text-blue-500/70 max-w-md mx-auto">
+                  Try adjusting your filters or search
+                </p>
+              </div>
+            ) : (
+              Object.entries(groupByMonth(filteredRequests))
+                .sort((a, b) => new Date(b[1][0].date).getTime() - new Date(a[1][0].date).getTime())
+                .map(([month, monthRequests]) => (
+                  <details key={month} open className="border-b border-blue-100 px-3 py-2 bg-blue-50/30">
+                    <summary className="cursor-pointer text-lg font-semibold text-blue-700 flex items-center justify-between group">
+                      <span>{month} ({monthRequests.length})</span>
+                      <ChevronDown className="w-4 h-4 text-blue-400 group-open:rotate-180 transition-transform" />
+                    </summary>
 
-          ) : (
-            <div className="divide-y divide-blue-100 dark:divide-blue-900/40">
-              {filteredRequests.map((request) => (
-                <div key={request.id} className="overflow-hidden">
-                  <div
-                    className="p-5 hover:bg-blue-50/50 transition-colors cursor-pointer"
-                    onClick={() => toggleRowExpansion(request.id)}
-                  >
-                    <div className="flex flex-col sm:flex-row justify-between">
-                      <div className="flex-1">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-blue-700 dark:text-blue-400">
-                              {request.budget_id}
-                            </h3>
+                    <div className="space-y-4 mt-4 transition-all">
+                      {monthRequests.map((request) => (
+                        <div
+                          key={request.id}
+                          className="p-4 bg-white hover:bg-blue-50 rounded-lg border border-blue-100 shadow-sm transition-all cursor-pointer"
+                          onClick={() => toggleRowExpansion(request.id)}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="text-blue-700 font-semibold text-base tracking-tight">
+                                  {request.budget_id}
+                                </h3>
 
-                            {request.has_unread_chat && (
-                              <span 
-                                className="px-2 py-0.5 bg-red-100 text-red-600 text-xs font-medium rounded-full border border-red-300 flex items-center gap-1"
-                                title="Unread chat"
-                              >
-                                <MessageSquare className="w-3 h-3" />
-                                Unread
-                              </span>
-                            )}
-                          </div>
+                                {request.has_unread_chat && (
+                                  <span title="Unread chat" className="px-2 py-0.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-full flex items-center gap-1">
+                                    <MessageSquare className="w-3 h-3" />
+                                    Unread
+                                  </span>
+                                )}
+                              </div>
 
-                          {getStatusBadge(request)}
-                        </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
-                          {request.reason}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-6 mt-3 sm:mt-0">
-                        <div className="flex items-center">
-                          <span className="text-sm font-medium text-green-600">
-                            {formatCurrency(request.total)}
-                          </span>
-                        </div>
-                        <div className="flex items-center">
-                          <Calendar className="h-4 w-4 text-blue-500 mr-1.5" />
-                          <span className="text-sm text-blue-600">
-                            {formatDate(request.date)}
-                          </span>
-                        </div>
-                        <div className="ml-auto">
-                          {expandedRows.includes(request.id) ? (
-                            <ChevronDown className="h-5 w-5 text-blue-400" />
-                          ) : (
-                            <ChevronRight className="h-5 w-5 text-blue-400" />
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Expanded view */}
-                  {expandedRows.includes(request.id) && (
-                    <div className="p-5 bg-blue-50/50 dark:bg-blue-900/10 border-t border-blue-100 dark:border-blue-900/40">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800/50 shadow-sm">
-                          <h4 className="text-sm font-medium uppercase tracking-wide text-blue-500 dark:text-blue-400 mb-3">
-                            Request Details
-                          </h4>
-                          <table className="w-full text-sm">
-                            <tbody className="divide-y divide-blue-100 dark:divide-blue-900/40">
-                              <tr>
-                                <td className="py-2 pr-4 font-medium text-blue-600/70 dark:text-blue-400/80 w-1/3">
-                                  Category:
-                                </td>
-                                <td
-                                  className={`py-2 ${getCategoryColor(
-                                    request.approval_category
-                                  )}`}
-                                >
-                                  {request.approval_category}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-2 pr-4 font-medium text-blue-600/70 dark:text-blue-400/80">
-                                  Requestor:
-                                </td>
-                                <td className="py-2 text-blue-700 dark:text-blue-300">
-                                  {getUserName(request.user)}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-2 pr-4 font-medium text-blue-600/70 dark:text-blue-400/80">
-                                  Department:
-                                </td>
-                                <td className="py-2 text-purple-600 dark:text-purple-400">
-                                  {getDepartmentName(request.department)}
-                                </td>
-                              </tr>
-                              <tr>
-                                <td className="py-2 pr-4 font-medium text-blue-600/70 dark:text-blue-400/80">
-                                  Business Unit:
-                                </td>
-                                <td className="py-2 text-teal-600 dark:text-teal-400">
-                                  {getBusinessUnitName(request.business_unit)}
-                                </td>
-                              </tr>
-                            </tbody>
-                          </table>
-                        </div>
-
-                        <div>
-                          <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800/50 shadow-sm mb-4">
-                            <h4 className="text-sm font-medium uppercase tracking-wide text-blue-500 dark:text-blue-400 mb-3">
-                              Benefit to Organization
-                            </h4>
-                            <p className="text-sm text-gray-700 dark:text-gray-300 bg-blue-50/70 dark:bg-blue-900/20 p-3 rounded-md border border-blue-100 dark:border-blue-800/40">
-                              {request.benefit_to_organisation ||
-                                "No information provided"}
-                            </p>
-                          </div>
-
-                          {request.rejected && request.rejection_reason && (
-                            <div className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-blue-200 dark:border-blue-800/50 shadow-sm mb-4">
-                              <h4 className="text-sm font-medium uppercase tracking-wide text-red-500 dark:text-red-400 mb-3">
-                                Rejection Reason
-                              </h4>
-                              <p className="text-sm text-gray-700 dark:text-gray-300 bg-red-50 dark:bg-red-900/20 p-3 rounded-md border border-red-100 dark:border-red-800/40">
-                                {request.rejection_reason}
+                              <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">
+                                {request.reason}
                               </p>
                             </div>
-                          )}
 
-                          <div className="flex justify-end gap-3">
-                            <Link
-                              href={`/dashboard/requests/${request.id}${
-                                currentUserId ? `?userId=${currentUserId}` : ""
-                              }`}
-                            >
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/30"
-                              >
-                                View Details
-                              </Button>
-                            </Link>
+                            <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
+                              <div className="flex items-center text-sm text-blue-600">
+                                <Calendar className="w-4 h-4 mr-1.5 text-blue-400" />
+                                {formatDate(request.date)}
+                              </div>
+                              <span className="text-sm text-green-700 font-medium">{formatCurrency(request.total)}</span>
+                              {getStatusBadge(request)}
+                            </div>
                           </div>
+
+                          {/* expanded row content */}
+                          {expandedRows.includes(request.id) && (
+                            <div className="mt-4 p-4 bg-blue-50/20 border-t border-blue-100 rounded-b-lg">
+                              <p className="text-sm text-blue-900 font-medium">
+                                Business Unit: {getBusinessUnitName(request.business_unit)} | Department: {getDepartmentName(request.department)} | Requested by {getUserName(request.user)}
+                              </p>
+                              {request.benefit_to_organisation && (
+                                <div className="mt-3">
+                                  <h4 className="text-sm font-medium text-blue-600 mb-1">Benefit to Organisation</h4>
+                                  <p className="text-sm text-gray-700 bg-blue-50 rounded-md p-3 border border-blue-100">
+                                    {request.benefit_to_organisation}
+                                  </p>
+                                </div>
+                              )}
+                              <div className="mt-4 text-right">
+                                <Link
+                                  href={`/dashboard/requests/${request.id}${currentUserId ? `?userId=${currentUserId}` : ""}`}
+                                >
+                                  <Button size="sm" variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                                    View Details
+                                  </Button>
+                                </Link>
+                              </div>
+                            </div>
+                          )}
                         </div>
-                      </div>
+                      ))}
                     </div>
-                  )}
-                </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
+                  </details>
+                ))
+            )}
+          </CardContent>
 
         <CardFooter className="flex justify-between items-center border-t border-blue-100 dark:border-blue-900/40 p-4">
         <p className="text-sm text-blue-500/70">
