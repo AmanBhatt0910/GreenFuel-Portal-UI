@@ -96,6 +96,22 @@ const RequestDetailsPage: React.FC = () => {
     departmentMap,
   } = useApprovalRequest(requestId, userIdParam);
 
+    useEffect(() => {
+      const markChatsAsRead = async () => {
+        if (currentTab === "comments" && request?.id) {
+          try {
+            await api.put(`/chats/${request.id}/`);
+            console.log("Marked chats as read with Axios");
+          } catch (err) {
+            console.error("Failed to mark chat as read:", err);
+          }
+        }
+      };
+
+      markChatsAsRead();
+    }, [currentTab, request?.id]);
+
+
   if (loading && !request) {
     return <LoadingIndicator />;
   }
@@ -108,21 +124,6 @@ const RequestDetailsPage: React.FC = () => {
     return <NotFoundAlert />;
   }
 
-  useEffect(() => {
-    const markChatsAsRead = async () => {
-      if (currentTab === "comments" && request?.id) {
-        try {
-          await api.put(`/chats/${request.id}/`);
-          console.log("Marked chats as read with Axios");
-        } catch (err) {
-          console.error("Failed to mark chat as read:", err);
-        }
-      }
-    };
-
-    markChatsAsRead();
-  }, [currentTab, request?.id]);
-  
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
 

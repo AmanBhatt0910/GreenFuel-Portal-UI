@@ -67,62 +67,62 @@ const BudgetRequestsList = () => {
   const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-useEffect(() => {
-  const fetchRequestsData = async () => {
-    try {
-      setLoading(true);
-
-      const response = await api.get(`/approval-requests/`);
-      const fetchedRequests: BudgetRequest[] = response.data;
-
-      const enrichedRequests = await Promise.all(
-        fetchedRequests.map(async (req) => {
-          try {
-            const unreadRes = await api.get("/chats", {
-              params: {
-                form_id: req.id,
-                unread: true,
-              },
-            });
-
-            return {
-              ...req,
-              has_unread_chat: unreadRes?.data?.unread_chat === true,
-            };
-          } catch (error) {
-            console.error(`Error fetching unread status for form ID ${req.id}`, error);
-            return {
-              ...req,
-              has_unread_chat: false,
-            };
-          }
-        })
-      );
-
-      setRequests(enrichedRequests);
-      setFilteredRequests(enrichedRequests);
-
+  useEffect(() => {
+    const fetchRequestsData = async () => {
       try {
-        const userRes = await api.get("/userInfo/");
-        if (userRes.data?.id) {
-          setCurrentUserId(userRes.data.id);
+        setLoading(true);
+
+        const response = await api.get(`/approval-requests/`);
+        const fetchedRequests: BudgetRequest[] = response.data;
+
+        const enrichedRequests = await Promise.all(
+          fetchedRequests.map(async (req) => {
+            try {
+              const unreadRes = await api.get("/chats", {
+                params: {
+                  form_id: req.id,
+                  unread: true,
+                },
+              });
+
+              return {
+                ...req,
+                has_unread_chat: unreadRes?.data?.unread_chat === true,
+              };
+            } catch (error) {
+              console.error(`Error fetching unread status for form ID ${req.id}`, error);
+              return {
+                ...req,
+                has_unread_chat: false,
+              };
+            }
+          })
+        );
+
+        setRequests(enrichedRequests);
+        setFilteredRequests(enrichedRequests);
+
+        try {
+          const userRes = await api.get("/userInfo/");
+          if (userRes.data?.id) {
+            setCurrentUserId(userRes.data.id);
+          }
+        } catch (userError) {
+          console.error("Error fetching user info", userError);
         }
-      } catch (userError) {
-        console.error("Error fetching user info", userError);
+
+        await fetchRelatedData();
+      } catch (mainError) {
+        console.error("Error loading budget requests:", mainError);
+        setRequests([]);
+        setFilteredRequests([]);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      await fetchRelatedData();
-    } catch (mainError) {
-      console.error("Error loading budget requests:", mainError);
-      setRequests([]);
-      setFilteredRequests([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchRequestsData();
-}, []);
+    fetchRequestsData();
+  }, []);
 
 
   useEffect(()=>{
