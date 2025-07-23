@@ -46,6 +46,8 @@ interface BudgetRequest {
   business_unit: number;
   department: number;
   notify_to: number;
+
+  has_unread_chat?: boolean;
 }
 
 interface EntityInfo {
@@ -71,11 +73,27 @@ const BudgetRequestsList = () => {
       try {
         setLoading(true);
         const response = await api.get(`/approval-requests/`);
-        console.log(response)
-        setRequests(response.data);
-        setFilteredRequests(response.data);
+        const fetchedRequests = response.data;
 
-        // Fetch current user ID
+        const enrichedRequests = await Promise.all(
+          fetchedRequests.map(async (req: BudgetRequest) => {
+            try {
+              const chatResp = await fetch(
+                `http://api.sugamgreenfuel.in/chats?form_id=${req.id}&unread=true`
+              );
+              const data = await chatResp.json();
+              return { ...req, has_unread_chat: data.unread_chat === true };
+            } catch (e) {
+              console.error("Error checking unread chat for form:", req.id, e);
+              return { ...req, has_unread_chat: false };
+            }
+          })
+        );
+
+        setRequests(enrichedRequests);
+        setFilteredRequests(enrichedRequests);
+
+        // Fetch current user
         try {
           const userResponse = await api.get("/userInfo/");
           if (userResponse.data && userResponse.data.id) {
@@ -85,7 +103,7 @@ const BudgetRequestsList = () => {
           console.error("Error fetching current user:", userError);
         }
 
-        // Fetch related data for display
+        // Fetch related entities
         await fetchRelatedData();
       } catch (error) {
         console.error("Error fetching requests data:", error);
@@ -382,9 +400,14 @@ const BudgetRequestsList = () => {
                     <div className="flex flex-col sm:flex-row justify-between">
                       <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                          <h3 className="font-medium text-blue-700 dark:text-blue-400">
-                            {request.budget_id}
-                          </h3>
+                          <div className="flex items-center gap-1">
+                            <h3 className="font-medium text-blue-700 dark:text-blue-400">
+                              {request.budget_id}
+                            </h3>
+                            {request.has_unread_chat && (
+                              <span className="ml-1 h-2 w-2 bg-red-500 rounded-full animate-pulse" title="Unread chat" />
+                            )}
+                          </div>
                           {getStatusBadge(request)}
                         </div>
                         <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-1">

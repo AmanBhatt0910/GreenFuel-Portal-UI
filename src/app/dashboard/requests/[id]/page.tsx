@@ -104,6 +104,23 @@ const RequestDetailsPage: React.FC = () => {
   if (!request) {
     return <NotFoundAlert />;
   }
+
+  useEffect(() => {
+    if (currentTab === "comments" && request?.id) {
+      const markChatsAsRead = async () => {
+        try {
+          await fetch(`http://api.sugamgreenfuel.in/chats/${request.id}/`, {
+            method: "PUT",
+          });
+          console.log("Chats marked as read for form:", request.id);
+        } catch (err) {
+          console.error("Failed to mark chat as read", err);
+        }
+      };
+
+      markChatsAsRead();
+    }
+  }, [currentTab, request?.id]);
   
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
