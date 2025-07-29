@@ -57,6 +57,15 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
   const [departmentCache, setDepartmentCache] = useState<Record<string, string>>({});
   const api = useAxios();
 
+  useEffect(() => {
+    const fun = async() => {
+      const res = await api.get('approval-logs/');
+      console.log(res);
+    }
+
+    fun();
+  },[])
+
   // Fetch user details by ID
   const fetchUserDetails = async (userId: string | number): Promise<UserInfo> => {
     const userIdStr = String(userId);

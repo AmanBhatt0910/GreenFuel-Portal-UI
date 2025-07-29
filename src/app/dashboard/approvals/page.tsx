@@ -1,10 +1,11 @@
 "use client";
 
-import React, {  useState } from "react";
+import React, {  useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 // Custom hooks
 import useApprovals from "./hooks/useApprovals";
+
 
 // Components
 import ApprovalHeader from "./components/ApprovalHeader";

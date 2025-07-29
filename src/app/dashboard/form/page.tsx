@@ -465,6 +465,8 @@ export default function AssetRequestForm() {
         })),
       };
 
+      formDataToSubmit.append('pdf', '');
+
       formDataToSubmit.append("user", String(submittingFormData.user || 0));
       formDataToSubmit.append(
         "business_unit",
