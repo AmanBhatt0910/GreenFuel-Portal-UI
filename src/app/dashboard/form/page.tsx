@@ -450,7 +450,7 @@ export default function AssetRequestForm() {
         benefit_to_organisation: formData.benefitToOrg,
         approval_category: formData.approvalCategory,
         notify_to: formData.notifyTo && formData.notifyTo !== 0 ? formData.notifyTo : null,
-        form_category: formData.category,
+        request_category: formData.category,
         concerned_department: formData.concerned_department,
         current_category_level: currentCategoryLevel,
         current_form_level: 1,
@@ -517,8 +517,8 @@ export default function AssetRequestForm() {
       }
       
       formDataToSubmit.append(
-        "form_category",
-        String(submittingFormData.form_category)
+        "request_category",
+        String(submittingFormData.request_category)
       );
       formDataToSubmit.append(
         "concerned_department",

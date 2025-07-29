@@ -43,7 +43,7 @@ export interface SubmittingFormData {
   benefit_to_organisation: string; // Using UK spelling as in your data
   approval_category: string;
   notify_to: number | null;        // Changed from string to number to match your data
-  form_category: number;           // Changed from category to form_category
+  request_category: number;           // Changed from category to form_category
   concerned_department: number;    // Added field for concerned department
   current_category_level: number;  // Added field for current category level
   current_form_level: number;      // Added new field
