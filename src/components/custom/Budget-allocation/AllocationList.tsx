@@ -1,8 +1,7 @@
 import React from 'react';
-import { Edit2, Trash2, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { BudgetAllocation } from './types';
 
 interface AllocationListProps {
@@ -73,15 +72,6 @@ export const AllocationList = ({ budgetAllocations }: AllocationListProps) => {
                       ></div>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex items-center gap-2 ml-4">
-                  <Button variant="outline" size="sm">
-                    <Edit2 size={14} />
-                  </Button>
-                  <Button variant="outline" size="sm" className="text-red-600 hover:text-red-700">
-                    <Trash2 size={14} />
-                  </Button>
                 </div>
               </div>
             </div>
