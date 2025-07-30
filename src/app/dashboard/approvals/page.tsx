@@ -15,7 +15,6 @@ import ApprovalList from "./components/ApprovalList";
 import ApprovalTracker from "./components/ApprovalTracker";
 import NoResults from "./components/NoResults";
 import LoadingState from "./components/LoadingState";
-import useAxios from "@/app/hooks/use-axios";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart2, BarChart } from "lucide-react";
 
@@ -57,15 +56,6 @@ const ApprovalDashboard: React.FC = () => {
   const navigateToDetails = (id: string) => {
     router.push(`/dashboard/approvals/${id}`);
   };
-  const api = useAxios();
-
-  // useEffect(() => {
-  //   const fetchApprovalLogs = async () => {
-  //     const response = await api.get('approval-logs/');
-  //     console.log(response);
-  //   };
-  //   fetchApprovalLogs();
-  // }, []);
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen">

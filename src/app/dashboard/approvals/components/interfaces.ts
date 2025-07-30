@@ -47,6 +47,16 @@ export interface ApprovalForm {
   budget_id: string;
 }
 
+// Approval Log interface for approved/rejected requests
+export interface ApprovalLog {
+  id: number;
+  status: string; // "approved" or "rejected"
+  approved_at: string;
+  comments: string;
+  approval_request: number;
+  approver: number;
+}
+
 // Enriched Approval Form with additional display properties
 export interface EnrichedApprovalForm extends ApprovalForm {
   user_name?: string;
@@ -56,6 +66,9 @@ export interface EnrichedApprovalForm extends ApprovalForm {
   designation_name?: string;
   formatted_date?: string;
   formatted_total?: string;
+  approved_at?: string; // For approved/rejected items
+  comments?: string; // Comments from approval log
+  approver?: number; // Approver ID from approval log
 }
 
 // Comment

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import useAxios from '@/app/hooks/use-axios';
-import { ApprovalForm, UserInfo, EnrichedApprovalForm } from '../components/interfaces';
+import { ApprovalForm, UserInfo, EnrichedApprovalForm, ApprovalLog } from '../components/interfaces';
 
 interface UseApprovalsProps {
   initialFilter?: string;
@@ -56,15 +56,6 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
   const [userCache, setUserCache] = useState<Record<string, UserInfo>>({});
   const [departmentCache, setDepartmentCache] = useState<Record<string, string>>({});
   const api = useAxios();
-
-  useEffect(() => {
-    const fun = async() => {
-      const res = await api.get('approval-logs/');
-      console.log(res);
-    }
-
-    fun();
-  },[])
 
   // Fetch user details by ID
   const fetchUserDetails = async (userId: string | number): Promise<UserInfo> => {
@@ -163,16 +154,58 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     try {
       setLoading(true);
       setError(null);
-      const response = await api.get(`/pending-approvals/`);
-      // console.log(response.data)
-      const rawData = response.data ;
       
-      const enrichedData = await enrichApprovalData(rawData);
+      // Fetch both pending approvals and approval logs
+      const [pendingResponse, logsResponse] = await Promise.all([
+        api.get(`/pending-approvals/`),
+        api.get(`/approval-logs/`)
+      ]);
       
-      // Sort by newest first (by date)
+      const pendingData = pendingResponse.data;
+      const logsData = logsResponse.data;
+      
+      // For each approval log, we need to fetch the corresponding approval request details
+      const approvedRejectedData = await Promise.all(
+        logsData.map(async (log: ApprovalLog) => {
+          try {
+            // Fetch the approval request details using the approval_request ID
+            const requestResponse = await api.get(`/approval-requests/${log.approval_request}/`);
+            const requestData = requestResponse.data;
+            
+            // Combine request data with log status
+            return {
+              ...requestData,
+              status: log.status, // Override status with log status
+              approved_at: log.approved_at,
+              comments: log.comments,
+              approver: log.approver
+            };
+          } catch (err) {
+            console.error(`Error fetching approval request ${log.approval_request}:`, err);
+            return null;
+          }
+        })
+      );
+      
+      // Filter out null results (failed requests)
+      const validApprovedRejected = approvedRejectedData.filter(item => item !== null);
+      
+      // Combine pending and approved/rejected data
+      const allApprovals = [...pendingData, ...validApprovedRejected];
+      
+      console.log('Combined approvals data:', {
+        pending: pendingData.length,
+        approvedRejected: validApprovedRejected.length,
+        total: allApprovals.length,
+        statuses: allApprovals.map(a => a.status)
+      });
+      
+      const enrichedData = await enrichApprovalData(allApprovals);
+      
+      // Sort by newest first (by date or approved_at)
       const sortedData = enrichedData.sort((a, b) => {
-        const dateA = new Date(a.date);
-        const dateB = new Date(b.date);
+        const dateA = new Date(a.approved_at || a.date);
+        const dateB = new Date(b.approved_at || b.date);
         return dateB.getTime() - dateA.getTime(); // Newest first
       });
       
@@ -180,8 +213,6 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     } catch (err) {
       console.error("Error fetching approvals:", err);
       setError(err instanceof Error ? err : new Error('Failed to fetch approvals'));
-      
-      
     } finally {
       setLoading(false);
     }

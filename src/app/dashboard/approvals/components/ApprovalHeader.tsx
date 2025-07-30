@@ -1,12 +1,5 @@
 import React from 'react';
-import { ApprovalForm } from './interfaces';
-
-interface EnrichedApprovalForm extends ApprovalForm {
-  user_name?: string;
-  user_email?: string;
-  department_name?: string;
-  formatted_date?: string;
-}
+import { EnrichedApprovalForm } from './interfaces';
 
 interface ApprovalHeaderProps {
   forms: EnrichedApprovalForm[];
