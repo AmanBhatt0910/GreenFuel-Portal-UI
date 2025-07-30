@@ -176,6 +176,13 @@ const BudgetAllocationSystem = () => {
       return;
     }
 
+    // Validate budget amount
+    const budgetAmount = parseFloat(childFormData.budget);
+    if (isNaN(budgetAmount) || budgetAmount <= 0) {
+      alert('Please enter a valid budget amount');
+      return;
+    }
+
     setLoading(true);
     try {
       // Find category ID from name
@@ -188,10 +195,16 @@ const BudgetAllocationSystem = () => {
         business_unit: childFormData.business_unit,
         department: childFormData.department,
         category: categoryId,
-        amount: childFormData.budget,
+        amount: budgetAmount, // Use the validated number
         transaction_type: apiFormData.transaction_type,
         remarks: apiFormData.remarks || `Budget ${apiFormData.transaction_type === 'CREDIT' ? 'allocated' : 'deducted'}`
       };
+
+      // Log current budget state for debugging
+      const currentAllocation = budgetAllocations.find(a => 
+        a.department_id === childFormData.department && 
+        a.category === childFormData.category
+      );
 
       await api.post('/budget-allocation/', allocationData);
       await fetchBudgetAllocations();
@@ -210,9 +223,30 @@ const BudgetAllocationSystem = () => {
       });
       
       alert('Budget operation completed successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating budget allocation:', error);
-      setError('Failed to perform budget operation. Please try again.');
+      
+      // Provide more specific error messages
+      let errorMessage = 'Failed to perform budget operation. Please try again.';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.detail) {
+          errorMessage = errorData.detail;
+        } else if (errorData.amount) {
+          // Handle field-specific errors
+          errorMessage = `Amount error: ${Array.isArray(errorData.amount) ? errorData.amount[0] : errorData.amount}`;
+        }
+      }
+      
+      setError(errorMessage);
+      alert(errorMessage);
     } finally {
       setLoading(false);
     }
