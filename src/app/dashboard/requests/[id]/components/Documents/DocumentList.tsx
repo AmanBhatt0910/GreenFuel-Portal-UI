@@ -47,7 +47,7 @@ const DocumentsList: React.FC<DocumentsListProps> = React.memo(
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {documents.map((doc) => {
-          const fullUrl = `http://127.0.0.1:8000${doc.url}`;
+          const fullUrl = `http://api.sugamgreenfuel.in${doc.url}`;
           const DocIcon = getDocumentIcon(doc.type);
           
           // Generate gradient colors based on file type

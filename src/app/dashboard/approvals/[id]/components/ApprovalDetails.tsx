@@ -37,7 +37,7 @@ export default function ApprovalDetails({
         return;
       }
 
-      const fullUrl = fileUrl.startsWith('http') ? fileUrl : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:8000'}${fileUrl}`;
+      const fullUrl = fileUrl.startsWith('http') ? fileUrl : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.sugamgreenfuel.in'}${fileUrl}`;
 
       const link = document.createElement('a');
       
@@ -266,7 +266,7 @@ export default function ApprovalDetails({
                         <button
                           onClick={() => {
                             const fileUrl = attachment.file || attachment.upload_url;
-                            const fullUrl = fileUrl.startsWith('http') ? fileUrl : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8000'}${fileUrl}`;
+                            const fullUrl = fileUrl.startsWith('http') ? fileUrl : `${process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.sugamgreenfuel.in'}${fileUrl}`;
                             window.open(fullUrl, '_blank');
                           }}
                           className="inline-flex items-center px-3 py-1.5 text-xs bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50 rounded-md font-medium transition-colors"
