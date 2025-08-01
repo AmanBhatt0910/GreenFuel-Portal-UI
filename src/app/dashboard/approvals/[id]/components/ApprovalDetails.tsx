@@ -5,6 +5,7 @@ import { numberToWords } from '@/app/dashboard/approvals/components/utils';
 import { InfoIcon, BarChart2, Package, IndianRupee, Calendar, FileText, Activity, Target, Download, MessageSquare, CheckCircle, XCircle, FileDown } from 'lucide-react';
 import AssetDetailsTable from '@/app/dashboard/approvals/components/AssetDetailsTable';
 import { generateApprovalPDF } from '@/lib/pdf-generator';
+import useAxios from '@/app/hooks/use-axios';
 
 interface ApprovalDetailsProps {
   enrichedForm: any;
@@ -27,6 +28,8 @@ export default function ApprovalDetails({
 }: ApprovalDetailsProps) {
   console.log('ApprovalDetails - enrichedForm:', enrichedForm);
   console.log('ApprovalDetails - attachments:', attachments);
+  
+  const api = useAxios();
 
   const handleDownload = async (attachment: any) => {
     try {
@@ -84,7 +87,9 @@ export default function ApprovalDetails({
 
       await generateApprovalPDF(
         pdfData,
-        enrichedForm.budget_id || enrichedForm.id
+        enrichedForm.budget_id || enrichedForm.id,
+        undefined, // fetchEntityNames not needed
+        api // Pass the API instance
       );
       
     } catch (error) {

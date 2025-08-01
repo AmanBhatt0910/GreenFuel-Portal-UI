@@ -98,8 +98,12 @@ export default function useApprovalDetails({
   // Cache states
   const [userCache, setUserCache] = useState<UserCache>({});
   const [departmentCache, setDepartmentCache] = useState<DepartmentCache>({});
-  const [businessUnitCache, setBusinessUnitCache] = useState<BusinessUnitCache>({});
-  const [designationCache, setDesignationCache] = useState<DesignationCache>({});
+  const [businessUnitCache, setBusinessUnitCache] = useState<BusinessUnitCache>(
+    {}
+  );
+  const [designationCache, setDesignationCache] = useState<DesignationCache>(
+    {}
+  );
 
   const api = useAxios();
 
@@ -115,12 +119,13 @@ export default function useApprovalDetails({
     try {
       const response = await api.get(`/userInfo/${userId}/`);
       const userData = response.data;
-      console.log('User data from API:', userData); // Debug log
+
       const userInfo: UserInfo = {
         id: userId,
         name: userData.name || userData.username || `User ${userId}`,
         email: userData.email || "No email available",
-        employee_code: userData.employee_code || userData.emp_code || userData.employeeCode,
+        employee_code:
+          userData.employee_code || userData.emp_code || userData.employeeCode,
       };
 
       // Update cache
@@ -174,8 +179,6 @@ export default function useApprovalDetails({
       };
     }
   };
-
-  
 
   // Fetch business unit details
   const fetchBusinessUnitDetails = async (
@@ -290,7 +293,6 @@ export default function useApprovalDetails({
 
       const response = await api.get(`/approval-requests/${id}/`);
       const formData = response.data;
-      console.log(formData)
 
       setForm(formData);
 
@@ -304,7 +306,6 @@ export default function useApprovalDetails({
         await fetchComments(formData.id);
         await fetchAttachments(formData.id);
       }
-
     } catch (err) {
       console.error("Error fetching approval details:", err);
       setError(
@@ -318,12 +319,12 @@ export default function useApprovalDetails({
   }, [id]);
 
   // Renamed and updated fetch asset details function
-  const fetchAssetDetails = async(formId: number) => {
+  const fetchAssetDetails = async (formId: number) => {
     try {
       const response = await api.get(`/approval-items/?form_id=${formId}`);
-    
+
       setassestDetails(response.data);
-    } catch (error:any) {
+    } catch (error: any) {
       console.error("Error fetching asset details:", error?.message);
     }
   };
@@ -333,24 +334,23 @@ export default function useApprovalDetails({
     try {
       setIsChatLoading(true);
       const response = await api.get(`/chats?form_id=${formId}`);
-      console.log(response)
-      
+
       if (response.data && Array.isArray(response.data)) {
         // Map API response to Comment interface
         const mappedComments: Comment[] = response.data.map((chat: any) => ({
           id: chat.id,
           user: chat.sender?.name || chat.sender?.username || "User",
           userRole: "User",
-          userInitials: chat.sender?.name 
-            ? chat.sender.name.charAt(0) 
-            : chat.sender?.username 
-              ? chat.sender.username.charAt(0) 
-              : "U",
+          userInitials: chat.sender?.name
+            ? chat.sender.name.charAt(0)
+            : chat.sender?.username
+            ? chat.sender.username.charAt(0)
+            : "U",
           text: chat.message,
           timestamp: chat.timestamp,
-          read: chat.read ? "true" : ""
+          read: chat.read ? "true" : "",
         }));
-        
+
         setComments(mappedComments);
       }
     } catch (error) {
@@ -364,8 +364,7 @@ export default function useApprovalDetails({
   const fetchAttachments = async (formId: number | string) => {
     try {
       const response = await api.get(`/approval-attachments?form_id=${formId}`);
-      console.log('Attachments response:', response.data);
-      
+
       if (response.data && Array.isArray(response.data)) {
         setAttachments(response.data);
       } else {
@@ -390,11 +389,11 @@ export default function useApprovalDetails({
 
       // Call the API to approve the request
       const res = await api.post(`/approval-requests/${id}/approve/`);
-      
+
       // Check if the API call was successful
       if (res.status === 200) {
         toast.success("Request approved successfully!");
-        
+
         // Only update the local state if the API call was successful
         if (form) {
           setForm({
@@ -420,7 +419,7 @@ export default function useApprovalDetails({
           userInitials: "YO",
           text: "Request approved.",
           timestamp: new Date().toISOString(),
-          read: ""
+          read: "",
         };
 
         setComments([...comments, systemComment]);
@@ -450,13 +449,13 @@ export default function useApprovalDetails({
       const res = await api.post(`/approval-requests/${id}/reject/`, {
         comments: rejectionReason,
       });
-      
+
       // Close the dialog only after API call is initiated
       setRejectionDialogOpen(false);
-      
+
       if (res.status === 200) {
         toast.success("Request rejected successfully!");
-        
+
         // Only update local state if the API call was successful
         if (form) {
           setForm({
@@ -484,7 +483,7 @@ export default function useApprovalDetails({
           userInitials: "YO",
           text: `Request rejected. Reason: ${rejectionReason}`,
           timestamp: new Date().toISOString(),
-          read: ""
+          read: "",
         };
 
         setComments([...comments, systemComment]);
@@ -513,23 +512,24 @@ export default function useApprovalDetails({
         message: newComment,
       };
 
-      
       const response = await api.post(`/chats/`, commentData);
-      
-      
+
       const newCommentObj: Comment = {
         id: response.data.id,
-        user: response.data.sender?.name || response.data.sender?.username || "You",
+        user:
+          response.data.sender?.name || response.data.sender?.username || "You",
         userRole: "Approver",
-        userInitials: response.data.sender?.name ? response.data.sender.name.charAt(0) : "U",
+        userInitials: response.data.sender?.name
+          ? response.data.sender.name.charAt(0)
+          : "U",
         text: response.data.message,
         timestamp: response.data.timestamp,
-        read: response.data.read ? "true" : ""
+        read: response.data.read ? "true" : "",
       };
 
       // Add to comments list
       setComments((prevComments) => [...prevComments, newCommentObj]);
-      
+
       // Clear comment input
       setNewComment("");
     } catch (err) {
@@ -557,6 +557,6 @@ export default function useApprovalDetails({
     isApproving,
     isRejecting,
     assestDetails,
-    attachments
+    attachments,
   };
 }

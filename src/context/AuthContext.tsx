@@ -77,15 +77,6 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     ? 'http://api.sugamgreenfuel.in'
     : (process.env.NEXT_PUBLIC_BACKEND_API_URL || 'http://127.0.0.1:8000');
     
-  // Log the base URL and environment for debugging
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      console.log('AuthContext NODE_ENV:', process.env.NODE_ENV);
-      console.log('AuthContext isProduction:', isProduction);
-      console.log('AuthContext hostname:', window.location.hostname);
-      console.log('AuthContext using baseURL:', baseURL);
-    }
-  }, [baseURL, isProduction]);
 
   const router = useRouter();
   const [authToken, setAuthToken] = useState<AccessTokenType | null>(

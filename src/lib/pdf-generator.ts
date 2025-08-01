@@ -240,7 +240,7 @@ function addJustification(doc: jsPDF, reason: string, y: number): number {
 }
 
 /**
- * Adds approval hierarchy section with current level information
+ * Adds approval hierarchy section with current level information and approver details
  */
 function addApprovalHierarchy(
   doc: jsPDF, 
@@ -254,78 +254,167 @@ function addApprovalHierarchy(
   addSectionHeader(doc, "APPROVAL HIERARCHY", y);
   y += 15;
 
-  // Current level information
-  doc.setFontSize(10);
+  // Current level information with better formatting
+  doc.setFontSize(11);
   doc.setTextColor(...PDF_COLORS.primary);
-  doc.text(`Current Approval Level: ${currentLevel} of ${maxLevel}`, 14, y);
-  y += 10;
+  doc.setFont("helvetica", "bold");
+  doc.text("Approval Status:", 14, y);
+  doc.setFont("helvetica", "normal");
+  
+  // Status text based on current level vs max level
+  let statusText = "";
+  let statusColor = PDF_COLORS.secondary;
+  
+  if (currentLevel > maxLevel) {
+    statusText = `Fully Approved (Level ${currentLevel} of ${maxLevel})`;
+    statusColor = PDF_COLORS.success;
+  } else if (currentLevel === maxLevel) {
+    statusText = `At Final Level (Level ${currentLevel} of ${maxLevel})`;
+    statusColor = PDF_COLORS.secondary;
+  } else {
+    statusText = `In Progress (Level ${currentLevel} of ${maxLevel})`;
+    statusColor = PDF_COLORS.secondary;
+  }
+  
+  doc.setTextColor(...statusColor);
+  doc.text(statusText, 70, y);
+  y += 12;
 
-  // Progress indicator
+  // Progress indicator with better styling
   const progressWidth = 160;
-  const progressHeight = 8;
+  const progressHeight = 10;
   const progressX = 14;
   
-  // Background
+  // Background with border
   doc.setFillColor(...PDF_COLORS.background);
-  doc.roundedRect(progressX, y, progressWidth, progressHeight, 2, 2, "F");
+  doc.setDrawColor(...PDF_COLORS.border);
+  doc.setLineWidth(0.5);
+  doc.roundedRect(progressX, y, progressWidth, progressHeight, 3, 3, "FD");
   
   // Progress fill
-  const fillWidth = (currentLevel / maxLevel) * progressWidth;
-  doc.setFillColor(...PDF_COLORS.primary);
-  doc.roundedRect(progressX, y, fillWidth, progressHeight, 2, 2, "F");
+  const fillWidth = Math.min((currentLevel / maxLevel) * progressWidth, progressWidth);
+  if (currentLevel > maxLevel) {
+    doc.setFillColor(...PDF_COLORS.success);
+  } else {
+    doc.setFillColor(...PDF_COLORS.primary);
+  }
+  doc.roundedRect(progressX + 1, y + 1, fillWidth - 2, progressHeight - 2, 2, 2, "F");
+  
+  // Add percentage text on progress bar
+  doc.setFontSize(8);
+  doc.setTextColor(255, 255, 255);
+  const percentage = Math.min((currentLevel / maxLevel) * 100, 100);
+  const percentText = `${Math.round(percentage)}%`;
+  const textWidth = doc.getTextWidth(percentText);
+  if (fillWidth > textWidth + 10) {
+    doc.text(percentText, progressX + (fillWidth / 2) - (textWidth / 2), y + 7);
+  }
   
   y += 20;
 
-  // Approval levels table
+  // Approval levels table with enhanced formatting
   if (approvalLevels && approvalLevels.length > 0) {
+    // Add a subtitle for the table
+    doc.setFontSize(10);
+    doc.setTextColor(...PDF_COLORS.primary);
+    doc.setFont("helvetica", "bold");
+    doc.text("Approval Details:", 14, y);
+    y += 8;
+    
+    // Prepare table data with better formatting
+    const tableData = approvalLevels.map((level) => [
+      `Level ${level.level}`,
+      level.status.charAt(0).toUpperCase() + level.status.slice(1),
+      level.approverName || "Pending Assignment",
+      level.approvedAt ? format(new Date(level.approvedAt), "dd MMM yyyy") : "-",
+      level.comments && level.comments !== "null" && level.comments !== "" ? 
+        (level.comments.length > 50 ? level.comments.substring(0, 47) + "..." : level.comments) : 
+        "-"
+    ]);
+    
     autoTable(doc, {
       startY: y,
-      head: [["Level", "Status", "Approver", "Date", "Comments"]],
-      body: approvalLevels.map((level) => [
-        `Level ${level.level}`,
-        level.status.charAt(0).toUpperCase() + level.status.slice(1),
-        level.approverName || "Pending Assignment",
-        level.approvedAt ? format(new Date(level.approvedAt), "MMM dd, yyyy") : "-",
-        level.comments || "-"
-      ]),
+      head: [["Level", "Status", "Approver Name", "Date", "Comments"]],
+      body: tableData,
       theme: "grid",
       styles: {
         fontSize: 9,
-        cellPadding: 3,
+        cellPadding: 4,
         lineColor: PDF_COLORS.border,
         textColor: PDF_COLORS.text,
+        lineWidth: 0.5,
       },
       headStyles: {
         fillColor: PDF_COLORS.primary,
-        textColor: 255,
+        textColor: [255, 255, 255],
         fontSize: 10,
+        fontStyle: "bold",
+        halign: "center"
       },
       columnStyles: {
-        0: { halign: "center", cellWidth: 20 },
-        1: { halign: "center", cellWidth: 25 },
-        2: { cellWidth: 50 },
+        0: { halign: "center", cellWidth: 25 },
+        1: { halign: "center", cellWidth: 30 },
+        2: { cellWidth: 55, halign: "left" },
         3: { halign: "center", cellWidth: 30 },
-        4: { cellWidth: 55 }
+        4: { cellWidth: 40, halign: "left" }
       },
       didParseCell: function(data: any) {
         if (data.column.index === 1 && data.cell.section === 'body') {
           const status = data.cell.raw.toLowerCase();
           if (status === 'approved') {
             data.cell.styles.textColor = PDF_COLORS.success;
+            data.cell.styles.fontStyle = 'bold';
           } else if (status === 'rejected') {
             data.cell.styles.textColor = PDF_COLORS.error;
+            data.cell.styles.fontStyle = 'bold';
           } else if (status === 'pending') {
             data.cell.styles.textColor = PDF_COLORS.secondary;
+            data.cell.styles.fontStyle = 'bold';
+          } else if (status === 'waiting') {
+            data.cell.styles.textColor = [128, 128, 128];
           }
         }
+        
+        // Highlight current level row
+        if (data.row.index < approvalLevels.length) {
+          const level = approvalLevels[data.row.index];
+          if (level.level === currentLevel) {
+            data.cell.styles.fillColor = [249, 250, 251]; // Light gray background for current level
+          }
+        }
+      },
+      margin: { left: 14, right: 14 },
+      tableWidth: 'auto',
+      alternateRowStyles: {
+        fillColor: [252, 252, 252]
       }
     });
-    return (doc as any).lastAutoTable.finalY + 15;
-  } else {
+    
+    // Get the final Y position after the table
+    const finalY = (doc as any).lastAutoTable?.finalY || y + 40;
+    y = finalY + 10;
+    
+    // Add approval summary text
+    doc.setFontSize(9);
     doc.setTextColor(...PDF_COLORS.text);
-    doc.text("No detailed approval information available", 14, y);
-    return y + 15;
+    doc.setFont("helvetica", "italic");
+    
+    const approvedCount = approvalLevels.filter(level => level.status === 'approved').length;
+    const totalLevels = approvalLevels.length;
+    const summaryText = `Summary: ${approvedCount} of ${totalLevels} approval levels completed`;
+    
+    doc.text(summaryText, 14, y);
+    y += 8;
+  } else {
+    // No approval levels found
+    doc.setFontSize(10);
+    doc.setTextColor(128, 128, 128);
+    doc.setFont("helvetica", "italic");
+    doc.text("No detailed approval hierarchy information available.", 14, y);
+    y += 15;
   }
+
+  return y;
 }
 
 /**
@@ -555,7 +644,8 @@ export async function generateAssetRequestPDF(options: PDFGeneratorOptions): Pro
 export async function generateApprovalPDF(
   requestData: any,
   budgetId: string | number,
-  fetchEntityNames?: (api: any) => Promise<{ businessUnitName: string; departmentName: string; designationName: string }>
+  fetchEntityNames?: (api: any) => Promise<{ businessUnitName: string; departmentName: string; designationName: string }>,
+  apiInstance?: any
 ): Promise<void> {
   console.log('generateApprovalPDF - requestData:', requestData);
   console.log('generateApprovalPDF - employee_code from requestData:', requestData.employee_code);
@@ -570,6 +660,114 @@ export async function generateApprovalPDF(
   };
 
   console.log('generateApprovalPDF - Final requestorInfo:', requestorInfo);
+  
+  // Fetch approval hierarchy data
+  let approvalLevelsWithNames: ApprovalLevel[] = [];
+  try {
+    // Use provided API instance or try to import axios as fallback
+    let api = apiInstance;
+    if (!api) {
+      // Fallback to direct axios if no API instance provided
+      const axios = (await import('axios')).default;
+      const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://api.sugamgreenfuel.in';
+      
+      // Try to get token from localStorage (if in browser environment)
+      let token = '';
+      if (typeof window !== 'undefined') {
+        const authData = localStorage.getItem('authToken');
+        if (authData) {
+          const parsed = JSON.parse(authData);
+          token = parsed.access;
+        }
+      }
+      
+      api = axios.create({
+        baseURL: baseURL,
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
+      });
+    }
+    
+    // Get current form level and max level from request data
+    const currentFormLevel = requestData.current_form_level || requestData.current_level || 1;
+    const maxFormLevel = requestData.form_max_level || requestData.max_level || 1;
+    
+    // Fetch approvers for the same business unit and department
+    const approversResponse = await api.get('/approver/', {
+      params: {
+        type: "approver"
+      }
+    });
+    
+    // Filter approvers for the current request's business unit and department
+    const relevantApprovers = approversResponse.data.filter((approver: any) => 
+      approver.business_unit === requestData.business_unit && 
+      approver.department === requestData.department
+    );
+    
+    console.log('Relevant approvers for PDF:', relevantApprovers);
+    
+    // Sort approvers by level
+    relevantApprovers.sort((a: any, b: any) => a.level - b.level);
+    
+    // Fetch user details for each approver and build approval levels
+    for (const approver of relevantApprovers) {
+      try {
+        const userResponse = await api.get(`/userInfo/${approver.user}`);
+        const userData = userResponse.data;
+        
+        // Determine status based on current form level
+        let status: "approved" | "pending" | "waiting" | "rejected" = "waiting";
+        if (requestData.rejected && requestData.rejection_reason !== "null") {
+          // If form is rejected, mark the current level as rejected and others as waiting
+          status = approver.level === currentFormLevel ? "rejected" : "waiting";
+        } else if (approver.level < currentFormLevel) {
+          status = "approved";
+        } else if (approver.level === currentFormLevel) {
+          status = requestData.status === "Approved" && currentFormLevel > maxFormLevel ? "approved" : "pending";
+        } else {
+          status = "waiting";
+        }
+        
+        approvalLevelsWithNames.push({
+          level: approver.level,
+          status: status,
+          approverName: userData.name || userData.username || `User ${userData.id}`,
+          approvedAt: status === "approved" ? requestData.date : undefined,
+          comments: status === "rejected" ? requestData.rejection_reason : undefined
+        });
+      } catch (userError) {
+        console.error(`Error fetching user ${approver.user}:`, userError);
+        // Add approver without name if user fetch fails
+        let status: "approved" | "pending" | "waiting" | "rejected" = "waiting";
+        if (requestData.rejected && requestData.rejection_reason !== "null") {
+          status = approver.level === currentFormLevel ? "rejected" : "waiting";
+        } else if (approver.level < currentFormLevel) {
+          status = "approved";
+        } else if (approver.level === currentFormLevel) {
+          status = requestData.status === "Approved" && currentFormLevel > maxFormLevel ? "approved" : "pending";
+        } else {
+          status = "waiting";
+        }
+        
+        approvalLevelsWithNames.push({
+          level: approver.level,
+          status: status,
+          approverName: `User ID: ${approver.user}`,
+          approvedAt: status === "approved" ? requestData.date : undefined,
+          comments: status === "rejected" ? requestData.rejection_reason : undefined
+        });
+      }
+    }
+    
+    console.log('Built approval levels with names:', approvalLevelsWithNames);
+    
+  } catch (error) {
+    console.error('Error fetching approval hierarchy:', error);
+    // Fallback to existing approval levels if API call fails
+    approvalLevelsWithNames = requestData.approval_levels || [];
+  }
 
   // Handle asset details - check if assetDetails is passed directly or use items
   let assets: AssetItem[] = [];
@@ -615,6 +813,6 @@ export async function generateApprovalPDF(
     rejected: requestData.rejected || false,
     currentLevel: requestData.current_form_level || requestData.current_level || 1,
     maxLevel: requestData.form_max_level || requestData.max_level || 1,
-    approvalLevels: requestData.approval_levels || [],
+    approvalLevels: approvalLevelsWithNames,
   });
 }

@@ -8,7 +8,6 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, MessageSquare, FileText, CheckCircle, XCircle, Clock, User, Building, Calendar, DollarSign, Package } from "lucide-react";
 import { useRouter, useParams } from "next/navigation";
 import useApprovalDetails from './hooks/useApprovalDetails';
-import ApprovalHeader from './components/ApprovalHeader';
 import RequesterInfo from './components/RequesterInfo';
 import ApprovalActions from './components/ApprovalActions';
 import ChatSection from './components/ChatSection';
@@ -46,7 +45,6 @@ function ApprovalDetailsPage() {
   const handleTabChange = (value: string) => {
     setActiveTab(value);
     setNewComment("");
-    console.log(enrichedForm)
   };
 
   const handleBack = () => {

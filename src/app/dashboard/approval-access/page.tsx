@@ -80,8 +80,7 @@ const ApprovalAccessPage = () => {
       try {
         
         const usersResponse = await api.get('/userInfo/');
-        console.log('Users data:', usersResponse.data);
-        
+
         const userData = Array.isArray(usersResponse.data) 
           ? usersResponse.data 
           : [usersResponse.data];
@@ -109,7 +108,7 @@ const ApprovalAccessPage = () => {
         
         const allDepartmentsArrays = await Promise.all(allDepartmentsPromises);
         const allDepartments = allDepartmentsArrays.flat();
-        console.log('All departments:', allDepartments);
+
         
         const approversResponse = await api.get('/approver/' , {
           params: {
@@ -126,8 +125,7 @@ const ApprovalAccessPage = () => {
               department_details: allDepartments.find((dept: Department) => dept.id === approver.department)
             }))
           : [];
-        
-        // console.log('Enriched approvers with department details:', enrichedApprovers);
+
         setApprovers(enrichedApprovers);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -175,8 +173,6 @@ const ApprovalAccessPage = () => {
     
     if (departmentApprovers.length > 0) {
       const highestLevel = Math.max(...departmentApprovers.map(a => a.level));
-      console.log(`Department ${formData.department} has approvers with highest level: ${highestLevel}`);
-      
       setFormData(prev => ({
         ...prev,
         level: highestLevel + 1

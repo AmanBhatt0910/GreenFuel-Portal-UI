@@ -179,7 +179,9 @@ const RequestDetailsPage: React.FC = () => {
 
       await generateApprovalPDF(
         requestData,
-        request?.budget_id || request?.id || 'request'
+        request?.budget_id || request?.id || 'request',
+        undefined, // fetchEntityNames not needed
+        api // Pass the API instance
       );
     } catch (error) {
       console.error('Error generating PDF:', error);
