@@ -2,20 +2,19 @@ import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   Filter, 
-  Download, 
   CheckCircle, 
   XCircle, 
   Clock, 
   Eye, 
-  MoreHorizontal,
   Search,
   ChevronDown,
-  ChevronUp,
   Calendar,
-  ChevronsUpDown
+  ChevronsUpDown,
+  ArrowLeft
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Progress } from "@/components/ui/progress";
 
 // Status configuration object
 const STATUS_CONFIG = {
@@ -169,6 +168,54 @@ interface RequestsTableProps {
 const isHighAmount = (totalStr: string): boolean => {
   const amount = parseFloat(totalStr);
   return amount >= 5000000; // 50 lakh (5,000,000)
+};
+
+// Helper function to get progress percentage
+const getProgressPercentage = (current: number, max: number): number => {
+  if (max === 0) return 0;
+  return Math.round((current / max) * 100);
+};
+
+// Helper function to get progress background color based on status
+const getProgressBackgroundColor = (request: RequestType): string => {
+  // If request is rejected, show red background
+  if (request.rejected || request.status === "rejected" || request.current_status.toLowerCase() === "rejected") {
+    return "bg-red-100 dark:bg-red-900/20";
+  }
+  // Default indigo background for other requests
+  return "bg-indigo-100 dark:bg-indigo-900/20";
+};
+
+// Helper function to get progress tooltip text
+const getProgressTooltip = (request: RequestType): string => {
+  const percentage = getProgressPercentage(request.current_form_level, request.form_max_level);
+  
+  if (request.rejected || request.status === "rejected" || request.current_status.toLowerCase() === "rejected") {
+    return `Request Rejected at Level ${request.current_form_level}/${request.form_max_level}`;
+  }
+  
+  return `Progress: ${percentage}% (Level ${request.current_form_level}/${request.form_max_level})`;
+};
+
+// Helper function to get progress color based on completion and status
+const getProgressColor = (percentage: number, request: RequestType): string => {
+  // If request is rejected, always show red
+  if (request.rejected || request.status === "rejected" || request.current_status.toLowerCase() === "rejected") {
+    return "[&>div]:bg-red-600 dark:[&>div]:bg-red-500"; // Rejected - red
+  }
+  
+  // Normal progress colors for non-rejected requests
+  if (percentage === 100) {
+    return "[&>div]:bg-emerald-600 dark:[&>div]:bg-emerald-500"; // Completed - green
+  } else if (percentage >= 75) {
+    return "[&>div]:bg-indigo-600 dark:[&>div]:bg-indigo-500"; // Almost done - indigo
+  } else if (percentage >= 50) {
+    return "[&>div]:bg-blue-600 dark:[&>div]:bg-blue-500"; // Halfway - blue
+  } else if (percentage >= 25) {
+    return "[&>div]:bg-amber-600 dark:[&>div]:bg-amber-500"; // Started - amber
+  } else {
+    return "[&>div]:bg-gray-600 dark:[&>div]:bg-gray-500"; // Just started - gray
+  }
 };
 
 // Function to determine the correct status configuration
@@ -327,7 +374,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                 whileTap={{ scale: 0.97 }}
               >
                 View All
-                <ChevronDown className="ml-1 h-4 w-4 rotate-270" style={{ transform: 'rotate(-90deg)' }} />
+                <ArrowLeft className="ml-1 h-4 w-4 rotate-270" style={{ transform: 'rotate(-90deg)' }} />
               </motion.button>
             </div>
           )}
@@ -526,14 +573,20 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                       </div>
                     </td>
                     <td className="py-4 px-4">
-                      <div className="flex items-center">
-                        <div className="w-16 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                          <div 
-                            className="bg-indigo-500 h-2 rounded-full" 
-                            style={{
-                              width: `${(request.current_form_level / request.form_max_level) * 100}%`
-                            }}
-                          />
+                      <div className="flex items-center space-x-2">
+                        <div className="w-16 group">
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: 0.1 + (0.05 * index) }}
+                            title={getProgressTooltip(request)}
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            <Progress 
+                              value={getProgressPercentage(request.current_form_level, request.form_max_level)}
+                              className={`h-2 ${getProgressBackgroundColor(request)} ${getProgressColor(getProgressPercentage(request.current_form_level, request.form_max_level), request)} [&>div]:transition-all [&>div]:duration-500 group-hover:h-2.5 transition-all duration-200`}
+                            />
+                          </motion.div>
                         </div>
                         <span className="text-xs font-medium text-gray-600 dark:text-gray-300 ml-2">
                           {request.current_form_level}/{request.form_max_level}
@@ -580,17 +633,6 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
                             </motion.div>
                           </motion.button>
                         </Link>
-                        <motion.button 
-                          className="flex items-center justify-center w-8 h-8 rounded-lg bg-gray-50 text-gray-600 hover:bg-gray-100 dark:bg-gray-700 dark:text-gray-400 dark:hover:bg-gray-600"
-                          variants={buttonVariants}
-                          whileHover="hover"
-                          whileTap="tap"
-                          title="More Options"
-                        >
-                          <motion.div variants={iconVariants}>
-                            <MoreHorizontal className="h-4 w-4" />
-                          </motion.div>
-                        </motion.button>
                       </div>
                     </td>
                   </motion.tr>
@@ -628,7 +670,7 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
             whileTap={{ scale: 0.97 }}
           >
             View All
-            <ChevronDown className="ml-1 h-4 w-4 rotate-270" style={{ transform: 'rotate(-90deg)' }} />
+            <ArrowLeft className="ml-1 h-4 w-4 rotate-270" style={{ transform: 'rotate(-90deg)' }} />
           </motion.button>
         </div>
       )}

@@ -533,7 +533,7 @@ const DashboardPage: React.FC = () => {
           </AnimateInView>
 
           {/* Optional bottom row components with grid layout */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <AnimateInView variants={fadeInUpVariants} delay={0.4}>
               <DashboardCard 
                 title="Recent Activity" 
@@ -551,7 +551,7 @@ const DashboardPage: React.FC = () => {
                 <QuickActions />
               </DashboardCard>
             </AnimateInView>
-          </div>
+          </div> */}
         </div>
       </motion.div>
     </AnimatePresence>
