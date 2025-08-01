@@ -11,6 +11,21 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   DollarSign,
   Calendar,
   CheckCircle,
@@ -21,6 +36,10 @@ import {
   PlusCircle,
   ChevronDown,
   ChevronRight,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Eye,
 } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
 import CustomBreadcrumb from "@/components/custom/CustomBreadcrumb";
@@ -62,10 +81,11 @@ const BudgetRequestsList = () => {
   const [filteredRequests, setFilteredRequests] = useState<BudgetRequest[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "id">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [businessUnits, setBusinessUnits] = useState<EntityInfo[]>([]);
   const [departments, setDepartments] = useState<EntityInfo[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [expandedRows, setExpandedRows] = useState<number[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
   useEffect(() => {
@@ -192,14 +212,54 @@ const BudgetRequestsList = () => {
       );
     }
 
-    setFilteredRequests(filtered);
-  }, [searchTerm, statusFilter, requests]);
+    // Sort requests
+    filtered.sort((a, b) => {
+      let aValue: any, bValue: any;
+      
+      switch (sortBy) {
+        case "date":
+          aValue = new Date(a.date).getTime();
+          bValue = new Date(b.date).getTime();
+          break;
+        case "amount":
+          aValue = parseFloat(a.total);
+          bValue = parseFloat(b.total);
+          break;
+        case "id":
+          aValue = a.budget_id.toLowerCase();
+          bValue = b.budget_id.toLowerCase();
+          break;
+        default:
+          aValue = new Date(a.date).getTime();
+          bValue = new Date(b.date).getTime();
+      }
+      
+      if (sortOrder === "asc") {
+        return aValue > bValue ? 1 : -1;
+      } else {
+        return aValue < bValue ? 1 : -1;
+      }
+    });
 
-  // Toggle row expansion
-  const toggleRowExpansion = (id: number) => {
-    setExpandedRows((prev) =>
-      prev.includes(id) ? prev.filter((rowId) => rowId !== id) : [...prev, id]
-    );
+    setFilteredRequests(filtered);
+  }, [searchTerm, statusFilter, requests, sortBy, sortOrder]);
+
+  // Handle sorting
+  const handleSort = (column: "date" | "amount" | "id") => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === "asc" ? "desc" : "asc");
+    } else {
+      setSortBy(column);
+      setSortOrder("desc");
+    }
+  };
+
+  // Get sort icon
+  const getSortIcon = (column: "date" | "amount" | "id") => {
+    if (sortBy !== column) {
+      return <ArrowUpDown className="h-4 w-4" />;
+    }
+    return sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
   };
 
   // Format date
@@ -315,23 +375,6 @@ const BudgetRequestsList = () => {
     );
   }
 
-  const groupByMonth = (items: BudgetRequest[]) => {
-    const grouped: Record<string, BudgetRequest[]> = {};
-
-    items.forEach((item) => {
-      const date = new Date(item.date);
-      const monthYear = date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-      });
-
-      if (!grouped[monthYear]) grouped[monthYear] = [];
-      grouped[monthYear].push(item);
-    });
-
-    return grouped;
-  };
-
   return (
     <div className="container mx-auto py-8 max-w-7xl sm:px-6">
       <CustomBreadcrumb
@@ -350,187 +393,198 @@ const BudgetRequestsList = () => {
 
       {/* Search and filters */}
       <div className="mb-8 bg-white rounded-lg border border-blue-100 shadow-sm overflow-hidden">
-        {/* <div className="h-1 bg-blue-500"></div> */}
         <div className="p-5">
-          <div className="flex flex-col md:flex-row items-center gap-4">
+          <div className="flex flex-col lg:flex-row items-center gap-4">
             <div className="relative flex-1 w-full">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-blue-500" />
-              <input
+              <Input
                 placeholder="Search by ID, reason, amount..."
-                className="w-full pl-9 pr-4 py-2 rounded-md border border-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-9 focus:ring-2 focus:ring-blue-500 border-blue-200"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             <div className="flex gap-2 flex-wrap">
-              <button
-                className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium border ${
-                  statusFilter === "pending"
-                    ? "bg-amber-50 text-amber-700 border-amber-200"
-                    : "text-amber-600 border-amber-200 hover:bg-amber-50"
-                }`}
-                onClick={() =>
-                  setStatusFilter(statusFilter === "pending" ? null : "pending")
-                }
+              <Select
+                value={statusFilter || "all"}
+                onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
               >
-                <Clock className="h-4 w-4 mr-1.5" />
-                Pending
-              </button>
-              <button
-                className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium border ${
-                  statusFilter === "approved"
-                    ? "bg-green-50 text-green-700 border-green-200"
-                    : "text-green-600 border-green-200 hover:bg-green-50"
-                }`}
-                onClick={() =>
-                  setStatusFilter(
-                    statusFilter === "approved" ? null : "approved"
-                  )
-                }
+                <SelectTrigger className="w-40 border-blue-200">
+                  <SelectValue placeholder="Filter by status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Status</SelectItem>
+                  <SelectItem value="pending">Pending</SelectItem>
+                  <SelectItem value="approved">Approved</SelectItem>
+                  <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select
+                value={`${sortBy}-${sortOrder}`}
+                onValueChange={(value) => {
+                  const [column, order] = value.split("-") as [typeof sortBy, typeof sortOrder];
+                  setSortBy(column);
+                  setSortOrder(order);
+                }}
               >
-                <CheckCircle className="h-4 w-4 mr-1.5" />
-                Approved
-              </button>
-              <button
-                className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium border ${
-                  statusFilter === "rejected"
-                    ? "bg-red-50 text-red-700 border-red-200"
-                    : "text-red-600 border-red-200 hover:bg-red-50"
-                }`}
-                onClick={() =>
-                  setStatusFilter(
-                    statusFilter === "rejected" ? null : "rejected"
-                  )
-                }
-              >
-                <XCircle className="h-4 w-4 mr-1.5" />
-                Rejected
-              </button>
+                <SelectTrigger className="w-48 border-blue-200">
+                  <SelectValue placeholder="Sort by" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="date-desc">Newest First</SelectItem>
+                  <SelectItem value="date-asc">Oldest First</SelectItem>
+                  <SelectItem value="amount-desc">Highest Amount</SelectItem>
+                  <SelectItem value="amount-asc">Lowest Amount</SelectItem>
+                  <SelectItem value="id-asc">ID A-Z</SelectItem>
+                  <SelectItem value="id-desc">ID Z-A</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Budget Requests List */}
+      {/* Budget Requests Table */}
       <div className="bg-white rounded-lg border border-blue-100 shadow-sm overflow-hidden">
         <div className="p-4 border-b border-blue-100">
-          <div className="flex justify-between items-end px-4 pb-2">
+          <div className="flex justify-between items-end">
             <div>
               <h2 className="text-2xl font-bold text-blue-800 tracking-tight">
                 Budget Requests
               </h2>
               <p className="text-sm text-blue-500/80 mt-1">
-                Showing {filteredRequests.length} total request
-                {filteredRequests.length !== 1 ? "s" : ""}.
+                Showing {filteredRequests.length} of {requests.length} request
+                {requests.length !== 1 ? "s" : ""}.
               </p>
             </div>
+            <Link href="/dashboard/form">
+              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+                <PlusCircle className="h-4 w-4 mr-1.5" />
+                New Request
+              </Button>
+            </Link>
           </div>
         </div>
 
-        <CardContent className="p-0">
-          {filteredRequests.length === 0 ? (
-            <div className="text-center py-16">
-              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                <Search className="h-8 w-8 text-blue-400" />
-              </div>
-              <h3 className="text-lg font-medium mb-1 text-blue-700">No requests found</h3>
-              <p className="text-sm text-blue-500/70 max-w-md mx-auto">
-                Try adjusting your filters or search
-              </p>
+        {filteredRequests.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+              <Search className="h-8 w-8 text-blue-400" />
             </div>
-          ) : (
-            Object.entries(groupByMonth(filteredRequests))
-              .sort((a, b) => new Date(b[1][0].date).getTime() - new Date(a[1][0].date).getTime())
-              .map(([month, monthRequests]) => (
-                <section key={month} className="px-3 py-2 rounded-lg border border-blue-100 bg-white shadow-sm mb-6">
-                  {/* ------ key was moved here! ----- */}
-                  <details open className="border-b border-blue-100 px-3 py-2 bg-blue-50/30">
-                    <summary className="cursor-pointer text-md font-semibold text-blue-600 hover:text-blue-800 bg-blue-50 px-3 py-2 rounded-md flex items-center justify-between group shadow-sm mt-6 mb-2 border border-blue-100">
-                      <span>
-                        {month} ({monthRequests.length})
-                      </span>
-                      <ChevronDown className="w-4 h-4 text-blue-400 group-open:rotate-180 transition-transform" />
-                    </summary>
-
-                    <div className="space-y-4 mt-4 transition-all">
-                      {monthRequests.map((request) => (
-                        <div
-                          key={request.id}
-                          className="p-4 bg-white hover:bg-blue-50 rounded-lg border border-blue-100 shadow-sm transition-all cursor-pointer"
-                          onClick={() => toggleRowExpansion(request.id)}
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="text-blue-800 font-semibold text-base mb-0.5 tracking-tight">
-                                  {request.budget_id}
-                                </h3>
-
-                                {request.has_unread_chat && (
-                                  <span
-                                    title="Unread chat"
-                                    className="px-2 py-0.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-full flex items-center gap-1"
-                                  >
-                                    <MessageSquare className="w-3 h-3" />
-                                    Unread
-                                  </span>
-                                )}
-                              </div>
-
-                              <p className="text-xs text-gray-600 line-clamp-1">
-                                {request.reason}
-                              </p>
-                            </div>
-
-                            <div className="flex-shrink-0 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6">
-                              <div className="flex items-center text-sm text-blue-600">
-                                <Calendar className="w-4 h-4 mr-1.5 text-blue-400" />
-                                {formatDate(request.date)}
-                              </div>
-                              <span className="text-sm text-green-700 font-medium">
-                                {formatCurrency(request.total)}
-                              </span>
-                              {getStatusBadge(request)}
-                            </div>
-                          </div>
-
-                          {/* expanded row content */}
-                          {expandedRows.includes(request.id) && (
-                            <div className="mt-4 p-4 bg-blue-50/20 border-t border-blue-100 rounded-b-lg">
-                              <p className="text-sm text-blue-900 font-medium">
-                                Business Unit: {getBusinessUnitName(request.business_unit)} | Department: {getDepartmentName(request.department)} | Requested by {getUserName(request.user)}
-                              </p>
-                              {request.benefit_to_organisation && (
-                                <div className="mt-3">
-                                  <h4 className="text-sm font-medium text-blue-600 mb-1">
-                                    Benefit to Organisation
-                                  </h4>
-                                  <p className="text-sm text-gray-700 bg-blue-50 rounded-md p-3 border border-blue-100">
-                                    {request.benefit_to_organisation}
-                                  </p>
-                                </div>
-                              )}
-                              <div className="mt-4 text-right">
-                                <Link
-                                  href={`/dashboard/requests/${request.id}${currentUserId ? `?userId=${currentUserId}` : ""}`}
-                                >
-                                  <Button size="sm" variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
-                                    View Details
-                                  </Button>
-                                </Link>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      ))}
+            <h3 className="text-lg font-medium mb-1 text-blue-700">No requests found</h3>
+            <p className="text-sm text-blue-500/70 max-w-md mx-auto">
+              Try adjusting your filters or search terms
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow className="border-blue-100">
+                  <TableHead 
+                    className="cursor-pointer hover:bg-blue-50 text-blue-700 font-semibold"
+                    onClick={() => handleSort("id")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Request ID
+                      {getSortIcon("id")}
                     </div>
-                  </details>
-                </section>
-              ))
-          )}
-        </CardContent>
+                  </TableHead>
+                  <TableHead className="text-blue-700 font-semibold">Reason</TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-blue-50 text-blue-700 font-semibold"
+                    onClick={() => handleSort("amount")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Amount
+                      {getSortIcon("amount")}
+                    </div>
+                  </TableHead>
+                  <TableHead 
+                    className="cursor-pointer hover:bg-blue-50 text-blue-700 font-semibold"
+                    onClick={() => handleSort("date")}
+                  >
+                    <div className="flex items-center gap-2">
+                      Date
+                      {getSortIcon("date")}
+                    </div>
+                  </TableHead>
+                  <TableHead className="text-blue-700 font-semibold">Status</TableHead>
+                  <TableHead className="text-blue-700 font-semibold">Category</TableHead>
+                  <TableHead className="text-blue-700 font-semibold">Business Unit</TableHead>
+                  <TableHead className="text-blue-700 font-semibold text-center">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredRequests.map((request) => (
+                  <TableRow 
+                    key={request.id} 
+                    className="hover:bg-blue-50/50 border-blue-100/50"
+                  >
+                    <TableCell className="font-medium">
+                      <div className="flex items-center gap-2">
+                        <span className="text-blue-700 font-semibold">
+                          {request.budget_id}
+                        </span>
+                        {request.has_unread_chat && (
+                          <span
+                            title="Unread chat"
+                            className="px-1.5 py-0.5 text-xs bg-red-50 text-red-600 border border-red-200 rounded-full flex items-center gap-1"
+                          >
+                            <MessageSquare className="w-3 h-3" />
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="max-w-xs">
+                        <p className="text-sm text-gray-700 line-clamp-2" title={request.reason}>
+                          {request.reason}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-green-700 font-semibold">
+                        {formatCurrency(request.total)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center text-sm text-blue-600">
+                        <Calendar className="w-4 h-4 mr-1.5 text-blue-400" />
+                        {formatDate(request.date)}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {getStatusBadge(request)}
+                    </TableCell>
+                    <TableCell>
+                      <span className={`text-sm font-medium ${getCategoryColor(request.approval_category)}`}>
+                        {request.approval_category}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm text-gray-600">
+                        {getBusinessUnitName(request.business_unit)}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Link
+                        href={`/dashboard/requests/${request.id}${currentUserId ? `?userId=${currentUserId}` : ""}`}
+                      >
+                        <Button size="sm" variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                          <Eye className="h-4 w-4 mr-1" />
+                          View
+                        </Button>
+                      </Link>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
 
-        <CardFooter className="flex justify-between items-center border-t border-blue-100 dark:border-blue-900/40 p-4">
+        <CardFooter className="flex justify-between items-center border-t border-blue-100 p-4">
           <p className="text-sm text-blue-500/70">
             Showing {filteredRequests.length} of {requests.length} requests
           </p>
@@ -539,7 +593,7 @@ const BudgetRequestsList = () => {
               <Button
                 size="sm"
                 variant="outline"
-                className="border-blue-300 text-blue-600 hover:bg-blue-50 dark:border-blue-700 dark:text-blue-400 dark:hover:bg-blue-900/30"
+                className="border-blue-300 text-blue-600 hover:bg-blue-50"
                 onClick={() => {
                   setSearchTerm("");
                   setStatusFilter(null);
@@ -549,15 +603,6 @@ const BudgetRequestsList = () => {
                 Clear Filters
               </Button>
             )}
-            <Link href="/dashboard/form">
-              <Button
-                size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <PlusCircle className="h-4 w-4 mr-1.5" />
-                New Request
-              </Button>
-            </Link>
           </div>
         </CardFooter>
       </div>

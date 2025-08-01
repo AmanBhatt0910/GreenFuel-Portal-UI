@@ -8,9 +8,11 @@ import {
   IndianRupee,
   Info,
   XCircle,
+  FileDown,
 } from "lucide-react";
 import { StatusBadge } from "../../type";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { formatDate } from "../AssetDetailsTable/AssetDetailsTable";
 
 const formatCurrency = (
@@ -29,6 +31,8 @@ const formatCurrency = (
 
 interface RequestHeaderProps {
   request: any;
+  onDownloadPDF?: () => void;
+  isGeneratingPDF?: boolean;
 }
 
 const COLORS = {
@@ -139,7 +143,7 @@ const StatusBadgeIcon: React.FC<{ status: string }> = React.memo(
 StatusBadgeIcon.displayName = "StatusBadgeIcon";
 
 const RequestHeader: React.FC<RequestHeaderProps> = React.memo(
-  ({ request }) => {
+  ({ request, onDownloadPDF, isGeneratingPDF = false }) => {
     return (
       <div className="bg-gradient-to-r from-indigo-50 via-blue-50 to-sky-50 rounded-xl shadow-md p-6 mb-6 border-l-4 border-indigo-500 hover:shadow-lg transition-all duration-300">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -160,6 +164,29 @@ const RequestHeader: React.FC<RequestHeaderProps> = React.memo(
               </span>
             </div>
           </div>
+          {onDownloadPDF && (
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={onDownloadPDF}
+                size="sm"
+                variant="outline"
+                disabled={isGeneratingPDF}
+                className="border-green-300 text-green-700 hover:bg-green-50 transition-colors"
+              >
+                {isGeneratingPDF ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full" />
+                    Generating...
+                  </>
+                ) : (
+                  <>
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Download PDF
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     );

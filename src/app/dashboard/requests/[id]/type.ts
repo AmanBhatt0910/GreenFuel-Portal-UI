@@ -7,6 +7,8 @@ export interface BudgetRequest {
   policy_agreement: boolean;
   current_status: string;
   benefit_to_organisation: string;
+  payback_period: string;
+  document_enclosed_summary: string;
   approval_category: string;
   current_level: number;
   max_level: number;

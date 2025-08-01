@@ -20,6 +20,14 @@ export interface RequestorInfo {
   designationName?: string;
 }
 
+export interface ApprovalLevel {
+  level: number;
+  status: "approved" | "pending" | "waiting" | "rejected";
+  approverName?: string;
+  approvedAt?: string;
+  comments?: string;
+}
+
 export interface PDFGeneratorOptions {
   budgetId: string | number;
   requestorInfo: RequestorInfo;
@@ -30,6 +38,17 @@ export interface PDFGeneratorOptions {
   status?: string;
   customTitle?: string;
   includePolicySection?: boolean;
+  // Additional request details
+  benefitToOrganisation?: string;
+  paybackPeriod?: string;
+  documentEnclosedSummary?: string;
+  policyAgreement?: boolean;
+  rejectionReason?: string;
+  rejected?: boolean;
+  // Approval hierarchy information
+  currentLevel?: number;
+  maxLevel?: number;
+  approvalLevels?: ApprovalLevel[];
 }
 
 // Color definitions for consistent theming
@@ -39,6 +58,8 @@ const PDF_COLORS = {
   text: [51, 51, 51] as [number, number, number],
   background: [245, 245, 245] as [number, number, number],
   border: [221, 221, 221] as [number, number, number],
+  success: [34, 197, 94] as [number, number, number],
+  error: [239, 68, 68] as [number, number, number],
 };
 
 /**
@@ -219,6 +240,95 @@ function addJustification(doc: jsPDF, reason: string, y: number): number {
 }
 
 /**
+ * Adds approval hierarchy section with current level information
+ */
+function addApprovalHierarchy(
+  doc: jsPDF, 
+  currentLevel: number, 
+  maxLevel: number, 
+  approvalLevels: ApprovalLevel[], 
+  y: number
+): number {
+  console.log('addApprovalHierarchy called with:', { currentLevel, maxLevel, approvalLevels, y });
+  
+  addSectionHeader(doc, "APPROVAL HIERARCHY", y);
+  y += 15;
+
+  // Current level information
+  doc.setFontSize(10);
+  doc.setTextColor(...PDF_COLORS.primary);
+  doc.text(`Current Approval Level: ${currentLevel} of ${maxLevel}`, 14, y);
+  y += 10;
+
+  // Progress indicator
+  const progressWidth = 160;
+  const progressHeight = 8;
+  const progressX = 14;
+  
+  // Background
+  doc.setFillColor(...PDF_COLORS.background);
+  doc.roundedRect(progressX, y, progressWidth, progressHeight, 2, 2, "F");
+  
+  // Progress fill
+  const fillWidth = (currentLevel / maxLevel) * progressWidth;
+  doc.setFillColor(...PDF_COLORS.primary);
+  doc.roundedRect(progressX, y, fillWidth, progressHeight, 2, 2, "F");
+  
+  y += 20;
+
+  // Approval levels table
+  if (approvalLevels && approvalLevels.length > 0) {
+    autoTable(doc, {
+      startY: y,
+      head: [["Level", "Status", "Approver", "Date", "Comments"]],
+      body: approvalLevels.map((level) => [
+        `Level ${level.level}`,
+        level.status.charAt(0).toUpperCase() + level.status.slice(1),
+        level.approverName || "Pending Assignment",
+        level.approvedAt ? format(new Date(level.approvedAt), "MMM dd, yyyy") : "-",
+        level.comments || "-"
+      ]),
+      theme: "grid",
+      styles: {
+        fontSize: 9,
+        cellPadding: 3,
+        lineColor: PDF_COLORS.border,
+        textColor: PDF_COLORS.text,
+      },
+      headStyles: {
+        fillColor: PDF_COLORS.primary,
+        textColor: 255,
+        fontSize: 10,
+      },
+      columnStyles: {
+        0: { halign: "center", cellWidth: 20 },
+        1: { halign: "center", cellWidth: 25 },
+        2: { cellWidth: 50 },
+        3: { halign: "center", cellWidth: 30 },
+        4: { cellWidth: 55 }
+      },
+      didParseCell: function(data: any) {
+        if (data.column.index === 1 && data.cell.section === 'body') {
+          const status = data.cell.raw.toLowerCase();
+          if (status === 'approved') {
+            data.cell.styles.textColor = PDF_COLORS.success;
+          } else if (status === 'rejected') {
+            data.cell.styles.textColor = PDF_COLORS.error;
+          } else if (status === 'pending') {
+            data.cell.styles.textColor = PDF_COLORS.secondary;
+          }
+        }
+      }
+    });
+    return (doc as any).lastAutoTable.finalY + 15;
+  } else {
+    doc.setTextColor(...PDF_COLORS.text);
+    doc.text("No detailed approval information available", 14, y);
+    return y + 15;
+  }
+}
+
+/**
  * Adds policy agreement section
  */
 function addPolicySection(doc: jsPDF, y: number): number {
@@ -233,6 +343,100 @@ function addPolicySection(doc: jsPDF, y: number): number {
   doc.text(splitPolicy, 14, y);
 
   return y + splitPolicy.length * 5 + 15;
+}
+
+/**
+ * Adds benefit to organisation section
+ */
+function addBenefitToOrganisation(doc: jsPDF, benefit: string, y: number): number {
+  addSectionHeader(doc, "BENEFIT TO ORGANISATION", y);
+  y += 15;
+
+  doc.setFontSize(10);
+  doc.setTextColor(...PDF_COLORS.text);
+  const splitBenefit = doc.splitTextToSize(
+    benefit || "No benefit description provided",
+    180
+  );
+  doc.text(splitBenefit, 14, y);
+  return y + splitBenefit.length * 5 + 15;
+}
+
+/**
+ * Adds payback period section
+ */
+function addPaybackPeriod(doc: jsPDF, payback: string, y: number): number {
+  addSectionHeader(doc, "PAYBACK PERIOD", y);
+  y += 15;
+
+  doc.setFontSize(10);
+  doc.setTextColor(...PDF_COLORS.text);
+  const splitPayback = doc.splitTextToSize(
+    payback || "No payback period specified",
+    180
+  );
+  doc.text(splitPayback, 14, y);
+  return y + splitPayback.length * 5 + 15;
+}
+
+/**
+ * Adds document enclosed summary section
+ */
+function addDocumentSummary(doc: jsPDF, summary: string, y: number): number {
+  addSectionHeader(doc, "DOCUMENT ENCLOSED SUMMARY", y);
+  y += 15;
+
+  doc.setFontSize(10);
+  doc.setTextColor(...PDF_COLORS.text);
+  const splitSummary = doc.splitTextToSize(
+    summary || "No document summary provided",
+    180
+  );
+  doc.text(splitSummary, 14, y);
+  return y + splitSummary.length * 5 + 15;
+}
+
+/**
+ * Enhanced policy agreement section with actual status
+ */
+function addPolicyAgreementStatus(doc: jsPDF, policyAgreement: boolean, y: number): number {
+  addSectionHeader(doc, "POLICY AGREEMENT", y);
+  y += 15;
+
+  doc.setFontSize(10);
+  
+  if (policyAgreement) {
+    doc.setTextColor(...PDF_COLORS.success);
+    doc.text("✓ Policy Agreement: AGREED", 14, y);
+    y += 10;
+    doc.setTextColor(...PDF_COLORS.text);
+    doc.text("The requestor has acknowledged and agreed to comply with all company policies.", 14, y);
+  } else {
+    doc.setTextColor(...PDF_COLORS.error);
+    doc.text("✗ Policy Agreement: NOT AGREED", 14, y);
+    y += 10;
+    doc.setTextColor(...PDF_COLORS.text);
+    doc.text("The requestor has not agreed to the company policies.", 14, y);
+  }
+  
+  return y + 15;
+}
+
+/**
+ * Adds rejection reason section (if applicable)
+ */
+function addRejectionReason(doc: jsPDF, rejectionReason: string, y: number): number {
+  addSectionHeader(doc, "REJECTION REASON", y);
+  y += 15;
+
+  doc.setFontSize(10);
+  doc.setTextColor(...PDF_COLORS.error);
+  const splitReason = doc.splitTextToSize(
+    rejectionReason || "No rejection reason provided",
+    180
+  );
+  doc.text(splitReason, 14, y);
+  return y + splitReason.length * 5 + 15;
 }
 
 /**
@@ -263,6 +467,15 @@ export async function generateAssetRequestPDF(options: PDFGeneratorOptions): Pro
     status = "Pending Approval",
     customTitle,
     includePolicySection = true,
+    benefitToOrganisation,
+    paybackPeriod,
+    documentEnclosedSummary,
+    policyAgreement,
+    rejectionReason,
+    rejected,
+    currentLevel,
+    maxLevel,
+    approvalLevels,
   } = options;
 
   const doc = new jsPDF({
@@ -287,10 +500,45 @@ export async function generateAssetRequestPDF(options: PDFGeneratorOptions): Pro
   // Add sections
   y = addRequestorInfo(doc, requestorInfo, status, y);
   y = addAssetsTable(doc, assets, totalAmount, y);
-  y = addJustification(doc, reason, y);
+  
+  // Add business justification (reason)
+  if (reason) {
+    y = addJustification(doc, reason, y);
+  }
+  
+  // Add benefit to organisation
+  if (benefitToOrganisation) {
+    y = addBenefitToOrganisation(doc, benefitToOrganisation, y);
+  }
+  
+  // Add payback period
+  if (paybackPeriod) {
+    y = addPaybackPeriod(doc, paybackPeriod, y);
+  }
+  
+  // Add document enclosed summary
+  if (documentEnclosedSummary) {
+    y = addDocumentSummary(doc, documentEnclosedSummary, y);
+  }
 
-  if (includePolicySection) {
+  // Add approval hierarchy if available
+  if ((currentLevel && maxLevel) || (approvalLevels && approvalLevels.length > 0)) {
+    console.log('Adding approval hierarchy:', { currentLevel, maxLevel, approvalLevels });
+    y = addApprovalHierarchy(doc, currentLevel || 1, maxLevel || 1, approvalLevels || [], y);
+  } else {
+    console.log('Skipping approval hierarchy:', { currentLevel, maxLevel, approvalLevels });
+  }
+
+  // Add policy agreement status if available
+  if (policyAgreement !== undefined) {
+    y = addPolicyAgreementStatus(doc, policyAgreement, y);
+  } else if (includePolicySection) {
     y = addPolicySection(doc, y);
+  }
+  
+  // Add rejection reason if rejected
+  if (rejected && rejectionReason) {
+    y = addRejectionReason(doc, rejectionReason, y);
   }
 
   // Add footer
@@ -359,5 +607,14 @@ export async function generateApprovalPDF(
     reason: requestData.reason || "",
     documentType: "Asset Request",
     status: requestData.status ? requestData.status.charAt(0).toUpperCase() + requestData.status.slice(1) : "Pending Approval",
+    benefitToOrganisation: requestData.benefit_to_organisation || "",
+    paybackPeriod: requestData.payback_period || "",
+    documentEnclosedSummary: requestData.document_enclosed_summary || "",
+    policyAgreement: requestData.policy_agreement,
+    rejectionReason: requestData.rejection_reason || "",
+    rejected: requestData.rejected || false,
+    currentLevel: requestData.current_form_level || requestData.current_level || 1,
+    maxLevel: requestData.form_max_level || requestData.max_level || 1,
+    approvalLevels: requestData.approval_levels || [],
   });
 }
