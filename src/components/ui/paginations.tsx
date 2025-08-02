@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -34,6 +34,11 @@ export default function BasicPagination({
   showDemo = false,
 }: BasicPaginationProps) {
   const [currentPage, setCurrentPage] = useState(initialPage);
+
+  // Sync internal state with external initialPage changes
+  useEffect(() => {
+    setCurrentPage(initialPage);
+  }, [initialPage]);
 
   // Generate page numbers array
   const generatePagination = () => {

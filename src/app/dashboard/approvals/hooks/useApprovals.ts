@@ -17,6 +17,17 @@ interface UseApprovalsReturn {
   filteredForms: EnrichedApprovalForm[];
   refreshApprovals: () => Promise<void>;
   assestDetail: (formId: number) => Promise<void>;
+  // Pagination properties
+  currentPage: number;
+  totalPages: number;
+  totalCount: number;
+  pageSize: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+  // Pagination functions
+  nextPage: () => void;
+  previousPage: () => void;
+  goToPage: (page: number) => void;
 }
 
 
@@ -55,6 +66,13 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
   const [searchTerm, setSearchTerm] = useState("");
   const [userCache, setUserCache] = useState<Record<string, UserInfo>>({});
   const [departmentCache, setDepartmentCache] = useState<Record<string, string>>({});
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(10); // Set to 10 items per page
+  
   const api = useAxios();
 
   // Fetch user details by ID
@@ -149,80 +167,81 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     return enrichedData;
   };
 
-  // Fetch approval requests
-  const fetchApprovals = useCallback(async () => {
+  // Fetch approval requests with pagination
+  const fetchApprovals = useCallback(async (page: number = currentPage) => {
     try {
       setLoading(true);
       setError(null);
       
-      // Fetch both pending approvals and approval logs
-      const [pendingResponse, logsResponse] = await Promise.all([
-        api.get(`/pending-approvals/`),
-        api.get(`/approval-logs/`)
-      ]);
+      // Fetch approval requests with pagination
+      const response = await api.get(`/approval-requests/?page=${page}&page_size=${pageSize}`);
+      console.log('Approval requests response:', response.data);
       
-      const pendingData = pendingResponse.data;
-      const logsData = logsResponse.data;
-
+      // Extract pagination data
+      const paginationData = response.data;
+      const approvalRequests = paginationData.results || [];
       
-      // For each approval log, we need to fetch the corresponding approval request details
-      const approvedRejectedData = await Promise.all(
-        logsData.map(async (log: ApprovalLog) => {
-          try {
-            // Fetch the approval request details using the approval_request ID
-            const requestResponse = await api.get(`/approval-requests/${log.approval_request}/`);
-            const requestData = requestResponse.data;
-            
-            // Combine request data with log status
-            return {
-              ...requestData,
-              status: log.status, // Override status with log status
-              approved_at: log.approved_at,
-              comments: log.comments,
-              approver: log.approver
-            };
-          } catch (err) {
-            console.error(`Error fetching approval request ${log.approval_request}:`, err);
-            return null;
-          }
-        })
-      );
+      // Set pagination info
+      setTotalCount(paginationData.count || 0);
+      setTotalPages(Math.ceil((paginationData.count || 0) / pageSize));
       
-      // Filter out null results (failed requests)
-      const validApprovedRejected = approvedRejectedData.filter(item => item !== null);
-      
-      // Combine pending and approved/rejected data
-      const allApprovals = [...pendingData, ...validApprovedRejected];
-      
-      console.log('Combined approvals data:', {
-        pending: pendingData.length,
-        approvedRejected: validApprovedRejected.length,
-        total: allApprovals.length,
-        statuses: allApprovals.map(a => a.status)
+      console.log('Pagination info:', {
+        currentPage: page,
+        totalCount: paginationData.count,
+        totalPages: Math.ceil((paginationData.count || 0) / pageSize),
+        pageSize: pageSize,
+        resultsCount: approvalRequests.length
       });
       
-      const enrichedData = await enrichApprovalData(allApprovals);
-      console.log('Enriched approvals data:', enrichedData);
+      // Enrich the approval requests with user and department names
+      const enrichedForms = await enrichApprovalData(approvalRequests);
       
-      // Sort by newest first (by date or approved_at)
-      const sortedData = enrichedData.sort((a, b) => {
-        const dateA = new Date(a.approved_at || a.date);
-        const dateB = new Date(b.approved_at || b.date);
-        return dateB.getTime() - dateA.getTime(); // Newest first
-      });
-      
-      setForms(sortedData);
+      setForms(enrichedForms);
+      setCurrentPage(page);
     } catch (err) {
       console.error("Error fetching approvals:", err);
       setError(err instanceof Error ? err : new Error('Failed to fetch approvals'));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentPage, pageSize]);
 
   useEffect(() => {
-    fetchApprovals();
-  }, [fetchApprovals]);
+    fetchApprovals(1); // Start with page 1
+  }, [pageSize]); // Refetch when page size changes
+
+  // Pagination functions
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      const newPage = currentPage + 1;
+      fetchApprovals(newPage);
+    }
+  };
+
+  const previousPage = () => {
+    if (currentPage > 1) {
+      const newPage = currentPage - 1;
+      fetchApprovals(newPage);
+    }
+  };
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchApprovals(page);
+    }
+  };
+
+  // Reset to first page when filter or search changes
+  useEffect(() => {
+    if (currentPage !== 1) {
+      setCurrentPage(1);
+      fetchApprovals(1);
+    }
+  }, [filter, searchTerm]);
+
+  // Computed pagination properties
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   // Filter forms based on status and search term
   const filteredForms = forms.filter((form) => {
@@ -251,7 +270,18 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     searchTerm,
     setSearchTerm,
     filteredForms,
-    refreshApprovals: fetchApprovals,
-    assestDetail
+    refreshApprovals: () => fetchApprovals(currentPage),
+    assestDetail,
+    // Pagination properties
+    currentPage,
+    totalPages,
+    totalCount,
+    pageSize,
+    hasNextPage,
+    hasPreviousPage,
+    // Pagination functions
+    nextPage,
+    previousPage,
+    goToPage
   };
 } 

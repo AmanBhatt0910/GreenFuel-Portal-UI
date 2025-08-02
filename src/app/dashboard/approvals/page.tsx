@@ -14,6 +14,7 @@ import ApprovalTable from "./components/ApprovalTable";
 import ApprovalList from "./components/ApprovalList";
 import NoResults from "./components/NoResults";
 import LoadingState from "./components/LoadingState";
+import BasicPagination from "@/components/ui/paginations";
 
 /**
  * ApprovalDashboard Component
@@ -32,7 +33,7 @@ const ApprovalDashboard: React.FC = () => {
   const router = useRouter();
   
   // Get approval data and related functionality from the custom hook
-  // This hook handles data fetching, filtering, and search functionality
+  // This hook handles data fetching, filtering, search functionality, and pagination
   const { 
     forms,           // All approval forms/requests
     loading,         // Loading state indicator
@@ -41,7 +42,18 @@ const ApprovalDashboard: React.FC = () => {
     setFilter,       // Function to update the filter
     searchTerm,      // Current search term
     setSearchTerm,   // Function to update search term
-    filteredForms    // Forms after applying filters and search
+    filteredForms,   // Forms after applying filters and search
+    // Pagination properties
+    currentPage,
+    totalPages,
+    totalCount,
+    pageSize,
+    hasNextPage,
+    hasPreviousPage,
+    // Pagination functions
+    nextPage,
+    previousPage,
+    goToPage
   } = useApprovals();
 
   /**
@@ -91,6 +103,25 @@ const ApprovalDashboard: React.FC = () => {
                     forms={filteredForms} 
                     onViewDetails={navigateToDetails} 
                   />
+                  
+                  {/* Pagination Section */}
+                  {totalPages > 1 && (
+                    <div className="flex flex-col sm:flex-row justify-between items-center mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="text-sm text-gray-700 dark:text-gray-300 mb-4 sm:mb-0">
+                        Showing page {currentPage} of {totalPages} ({totalCount} total approvals)
+                      </div>
+                      
+                      <div className="flex items-center gap-4">
+                        {/* Pagination controls */}
+                        <BasicPagination
+                          totalPages={totalPages}
+                          initialPage={currentPage}
+                          onPageChange={goToPage}
+                          className="ml-auto"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

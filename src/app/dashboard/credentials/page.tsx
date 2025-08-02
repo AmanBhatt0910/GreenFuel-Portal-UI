@@ -19,6 +19,7 @@ import { CustomBreadcrumb } from "@/components/custom/ui/Breadcrumb.custom";
 import { Button } from "@/components/ui/button";
 import { Plus, AlertTriangle, Info } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
+import BasicPagination from "@/components/ui/paginations";
 
 export default function CredentialsPage() {
   // State
@@ -38,18 +39,28 @@ export default function CredentialsPage() {
     business_unit: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+  
   const api = useAxios();
 
-  // Fetch employees with filters applied
-  const fetchCredentials = useCallback(async () => {
+  // Fetch employees with filters and pagination applied
+  const fetchCredentials = useCallback(async (page: number = currentPage) => {
     // Only show loading state if we don't have any data yet
     if (credentials.length === 0) {
       setIsLoading(true);
     }
 
     try {
-      // Build query parameters based on filters
+      // Build query parameters based on filters and pagination
       const params = new URLSearchParams();
+      params.append("page", page.toString());
+      params.append("page_size", pageSize.toString());
+      
       if (filter.searchValue) {
         params.append("search", filter.searchValue);
       }
@@ -57,10 +68,33 @@ export default function CredentialsPage() {
         params.append("business_unit", filter.business_unit);
       }
 
-      const queryString = params.toString() ? `?${params.toString()}` : "";
+      const queryString = `?${params.toString()}`;
       const response = await api.get(`/userInfo/${queryString}`);
-      console.log(response)
-      setCredentials(response.data);
+      console.log('UserInfo response:', response.data);
+      
+      // Handle paginated response
+      if (response.data && typeof response.data === 'object' && 'results' in response.data) {
+        // Paginated response
+        const paginationData = response.data;
+        setCredentials(paginationData.results || []);
+        setTotalCount(paginationData.count || 0);
+        setTotalPages(Math.ceil((paginationData.count || 0) / pageSize));
+        setCurrentPage(page);
+        
+        console.log('Pagination info:', {
+          currentPage: page,
+          totalCount: paginationData.count,
+          totalPages: Math.ceil((paginationData.count || 0) / pageSize),
+          pageSize: pageSize,
+          resultsCount: (paginationData.results || []).length
+        });
+      } else {
+        // Non-paginated response (fallback)
+        setCredentials(Array.isArray(response.data) ? response.data : []);
+        setTotalCount(Array.isArray(response.data) ? response.data.length : 0);
+        setTotalPages(1);
+        setCurrentPage(1);
+      }
     } catch (error) {
       console.error("Error fetching credentials:", error);
       // Only show error toast if we don't have any data to display
@@ -70,15 +104,56 @@ export default function CredentialsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [filter.searchValue, filter.business_unit, credentials.length]);
+  }, [filter.searchValue, filter.business_unit, currentPage, pageSize, api]);
 
   useEffect(() => {
     const debounceTimer = setTimeout(() => {
-      fetchCredentials();
+      // Reset to page 1 when filters change
+      if (currentPage !== 1) {
+        setCurrentPage(1);
+        fetchCredentials(1);
+      } else {
+        fetchCredentials(currentPage);
+      }
     }, 300);
 
     return () => clearTimeout(debounceTimer);
   }, [filter.searchValue, filter.business_unit]);
+
+  // Separate effect for page size changes
+  useEffect(() => {
+    if (currentPage === 1) {
+      fetchCredentials(1);
+    } else {
+      setCurrentPage(1);
+      fetchCredentials(1);
+    }
+  }, [pageSize]);
+
+  // Pagination functions
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      const newPage = currentPage + 1;
+      fetchCredentials(newPage);
+    }
+  };
+
+  const previousPage = () => {
+    if (currentPage > 1) {
+      const newPage = currentPage - 1;
+      fetchCredentials(newPage);
+    }
+  };
+
+  const goToPage = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      fetchCredentials(page);
+    }
+  };
+
+  // Computed pagination properties
+  const hasNextPage = currentPage < totalPages;
+  const hasPreviousPage = currentPage > 1;
 
   const handleAddNew = useCallback(() => {
     setSelectedUser(null);
@@ -155,10 +230,8 @@ export default function CredentialsPage() {
         // Don't update UI until API succeeds
         await api.put(`/userInfo/${userIdToDelete}/`, { is_deleted: true });
 
-        // Update UI after successful API call
-        setCredentials((prev) =>
-          prev.filter((user) => user.id !== userIdToDelete)
-        );
+        // Refresh current page to get updated data
+        await fetchCredentials(currentPage);
 
         setIsDeleteDialogOpen(false);
         toast.success("Employee deleted successfully", { id: toastId });
@@ -229,13 +302,8 @@ export default function CredentialsPage() {
             `/userInfo/${selectedUser.id}/`,
             formData
           );
-          const updatedUser = response.data as Credential;
-          // Update the local state instead of re-fetching
-          setCredentials((prev) =>
-            prev.map((user) =>
-              user.id === selectedUser.id ? updatedUser : user
-            )
-          );
+          // Refresh current page to get updated data
+          await fetchCredentials(currentPage);
           toast.success("Employee updated successfully", { id: toastId });
           setIsFormOpen(false);
         } else {
@@ -244,13 +312,8 @@ export default function CredentialsPage() {
           
           // Only proceed if we get a successful response
           if (response.data) {
-            // If API returns the new user data, use it directly
-            if (response.data.id) {
-              setCredentials((prev) => [...prev, response.data]);
-            } else {
-              // Otherwise fetch fresh data to ensure we have accurate information
-              fetchCredentials();
-            }
+            // Refresh current page to show updated data
+            await fetchCredentials(currentPage);
             
             toast.success("Employee added successfully", { id: toastId });
             setIsFormOpen(false);
@@ -270,7 +333,7 @@ export default function CredentialsPage() {
         setIsLoading(false);
       }
     },
-    [selectedUser, fetchCredentials, setCredentials, setIsFormOpen, setIsLoading]
+    [selectedUser, fetchCredentials, currentPage]
   );
 
   return (
@@ -333,6 +396,30 @@ export default function CredentialsPage() {
           departments={departments}
           businessUnits={businessUnits}
         />
+        
+        {/* Pagination Section */}
+        {!isLoading && totalCount > 0 && (
+          <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/50">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="text-sm text-gray-600 dark:text-gray-400">
+                <span>
+                  Showing {((currentPage - 1) * pageSize) + 1} to {Math.min(currentPage * pageSize, totalCount)} of {totalCount} employees
+                </span>
+              </div>
+              
+              {totalPages > 1 && (
+                <div className="flex items-center gap-2">
+                  {/* Pagination controls */}
+                  <BasicPagination
+                    initialPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={goToPage}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       <CredentialForm
