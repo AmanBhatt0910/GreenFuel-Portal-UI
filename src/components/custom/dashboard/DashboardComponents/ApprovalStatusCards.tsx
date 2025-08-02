@@ -238,6 +238,7 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }
         setLoading(true);
         const currentYear = new Date().getFullYear();
         const response = await api.get<YearlyStatsResponse>(`/yearly-stats?year=${currentYear}`);
+        console.log(response.data)
         setStats(response.data);
       } catch (error) {
         console.error("Error fetching yearly stats:", error);
@@ -268,10 +269,26 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }
   // Get current month
   const currentMonth = new Date().toLocaleString('default', { month: 'long' });
   
-  // Find current month data
-  const currentMonthData = stats?.data.find(
+  // Find current month data, or fall back to most recent month with data
+  let currentMonthData = stats?.data.find(
     month => month.month === currentMonth
   );
+  
+  // If current month has no data, find the most recent month with data
+  let displayMonth = currentMonth;
+  if (currentMonthData && (currentMonthData.created === 0 && currentMonthData.approved === 0 && currentMonthData.rejected === 0)) {
+    // Find the most recent month with data (working backwards from current month)
+    const currentMonthIndex = new Date().getMonth();
+    for (let i = 0; i < 12; i++) {
+      const checkIndex = (currentMonthIndex - i + 12) % 12;
+      const monthData = stats?.data[checkIndex];
+      if (monthData && (monthData.created > 0 || monthData.approved > 0 || monthData.rejected > 0)) {
+        currentMonthData = monthData;
+        displayMonth = monthData.month;
+        break;
+      }
+    }
+  }
   
   // Calculate totals
   const totalCreated = stats?.data.reduce(
@@ -296,17 +313,17 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }
     return Math.round(((current - previous) / previous) * 100);
   };
 
-  // Find previous month data
-  const currentMonthIndex = new Date().getMonth();
-  const previousMonthIndex = currentMonthIndex === 0 ? 11 : currentMonthIndex - 1;
+  // Find previous month data based on the display month
+  const displayMonthIndex = stats?.data.findIndex(month => month.month === displayMonth) || 0;
+  const previousMonthIndex = displayMonthIndex === 0 ? 11 : displayMonthIndex - 1;
   const previousMonthData = stats?.data[previousMonthIndex];
   
   // Create card data based on API response
   const cardData = [
     {
-      title: "Created This Month",
+      title: displayMonth === currentMonth ? "Created This Month" : `Created in ${displayMonth}`,
       count: currentMonthData?.created || 0,
-      description: "Requests created this month",
+      description: displayMonth === currentMonth ? "Requests created this month" : `Requests created in ${displayMonth}`,
       icon: <Clock className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
       color: "amber",
       trend: calculateTrend(
@@ -316,9 +333,9 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }
       progress: Math.min(100, Math.round((currentMonthData?.created || 0) / 100))
     },
     {
-      title: "Approved This Month",
+      title: displayMonth === currentMonth ? "Approved This Month" : `Approved in ${displayMonth}`,
       count: currentMonthData?.approved || 0,
-      description: "Requests approved this month",
+      description: displayMonth === currentMonth ? "Requests approved this month" : `Requests approved in ${displayMonth}`,
       icon: <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
       color: "green",
       trend: calculateTrend(
@@ -328,9 +345,9 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }
       progress: approvalRate
     },
     {
-      title: "Rejected This Month",
+      title: displayMonth === currentMonth ? "Rejected This Month" : `Rejected in ${displayMonth}`,
       count: currentMonthData?.rejected || 0,
-      description: "Requests rejected this month",
+      description: displayMonth === currentMonth ? "Requests rejected this month" : `Requests rejected in ${displayMonth}`,
       icon: <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
       color: "red",
       trend: calculateTrend(
