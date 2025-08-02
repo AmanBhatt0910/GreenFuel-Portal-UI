@@ -163,6 +163,7 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
       
       const pendingData = pendingResponse.data;
       const logsData = logsResponse.data;
+
       
       // For each approval log, we need to fetch the corresponding approval request details
       const approvedRejectedData = await Promise.all(
@@ -201,6 +202,7 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
       });
       
       const enrichedData = await enrichApprovalData(allApprovals);
+      console.log('Enriched approvals data:', enrichedData);
       
       // Sort by newest first (by date or approved_at)
       const sortedData = enrichedData.sort((a, b) => {

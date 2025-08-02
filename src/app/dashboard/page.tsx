@@ -1,6 +1,19 @@
 "use client";
-import React, { useContext, useEffect, useState, Suspense, useRef, ReactNode } from "react";
-import { motion, useInView, useAnimation, AnimatePresence, Variants } from "framer-motion";
+import React, {
+  useContext,
+  useEffect,
+  useState,
+  Suspense,
+  useRef,
+  ReactNode,
+} from "react";
+import {
+  motion,
+  useInView,
+  useAnimation,
+  AnimatePresence,
+  Variants,
+} from "framer-motion";
 import useAxios from "../hooks/use-axios";
 import { GFContext } from "@/context/AuthContext";
 import Loading from "./loading";
@@ -10,17 +23,19 @@ import { scrollToTop } from "@/utils/scroll-utils";
 // Import components
 import {
   WelcomeBanner,
-  StatsCard,
   ApprovalStatusCards,
   FormStatisticsChart,
   ProfileCard,
   RequestsTable,
-  ActivityTimeline,
-  QuickActions,
 } from "@/components/custom/dashboard/DashboardComponents";
 
 // Import icons
-import { FileText, Users, CheckCircle, AlertCircle, ChevronRight, BarChart2, LucideIcon } from "lucide-react";
+import {
+  FileText,
+  CheckCircle,
+  ChevronRight,
+  BarChart2,
+} from "lucide-react";
 
 // Import types
 import {
@@ -29,7 +44,6 @@ import {
   DepartmentType,
   DesignationType,
   RequestType,
-  FormDataType,
 } from "@/components/custom/dashboard/types";
 
 // Import chart components
@@ -41,8 +55,8 @@ import {
   Title,
   Tooltip,
   Legend,
-} from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
 
 // Register ChartJS components
 ChartJS.register(
@@ -74,50 +88,50 @@ const pageVariants: Variants = {
 // Enhanced animation variants for components
 const fadeInUpVariants: Variants = {
   hidden: { opacity: 0, y: 25 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    transition: { 
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
       duration: 0.7,
-      ease: [0.25, 0.1, 0.25, 1.0]
-    } 
-  }
+      ease: [0.25, 0.1, 0.25, 1.0],
+    },
+  },
 };
 
 const fadeInLeftVariants: Variants = {
   hidden: { opacity: 0, x: -30 },
-  visible: { 
-    opacity: 1, 
-    x: 0, 
-    transition: { 
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
       duration: 0.7,
-      ease: [0.25, 0.1, 0.25, 1.0]
-    } 
-  }
+      ease: [0.25, 0.1, 0.25, 1.0],
+    },
+  },
 };
 
 const fadeInRightVariants: Variants = {
   hidden: { opacity: 0, x: 30 },
-  visible: { 
-    opacity: 1, 
-    x: 0, 
-    transition: { 
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
       duration: 0.7,
-      ease: [0.25, 0.1, 0.25, 1.0]
-    } 
-  }
+      ease: [0.25, 0.1, 0.25, 1.0],
+    },
+  },
 };
 
 const scaleInVariants: Variants = {
   hidden: { opacity: 0, scale: 0.95 },
-  visible: { 
-    opacity: 1, 
-    scale: 1, 
-    transition: { 
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
       duration: 0.6,
-      ease: [0.25, 0.1, 0.25, 1.0]
-    } 
-  }
+      ease: [0.25, 0.1, 0.25, 1.0],
+    },
+  },
 };
 
 // Improved AnimateInView component with threshold option
@@ -129,23 +143,23 @@ interface AnimateInViewProps {
   threshold?: number;
 }
 
-const AnimateInView: React.FC<AnimateInViewProps> = ({ 
-  children, 
-  variants = fadeInUpVariants, 
-  className = "", 
+const AnimateInView: React.FC<AnimateInViewProps> = ({
+  children,
+  variants = fadeInUpVariants,
+  className = "",
   delay = 0,
-  threshold = 0.2
+  threshold = 0.2,
 }) => {
   const controls = useAnimation();
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: threshold });
-  
+
   useEffect(() => {
     if (isInView) {
       controls.start("visible");
     }
   }, [controls, isInView]);
-  
+
   return (
     <motion.div
       ref={ref}
@@ -170,20 +184,28 @@ interface DashboardCardProps {
   action?: string;
 }
 
-const DashboardCard: React.FC<DashboardCardProps> = ({ 
-  children, 
-  className = "", 
-  title, 
-  icon, 
-  action 
+const DashboardCard: React.FC<DashboardCardProps> = ({
+  children,
+  className = "",
+  title,
+  icon,
+  action,
 }) => {
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden ${className}`}>
+    <div
+      className={`bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden ${className}`}
+    >
       {(title || action) && (
         <div className="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
           <div className="flex items-center space-x-2">
-            {icon && <span className="text-indigo-500 dark:text-indigo-400">{icon}</span>}
-            <h3 className="font-medium text-gray-800 dark:text-gray-200">{title}</h3>
+            {icon && (
+              <span className="text-indigo-500 dark:text-indigo-400">
+                {icon}
+              </span>
+            )}
+            <h3 className="font-medium text-gray-800 dark:text-gray-200">
+              {title}
+            </h3>
           </div>
           {action && (
             <button className="text-sm text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 flex items-center transition-colors duration-200">
@@ -211,7 +233,9 @@ export interface YearlyStatsResponse {
   data: YearlyStatsData[];
 }
 
-const YearlyStatsChart: React.FC<{ yearlyStats: YearlyStatsResponse | null }> = ({ yearlyStats }) => {
+const YearlyStatsChart: React.FC<{
+  yearlyStats: YearlyStatsResponse | null;
+}> = ({ yearlyStats }) => {
   if (!yearlyStats) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -221,30 +245,30 @@ const YearlyStatsChart: React.FC<{ yearlyStats: YearlyStatsResponse | null }> = 
   }
 
   const chartData = {
-    labels: yearlyStats.data.map(item => item.month),
+    labels: yearlyStats.data.map((item) => item.month),
     datasets: [
       {
-        label: 'Created',
-        data: yearlyStats.data.map(item => item.created),
-        backgroundColor: 'rgba(79, 70, 229, 0.8)',
-        borderColor: 'rgba(79, 70, 229, 1)',
+        label: "Created",
+        data: yearlyStats.data.map((item) => item.created),
+        backgroundColor: "rgba(79, 70, 229, 0.8)",
+        borderColor: "rgba(79, 70, 229, 1)",
         borderWidth: 1,
       },
       {
-        label: 'Approved',
-        data: yearlyStats.data.map(item => item.approved),
-        backgroundColor: 'rgba(16, 185, 129, 0.8)',
-        borderColor: 'rgba(16, 185, 129, 1)',
+        label: "Approved",
+        data: yearlyStats.data.map((item) => item.approved),
+        backgroundColor: "rgba(16, 185, 129, 0.8)",
+        borderColor: "rgba(16, 185, 129, 1)",
         borderWidth: 1,
       },
       {
-        label: 'Rejected',
-        data: yearlyStats.data.map(item => item.rejected),
-        backgroundColor: 'rgba(239, 68, 68, 0.8)',
-        borderColor: 'rgba(239, 68, 68, 1)',
+        label: "Rejected",
+        data: yearlyStats.data.map((item) => item.rejected),
+        backgroundColor: "rgba(239, 68, 68, 0.8)",
+        borderColor: "rgba(239, 68, 68, 1)",
         borderWidth: 1,
-      }
-    ]
+      },
+    ],
   };
 
   const options = {
@@ -252,14 +276,14 @@ const YearlyStatsChart: React.FC<{ yearlyStats: YearlyStatsResponse | null }> = 
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top' as const,
+        position: "top" as const,
       },
       title: {
         display: true,
         text: `Form Statistics for ${yearlyStats.year}`,
         font: {
           size: 16,
-        }
+        },
       },
     },
     scales: {
@@ -269,7 +293,7 @@ const YearlyStatsChart: React.FC<{ yearlyStats: YearlyStatsResponse | null }> = 
           precision: 0,
         },
         grid: {
-          color: 'rgba(0, 0, 0, 0.05)',
+          color: "rgba(0, 0, 0, 0.05)",
         },
       },
       x: {
@@ -290,13 +314,22 @@ const YearlyStatsChart: React.FC<{ yearlyStats: YearlyStatsResponse | null }> = 
 const DashboardPage: React.FC = () => {
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   const { userInfo, setUserInfo } = useContext(GFContext);
-  const [businessUnit, setBusinessUnit] = useState<BusinessUnitType | null>(null);
+  const [businessUnit, setBusinessUnit] = useState<BusinessUnitType | null>(
+    null
+  );
   const [department, setDepartment] = useState<DepartmentType | null>(null);
   const [designation, setDesignation] = useState<DesignationType | null>(null);
   const api = useAxios();
   const [requestsData, setRequestsData] = useState<RequestType[]>([]);
   const router = useRouter();
-  const [yearlyStats, setYearlyStats] = useState<YearlyStatsResponse | null>(null);
+  const [yearlyStats, setYearlyStats] = useState<YearlyStatsResponse | null>(
+    null
+  );
+  
+  // Pagination state for requests
+  const [requestsCurrentPage, setRequestsCurrentPage] = useState(1);
+  const [requestsTotalPages, setRequestsTotalPages] = useState(1);
+  const [requestsTotalCount, setRequestsTotalCount] = useState(0);
 
   useEffect(() => {
     if (userInfo?.role) {
@@ -338,48 +371,63 @@ const DashboardPage: React.FC = () => {
   };
 
   const fetchYearlyStats = async (): Promise<void> => {
-  try {
-    const currentYear = new Date().getFullYear();
-    const response = await api.get<YearlyStatsResponse>(`/yearly-stats?year=${currentYear}`);
-    setYearlyStats(response.data);
-  } catch (error) {
-    const currentYear = new Date().getFullYear(); // Define currentYear here
-    console.error("Error fetching yearly stats:", error);
-    setYearlyStats({
-      year: currentYear,
-      data: Array(12).fill(0).map((_, i) => ({
-        month: new Date(0, i).toLocaleString('default', { month: 'long' }),
-        created: 0,
-        approved: 0,
-        rejected: 0
-      }))
-    });
-  }
-};
-
-  const getRequestData = async (): Promise<void> => {
     try {
-      const response = await api.get(`/approval-requests/`);
-      
-      // Ensure we're handling the data as an array
-      const requestsArray = Array.isArray(response.data) ? response.data : [response.data];
-      
-      // Map the data to ensure all required fields are present
-      const mappedRequests = requestsArray.map((request: Partial<RequestType>) => ({
-        ...request,
-        // Ensure these fields exist with default values if they don't
-        current_status: request.current_status || request.status || "Pending",
-        budget_id: request.budget_id || `BUD-${request.id}`,
-        approval_category: request.approval_category || "N/A",
-        current_form_level: request.current_form_level || 1,
-        form_max_level: request.form_max_level || 3
-      })) as RequestType[];
-      
-      // Sort by date (newest first) before setting state
-      const sortedRequests = mappedRequests.sort((a, b) => 
-        new Date(b.date).getTime() - new Date(a.date).getTime()
+      const currentYear = new Date().getFullYear();
+      const response = await api.get<YearlyStatsResponse>(
+        `/yearly-stats?year=${currentYear}`
       );
+      setYearlyStats(response.data);
+    } catch (error) {
+      const currentYear = new Date().getFullYear(); // Define currentYear here
+      console.error("Error fetching yearly stats:", error);
+      setYearlyStats({
+        year: currentYear,
+        data: Array(12)
+          .fill(0)
+          .map((_, i) => ({
+            month: new Date(0, i).toLocaleString("default", { month: "long" }),
+            created: 0,
+            approved: 0,
+            rejected: 0,
+          })),
+      });
+    }
+  };
+
+  const getRequestData = async (page: number = 1): Promise<void> => {
+    try {
+      const response = await api.get(`/approval-requests/?page=${page}`);
+      console.log(response.data);
+
+      // Handle paginated response - extract the results array and pagination info
+      const paginationData = response.data;
+      const requestsArray = paginationData.results || [];
       
+      // Set pagination info
+      setRequestsTotalCount(paginationData.count || 0);
+      
+      // Calculate total pages based on the count and results length
+      const itemsPerPage = 20; // Default page size from Django Rest Framework
+      setRequestsTotalPages(Math.ceil((paginationData.count || 0) / itemsPerPage));
+
+      // Map the data to ensure all required fields are present
+      const mappedRequests = requestsArray.map(
+        (request: Partial<RequestType>) => ({
+          ...request,
+          // Ensure these fields exist with default values if they don't
+          current_status: request.current_status || request.status || "Pending",
+          budget_id: request.budget_id || `BUD-${request.id}`,
+          approval_category: request.approval_category || "N/A",
+          current_form_level: request.current_form_level || 1,
+          form_max_level: request.form_max_level || 3,
+        })
+      ) as RequestType[];
+
+      // Sort by date (newest first) before setting state
+      const sortedRequests = mappedRequests.sort(
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+
       setRequestsData(sortedRequests);
     } catch (error) {
       console.error("Error fetching request data:", error);
@@ -411,6 +459,12 @@ const DashboardPage: React.FC = () => {
     } catch (error) {
       console.error("Error fetching designation:", error);
     }
+  };
+
+  // Handle page change for requests pagination
+  const handleRequestsPageChange = (page: number): void => {
+    setRequestsCurrentPage(page);
+    getRequestData(page);
   };
 
   useEffect(() => {
@@ -463,20 +517,30 @@ const DashboardPage: React.FC = () => {
           <AnimateInView variants={fadeInLeftVariants} className="mb-6">
             <WelcomeBanner
               userInfo={
-                userInfo ? { ...userInfo, role: userInfo.role ?? undefined } : null
+                userInfo
+                  ? { ...userInfo, role: userInfo.role ?? undefined }
+                  : null
               }
             />
           </AnimateInView>
 
           {/* Approval Status Cards with upgraded animation */}
-          <AnimateInView variants={fadeInUpVariants} delay={0.1} className="mb-6">
+          <AnimateInView
+            variants={fadeInUpVariants}
+            delay={0.1}
+            className="mb-6"
+          >
             <ApprovalStatusCards />
           </AnimateInView>
 
           {/* Yearly Statistics Chart */}
-          <AnimateInView variants={fadeInUpVariants} delay={0.15} className="mb-6">
-            <DashboardCard 
-              title="Yearly Statistics" 
+          <AnimateInView
+            variants={fadeInUpVariants}
+            delay={0.15}
+            className="mb-6"
+          >
+            <DashboardCard
+              title="Yearly Statistics"
               icon={<BarChart2 className="h-5 w-5" />}
             >
               <YearlyStatsChart yearlyStats={yearlyStats} />
@@ -486,23 +550,31 @@ const DashboardPage: React.FC = () => {
           {/* Charts and Profile Section with more dynamic layout */}
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
             {/* Chart with enhanced scale-in animation */}
-            <AnimateInView variants={scaleInVariants} delay={0.2} className="lg:col-span-8">
-              <DashboardCard 
-                title="Performance Overview" 
+            <AnimateInView
+              variants={scaleInVariants}
+              delay={0.2}
+              className="lg:col-span-8"
+            >
+              <DashboardCard
+                title="Performance Overview"
                 action="View Details"
                 icon={<FileText className="h-5 w-5" />}
               >
                 <FormStatisticsChart yearlyStats={yearlyStats} />
               </DashboardCard>
             </AnimateInView>
-            
+
             {/* Profile Card with improved slide-in animation */}
             {userInfo && (
-              <AnimateInView variants={fadeInRightVariants} delay={0.25} className="lg:col-span-4">
+              <AnimateInView
+                variants={fadeInRightVariants}
+                delay={0.25}
+                className="lg:col-span-4"
+              >
                 <ProfileCard
                   userInfo={{
                     ...userInfo,
-                    role: userInfo.role || undefined
+                    role: userInfo.role || undefined,
                   }}
                   department={department}
                   designation={designation}
@@ -513,21 +585,27 @@ const DashboardPage: React.FC = () => {
           </div>
 
           {/* Requests Table with enhanced fade-up animation */}
-          <AnimateInView 
-            variants={fadeInUpVariants} 
-            delay={0.3} 
+          <AnimateInView
+            variants={fadeInUpVariants}
+            delay={0.3}
             className="mb-6"
             threshold={0.1}
           >
-            <DashboardCard 
-              title="Recent Requests" 
+            <DashboardCard
+              title="Recent Requests"
               action="View All"
               icon={<CheckCircle className="h-5 w-5" />}
               className="overflow-hidden"
             >
               <RequestsTable 
                 requests={requestsData} 
-                formatDate={formatDate} 
+                formatDate={formatDate}
+                usePagination={true}
+                showPagination={true}
+                totalPages={requestsTotalPages}
+                currentPage={requestsCurrentPage}
+                totalCount={requestsTotalCount}
+                onPageChange={handleRequestsPageChange}
               />
             </DashboardCard>
           </AnimateInView>
@@ -561,11 +639,13 @@ const DashboardPage: React.FC = () => {
 // Wrap the component with Suspense and add some modern loading styles
 const DashboardPageWithSuspense: React.FC = () => {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-        <Loading />
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
+          <Loading />
+        </div>
+      }
+    >
       <DashboardPage />
     </Suspense>
   );

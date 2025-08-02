@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Progress } from "@/components/ui/progress";
+import BasicPagination from "@/components/ui/paginations";
 
 // Status configuration object
 const STATUS_CONFIG = {
@@ -163,6 +164,14 @@ interface RequestsTableProps {
   showControls?: boolean;
   maxItems?: number;
   onViewAll?: () => void;
+  // Pagination props
+  totalPages?: number;
+  currentPage?: number;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
+  showPagination?: boolean;
+  // When true, shows all requests (paginated), when false, limits to maxItems
+  usePagination?: boolean;
 }
 
 const isHighAmount = (totalStr: string): boolean => {
@@ -234,7 +243,14 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
   formatDate, 
   showControls = true, 
   maxItems = 5,
-  onViewAll
+  onViewAll,
+  // Pagination props
+  totalPages = 1,
+  currentPage = 1,
+  totalCount = 0,
+  onPageChange,
+  showPagination = false,
+  usePagination = false
 }) => {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState<string>("");
@@ -280,7 +296,11 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
       return sortDirection === "asc" ? comparison * -1 : comparison;
     });
   
-  const displayRequests = filteredRequests.slice(0, maxItems);
+  // Display logic: 
+  // - If usePagination is true, show all filtered requests (data is already paginated from backend)
+  // - If showPagination is true, show all filtered requests 
+  // - Otherwise, limit to maxItems
+  const displayRequests = (usePagination || showPagination) ? filteredRequests : filteredRequests.slice(0, maxItems);
   
   // Handle sorting
   const toggleSort = (field: string) => {
@@ -659,19 +679,41 @@ const RequestsTable: React.FC<RequestsTableProps> = ({
       {showControls && displayRequests.length > 0 && (
         <div className="px-6 py-4 border-t border-gray-100 dark:border-gray-700 flex justify-between items-center">
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            Showing <span className="font-medium text-gray-700 dark:text-gray-300">{displayRequests.length}</span> of{" "}
-            <span className="font-medium text-gray-700 dark:text-gray-300">{filteredRequests.length}</span> requests
+            {(showPagination || usePagination) ? (
+              <>
+                Showing page {currentPage} of {totalPages}{" "}
+                (<span className="font-medium text-gray-700 dark:text-gray-300">{totalCount}</span> total requests)
+              </>
+            ) : (
+              <>
+                Showing <span className="font-medium text-gray-700 dark:text-gray-300">{displayRequests.length}</span> of{" "}
+                <span className="font-medium text-gray-700 dark:text-gray-300">{filteredRequests.length}</span> requests
+              </>
+            )}
           </div>
           
-          <motion.button
-            onClick={handleViewAll}
-            className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
-            whileHover={{ scale: 1.03, x: 3 }}
-            whileTap={{ scale: 0.97 }}
-          >
-            View All
-            <ArrowLeft className="ml-1 h-4 w-4 rotate-270" style={{ transform: 'rotate(-90deg)' }} />
-          </motion.button>
+          <div className="flex items-center gap-4">
+            {(showPagination || usePagination) && totalPages > 1 && onPageChange && (
+              <BasicPagination
+                totalPages={totalPages}
+                initialPage={currentPage}
+                onPageChange={onPageChange}
+                className="ml-auto"
+              />
+            )}
+            
+            {!(showPagination || usePagination) && (
+              <motion.button
+                onClick={handleViewAll}
+                className="inline-flex items-center justify-center px-4 py-2 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 text-sm font-medium hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors"
+                whileHover={{ scale: 1.03, x: 3 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                View All
+                <ArrowLeft className="ml-1 h-4 w-4 rotate-270" style={{ transform: 'rotate(-90deg)' }} />
+              </motion.button>
+            )}
+          </div>
         </div>
       )}
     </div>
