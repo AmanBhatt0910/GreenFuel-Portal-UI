@@ -13,6 +13,7 @@ import { AnalyticsCharts } from '@/components/custom/Budget-allocation/Analytics
 import { TransactionList } from '@/components/custom/Budget-allocation/TransactionList';
 import { ReportsView } from '@/components/custom/Budget-allocation/ReportsView';
 import { TabManager } from '@/components/custom/Budget-allocation/TabManager';
+import { BudgetHistoryTransaction } from '@/components/custom/Budget-allocation/types';
 
 // Import types
 import { 
@@ -52,9 +53,8 @@ const BudgetAllocationSystem = () => {
   const [error, setError] = useState<string | null>(null);
   const [budgetAllocations, setBudgetAllocations] = useState<BudgetAllocation[]>([]);
   
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [txPage, setTxPage] = useState(1);
-  const [txCount, setTxCount] = useState(0);
+  const [transactions, setTransactions] =
+    useState<BudgetHistoryTransaction[]>([]);
   const [txLoading, setTxLoading] = useState(false);
 
 
@@ -128,28 +128,56 @@ const BudgetAllocationSystem = () => {
     fetchInitialData();
   }, []);
 
+
   useEffect(() => {
-  if (activeTab === 'transactions') {
-    fetchTransactions(1);
-  }
-}, [activeTab]);
+    if (
+      activeTab === 'transactions' &&
+      budgetAllocations.length > 0 &&
+      categories.length > 0
+    ) {
+      const firstAllocation = budgetAllocations[0];
+
+      const categoryId = categories.find(
+        c => c.name === firstAllocation.category
+      )?.id;
+
+      if (categoryId) {
+        fetchBudgetHistory(firstAllocation.department_id, categoryId);
+      }
+    }
+  }, [activeTab, budgetAllocations, categories]);
+
+  useEffect(() => {
+    if (activeTab !== 'transactions') {
+      setTransactions([]);
+    }
+  }, [activeTab]);
 
 
-  const fetchTransactions = async (page = 1) => {
+
+  const fetchBudgetHistory = async (
+    departmentId: number,
+    categoryId: number
+  ) => {
     try {
       setTxLoading(true);
-      const res = await api.get(`/transactions/?page=${page}`);
+      setError(null);
 
-      setTransactions(res.data.results);
-      setTxCount(res.data.count);
-      setTxPage(page);
+      const res = await api.get(
+        `/budget-history/?department=${departmentId}&category=${categoryId}`
+      );
+
+      // backend returns ARRAY
+      setTransactions(Array.isArray(res.data) ? res.data : []);
     } catch (err) {
-      console.error('Failed to load transactions', err);
-      setError('Failed to load transactions');
+      console.error('Failed to load budget history', err);
+      setTransactions([]);
+      setError('Failed to load transaction history');
     } finally {
       setTxLoading(false);
     }
   };
+
 
 
   // Map API allocation to UI type
@@ -443,10 +471,8 @@ const BudgetAllocationSystem = () => {
           <TransactionList
             transactions={transactions}
             loading={txLoading}
-            page={txPage}
-            total={txCount}
-            onPageChange={fetchTransactions}
           />
+
         }
 
         reportsContent={

@@ -19,6 +19,9 @@ export interface BudgetAllocation {
   status: 'active' | 'warning' | 'over_budget';
 }
 
+/**
+ * OLD / GENERIC UI TRANSACTION (keep if used elsewhere)
+ */
 export interface Transaction {
   id: number;
   department: string;
@@ -27,6 +30,17 @@ export interface Transaction {
   date: string;
   description: string;
   type: 'expense' | 'income';
+}
+
+/**
+ * BACKEND: /budget-history/ response
+ */
+export interface BudgetHistoryTransaction {
+  id: number;
+  transaction_type: 'CREDIT' | 'DEBIT';
+  amount: string;               // backend sends string
+  remarks: string | null;
+  created_at: string;
 }
 
 export interface FormData {
