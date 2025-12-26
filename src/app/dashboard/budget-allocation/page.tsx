@@ -51,7 +51,12 @@ const BudgetAllocationSystem = () => {
   const [activeTab, setActiveTab] = useState<string>("allocations");
   const [error, setError] = useState<string | null>(null);
   const [budgetAllocations, setBudgetAllocations] = useState<BudgetAllocation[]>([]);
+  
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [txPage, setTxPage] = useState(1);
+  const [txCount, setTxCount] = useState(0);
+  const [txLoading, setTxLoading] = useState(false);
+
 
   // Form state for AllocationForm
   const [childFormData, setChildFormData] = useState<ChildFormData>({
@@ -122,6 +127,30 @@ const BudgetAllocationSystem = () => {
     
     fetchInitialData();
   }, []);
+
+  useEffect(() => {
+  if (activeTab === 'transactions') {
+    fetchTransactions(1);
+  }
+}, [activeTab]);
+
+
+  const fetchTransactions = async (page = 1) => {
+    try {
+      setTxLoading(true);
+      const res = await api.get(`/transactions/?page=${page}`);
+
+      setTransactions(res.data.results);
+      setTxCount(res.data.count);
+      setTxPage(page);
+    } catch (err) {
+      console.error('Failed to load transactions', err);
+      setError('Failed to load transactions');
+    } finally {
+      setTxLoading(false);
+    }
+  };
+
 
   // Map API allocation to UI type
   const mapApiAllocationToUi = (apiAllocation: ApiBudgetAllocation): BudgetAllocation => {
@@ -411,8 +440,15 @@ const BudgetAllocationSystem = () => {
           />
         }
         transactionsContent={
-          <TransactionList transactions={transactions} />
+          <TransactionList
+            transactions={transactions}
+            loading={txLoading}
+            page={txPage}
+            total={txCount}
+            onPageChange={fetchTransactions}
+          />
         }
+
         reportsContent={
           <ReportsView 
             departmentUsage={getDepartmentUsage()} 
