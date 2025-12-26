@@ -114,10 +114,10 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     try {
       
       const response = await api.get(`/approval-items?form_id=${formId}/`);
-      console.log(response)
+      // console.log(response)
     
     } catch (error) {
-      console.log(error)
+      // console.log(error)
     }
 
   }
@@ -175,7 +175,7 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
       
       // Fetch approval requests with pagination
       const response = await api.get(`/approval-requests/?page=${page}&page_size=${pageSize}`);
-      console.log('Approval requests response:', response.data);
+      // console.log('Approval requests response:', response.data);
       
       // Extract pagination data
       const paginationData = response.data;
@@ -185,13 +185,13 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
       setTotalCount(paginationData.count || 0);
       setTotalPages(Math.ceil((paginationData.count || 0) / pageSize));
       
-      console.log('Pagination info:', {
-        currentPage: page,
-        totalCount: paginationData.count,
-        totalPages: Math.ceil((paginationData.count || 0) / pageSize),
-        pageSize: pageSize,
-        resultsCount: approvalRequests.length
-      });
+      // console.log('Pagination info:', {
+      //   currentPage: page,
+      //   totalCount: paginationData.count,
+      //   totalPages: Math.ceil((paginationData.count || 0) / pageSize),
+      //   pageSize: pageSize,
+      //   resultsCount: approvalRequests.length
+      // });
       
       // Enrich the approval requests with user and department names
       const enrichedForms = await enrichApprovalData(approvalRequests);

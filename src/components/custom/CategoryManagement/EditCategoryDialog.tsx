@@ -31,7 +31,7 @@ const EditCategoryDialog: React.FC<EditCategoryDialogProps> = ({
 
     try {
       setIsLoading(true);
-      console.log("Editing category:", category.id);
+      // console.log("Editing category:", category.id);
       const response = await api.put(`/approval-request-category/${category.id}/`, {
         name: categoryName.trim(),
       });

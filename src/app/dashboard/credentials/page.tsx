@@ -70,7 +70,7 @@ export default function CredentialsPage() {
 
       const queryString = `?${params.toString()}`;
       const response = await api.get(`/userInfo/${queryString}`);
-      console.log('UserInfo response:', response.data);
+      // console.log('UserInfo response:', response.data);
       
       // Handle paginated response
       if (response.data && typeof response.data === 'object' && 'results' in response.data) {
@@ -81,13 +81,13 @@ export default function CredentialsPage() {
         setTotalPages(Math.ceil((paginationData.count || 0) / pageSize));
         setCurrentPage(page);
         
-        console.log('Pagination info:', {
-          currentPage: page,
-          totalCount: paginationData.count,
-          totalPages: Math.ceil((paginationData.count || 0) / pageSize),
-          pageSize: pageSize,
-          resultsCount: (paginationData.results || []).length
-        });
+        // console.log('Pagination info:', {
+        //   currentPage: page,
+        //   totalCount: paginationData.count,
+        //   totalPages: Math.ceil((paginationData.count || 0) / pageSize),
+        //   pageSize: pageSize,
+        //   resultsCount: (paginationData.results || []).length
+        // });
       } else {
         // Non-paginated response (fallback)
         setCredentials(Array.isArray(response.data) ? response.data : []);

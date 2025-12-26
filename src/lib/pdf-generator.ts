@@ -249,7 +249,7 @@ function addApprovalHierarchy(
   approvalLevels: ApprovalLevel[], 
   y: number
 ): number {
-  console.log('addApprovalHierarchy called with:', { currentLevel, maxLevel, approvalLevels, y });
+  // console.log('addApprovalHierarchy called with:', { currentLevel, maxLevel, approvalLevels, y });
   
   addSectionHeader(doc, "APPROVAL HIERARCHY", y);
   y += 15;
@@ -612,10 +612,10 @@ export async function generateAssetRequestPDF(options: PDFGeneratorOptions): Pro
 
   // Add approval hierarchy if available
   if ((currentLevel && maxLevel) || (approvalLevels && approvalLevels.length > 0)) {
-    console.log('Adding approval hierarchy:', { currentLevel, maxLevel, approvalLevels });
+    // console.log('Adding approval hierarchy:', { currentLevel, maxLevel, approvalLevels });
     y = addApprovalHierarchy(doc, currentLevel || 1, maxLevel || 1, approvalLevels || [], y);
   } else {
-    console.log('Skipping approval hierarchy:', { currentLevel, maxLevel, approvalLevels });
+    // console.log('Skipping approval hierarchy:', { currentLevel, maxLevel, approvalLevels });
   }
 
   // Add policy agreement status if available
@@ -647,8 +647,8 @@ export async function generateApprovalPDF(
   fetchEntityNames?: (api: any) => Promise<{ businessUnitName: string; departmentName: string; designationName: string }>,
   apiInstance?: any
 ): Promise<void> {
-  console.log('generateApprovalPDF - requestData:', requestData);
-  console.log('generateApprovalPDF - employee_code from requestData:', requestData.employee_code);
+  // console.log('generateApprovalPDF - requestData:', requestData);
+  // console.log('generateApprovalPDF - employee_code from requestData:', requestData.employee_code);
   
   // Use enriched data if available (from approval pages), otherwise fallback to original logic
   const requestorInfo: RequestorInfo = {
@@ -659,7 +659,7 @@ export async function generateApprovalPDF(
     designationName: requestData.designation_name || "N/A",
   };
 
-  console.log('generateApprovalPDF - Final requestorInfo:', requestorInfo);
+  // console.log('generateApprovalPDF - Final requestorInfo:', requestorInfo);
   
   // Fetch approval hierarchy data
   let approvalLevelsWithNames: ApprovalLevel[] = [];
@@ -706,7 +706,7 @@ export async function generateApprovalPDF(
       approver.department === requestData.department
     );
     
-    console.log('Relevant approvers for PDF:', relevantApprovers);
+    // console.log('Relevant approvers for PDF:', relevantApprovers);
     
     // Sort approvers by level
     relevantApprovers.sort((a: any, b: any) => a.level - b.level);
@@ -761,7 +761,7 @@ export async function generateApprovalPDF(
       }
     }
     
-    console.log('Built approval levels with names:', approvalLevelsWithNames);
+    // console.log('Built approval levels with names:', approvalLevelsWithNames);
     
   } catch (error) {
     console.error('Error fetching approval hierarchy:', error);

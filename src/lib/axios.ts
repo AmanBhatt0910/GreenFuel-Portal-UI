@@ -19,9 +19,9 @@ const getBaseUrl = () => {
 };
 
 const baseURL = getBaseUrl();
-console.log('NODE_ENV:', process.env.NODE_ENV);
-console.log('isProduction:', isProduction);
-console.log('Axios instance using base URL:', baseURL);
+// console.log('NODE_ENV:', process.env.NODE_ENV);
+// console.log('isProduction:', isProduction);
+// console.log('Axios instance using base URL:', baseURL);
 
 const axiosInstance = axios.create({
   baseURL,

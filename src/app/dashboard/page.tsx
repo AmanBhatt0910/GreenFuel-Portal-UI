@@ -397,7 +397,7 @@ const DashboardPage: React.FC = () => {
   const getRequestData = async (page: number = 1): Promise<void> => {
     try {
       const response = await api.get(`/approval-requests/?page=${page}`);
-      console.log(response.data);
+      // console.log(response.data);
 
       // Handle paginated response - extract the results array and pagination info
       const paginationData = response.data;

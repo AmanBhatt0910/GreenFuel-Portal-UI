@@ -61,7 +61,7 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = React.memo(({
   });
 
   const handleSelectChange = (name: string, value: string) => {
-    console.log(`Dropdown selection changed: ${name} = ${value}`);
+    // console.log(`Dropdown selection changed: ${name} = ${value}`);
     
     // Create a batch update object to minimize re-renders
     const updates: any = {};

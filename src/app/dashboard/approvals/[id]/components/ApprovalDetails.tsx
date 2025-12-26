@@ -26,8 +26,8 @@ export default function ApprovalDetails({
   showOnlyAssets = false,
   showOnlyAttachments = false
 }: ApprovalDetailsProps) {
-  console.log('ApprovalDetails - enrichedForm:', enrichedForm);
-  console.log('ApprovalDetails - attachments:', attachments);
+  // console.log('ApprovalDetails - enrichedForm:', enrichedForm);
+  // console.log('ApprovalDetails - attachments:', attachments);
   
   const api = useAxios();
 

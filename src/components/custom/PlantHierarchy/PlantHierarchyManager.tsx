@@ -42,7 +42,7 @@ export const PlantHierarchyManager: React.FC = () => {
 
         const businessUnitsResponse = await api.get('/business-units/');
         const businessUnitsData = businessUnitsResponse.data;
-        console.log("Business units data:", businessUnitsData);
+        // console.log("Business units data:", businessUnitsData);
         
         setBusinessUnits(businessUnitsData.map((bu: BusinessUnit) => ({
           ...bu,

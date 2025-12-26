@@ -238,7 +238,7 @@ const ApprovalStatusCards: React.FC<ApprovalStatusCardsProps> = ({ yearlyStats }
         setLoading(true);
         const currentYear = new Date().getFullYear();
         const response = await api.get<YearlyStatsResponse>(`/yearly-stats?year=${currentYear}`);
-        console.log(response.data)
+        // console.log(response.data)
         setStats(response.data);
       } catch (error) {
         console.error("Error fetching yearly stats:", error);

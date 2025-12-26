@@ -36,7 +36,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
         // Fetch business unit name
         if (formData.plant) {
           const businessUnitResponse = await api.get(`/business-units/${formData.plant}/`);
-          console.log("Business Unit Response:", businessUnitResponse.data);
+          // console.log("Business Unit Response:", businessUnitResponse.data);
           if (businessUnitResponse.data) {
             setBusinessUnitName(businessUnitResponse.data.name || "Unknown");
           }
@@ -45,7 +45,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
         // Fetch department name - check both department and initiateDept
         if (formData.initiateDept) {
           const departmentResponse = await api.get(`/departments/${formData.initiateDept}/`);
-          console.log("Department Response:", departmentResponse.data);
+          // console.log("Department Response:", departmentResponse.data);
           if (departmentResponse.data) {
             setDepartmentName(departmentResponse.data.name || "Unknown");
           }
@@ -54,7 +54,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
         // Fetch designation name
         if (formData.designation) {
           const designationResponse = await api.get(`/designations/${formData.designation}/`);
-          console.log("Designation Response:", designationResponse.data);
+          // console.log("Designation Response:", designationResponse.data);
           if (designationResponse.data) {
             setDesignationName(designationResponse.data.name || "Unknown");
           }
@@ -62,9 +62,9 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
         
         // Fetch category name
         if (formData.category) {
-          console.log("Fetching category with ID:", formData.category);
+          // console.log("Fetching category with ID:", formData.category);
           const categoryResponse = await api.get(`/approval-request-category/${formData.category}/`);
-          console.log("Category Response:", categoryResponse.data);
+          // console.log("Category Response:", categoryResponse.data);
           if (categoryResponse.data) {
             setCategoryName(categoryResponse.data.name || "Unknown");
           }
@@ -72,9 +72,9 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
         
         // Fetch concerned department name
         if (formData.concerned_department) {
-          console.log("Fetching concerned department with ID:", formData.concerned_department);
+          // console.log("Fetching concerned department with ID:", formData.concerned_department);
           const concernedDeptResponse = await api.get(`/departments/${formData.concerned_department}/`);
-          console.log("Concerned Department Response:", concernedDeptResponse.data);
+          // console.log("Concerned Department Response:", concernedDeptResponse.data);
           if (concernedDeptResponse.data) {
             setConcernedDepartmentName(concernedDeptResponse.data.name || "Unknown");
           }
@@ -87,7 +87,7 @@ export const ConfirmationStep: React.FC<ConfirmationStepProps> = ({
       }
     };
     
-    console.log("Form data in ConfirmationStep:", formData);
+    // console.log("Form data in ConfirmationStep:", formData);
     fetchData();
   }, [formData.plant, formData.initiateDept, formData.designation, formData.category, formData.concerned_department]);
 

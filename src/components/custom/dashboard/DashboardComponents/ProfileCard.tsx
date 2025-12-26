@@ -463,7 +463,7 @@ const ProfileCardModern: React.FC<ProfileCardModernProps> = ({
             onClick={(e) => {
               e.preventDefault();
               e.stopPropagation();
-              console.log("Profile button clicked!"); // Debug log
+              // console.log("Profile button clicked!"); // Debug log
               try {
                 router.push("/dashboard/profile");
               } catch (error) {

@@ -116,7 +116,7 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
       if(response.status === 400){
         const errorData = await response.json();
-        console.log("Login error:", errorData);
+        // console.log("Login error:", errorData);
         return {
           success: false,
           message: errorData.detail || "Invalid credentials",

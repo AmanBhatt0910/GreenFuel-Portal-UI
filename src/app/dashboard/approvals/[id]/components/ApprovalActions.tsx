@@ -62,7 +62,7 @@ export default function ApprovalActions({
   // Conditionally render based on the approval status
   // Only show actions if the form is pending
   if (!isPending(form.status)) {
-    console.log(form.status);
+    // console.log(form.status);
     // Show a banner indicating the request has already been processed
     return (
       <div className="sticky bottom-0 p-4 shadow-lg z-10 rounded-md mt-4">

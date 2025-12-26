@@ -110,12 +110,12 @@ const RequestDetailsPage: React.FC = () => {
       // Dynamic import to avoid loading PDF libraries unless needed
       const { generateApprovalPDF } = await import('@/lib/pdf-generator');
       
-      console.log('PDF Data Debug:', {
-        approvalLevels: approvalLevels,
-        currentLevel: request?.current_level,
-        maxLevel: request?.max_level,
-        requestData: request
-      });
+      // console.log('PDF Data Debug:', {
+      //   approvalLevels: approvalLevels,
+      //   currentLevel: request?.current_level,
+      //   maxLevel: request?.max_level,
+      //   requestData: request
+      // });
 
       // Transform approval levels to match PDF generator interface
       const transformedApprovalLevels = (approvalLevels || []).map((level: any) => ({
@@ -196,7 +196,7 @@ const RequestDetailsPage: React.FC = () => {
         if (currentTab === "comments" && request?.id) {
           try {
             await api.put(`/chats/${request.id}/`);
-            console.log("Marked chats as read with Axios");
+            // console.log("Marked chats as read with Axios");
           } catch (err) {
             console.error("Failed to mark chat as read:", err);
           }

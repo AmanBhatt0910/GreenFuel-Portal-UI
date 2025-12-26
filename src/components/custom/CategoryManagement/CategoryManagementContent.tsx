@@ -73,13 +73,6 @@ const CategoryManagementContent: React.FC = () => {
 
       const categoriesRes = await api.get("/approval-request-category/");
 
-      if (categoriesRes.data.length > 0) {
-        console.log(
-          "Sample created_at format:",
-          categoriesRes.data[0].created_at
-        );
-      }
-
       const transformedCategories: Category[] = categoriesRes.data.map(
         (cat: any) => {
           return {

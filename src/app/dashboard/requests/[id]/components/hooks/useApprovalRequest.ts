@@ -71,11 +71,11 @@ export const useApprovalRequest = (
         const endpoint = userIdParam
           ? `/userInfo/${userIdParam}`
           : "/userInfo/";
-        console.log("Fetching user info from:", endpoint);
+        // console.log("Fetching user info from:", endpoint);
         const response = await api.get(endpoint);
 
         setUserInfo(response.data);
-        console.log("User info loaded:", response.data);
+        // console.log("User info loaded:", response.data);
 
         const designationsRes = await api.get("/designations/");
         setDesignations(designationsRes.data);
@@ -96,7 +96,7 @@ export const useApprovalRequest = (
       try {
         setLoading(true);
         const response = await api.get(`/approval-requests/${requestId}/`);
-        console.log("response", response);
+        // console.log("response", response);
         const requestData = response.data;
         setRequest(requestData);
 
@@ -139,7 +139,7 @@ export const useApprovalRequest = (
         }
 
         if (requestData.documents) {
-          console.log("requestData.documents" , requestData.documents)
+          // console.log("requestData.documents" , requestData.documents)
           setDocuments(requestData.documents);
         }
 
@@ -220,7 +220,7 @@ export const useApprovalRequest = (
           url: doc.file,
         }));
 
-        console.log("response for doc" , response.data);
+        // console.log("response for doc" , response.data);
 
         // Only update state if documents have changed
         if (JSON.stringify(mappedDocuments) !== JSON.stringify(documents)) {
@@ -244,7 +244,7 @@ export const useApprovalRequest = (
       
       try {
         const response = await api.get(`/approval-items/?form_id=${request.id}`);
-        console.log("Asset details response:", response);
+        // console.log("Asset details response:", response);
         setassestDetails(response.data);
       } catch (error: any) {
         console.error("Error fetching asset details:", error?.message);
