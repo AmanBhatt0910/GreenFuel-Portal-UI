@@ -102,15 +102,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit, isLoading }) => 
             className="focus:border-green-500 dark:focus:border-green-400 transition-all duration-300"
           />
           <div className="text-right mt-2">
-            <Link
-              href="/forgot-password"
-              aria-label="Forgot password"
-              aria-describedby="forgot-password-description"
-              className="text-sm font-medium text-[#243B55] hover:text-[#141E30] dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-            >
-              Forgot password?
-            </Link>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Forgot your password?{" "}
+              <span className="font-medium text-[#243B55] dark:text-blue-400">
+                Please contact the system administrator.
+              </span>
+            </p>
           </div>
+
         </div>
 
         <div className="pt-4">

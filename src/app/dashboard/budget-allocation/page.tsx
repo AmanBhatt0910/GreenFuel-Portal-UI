@@ -20,7 +20,6 @@ import {
   BusinessUnit, 
   Department, 
   BudgetAllocation, 
-  Transaction, 
   FormData as ChildFormData,
   DepartmentStats,
   CategoryStats,
@@ -133,24 +132,15 @@ const BudgetAllocationSystem = () => {
   }, []);
 
 
-useEffect(() => {
-  if (
-    activeTab === 'transactions' &&
-    selectedAllocation &&
-    categories.length > 0
-  ) {
-    const categoryId = categories.find(
-      c => c.name === selectedAllocation.category
-    )?.id;
-
-    if (categoryId) {
+  useEffect(() => {
+    if (activeTab === 'transactions' && selectedAllocation) {
       fetchBudgetHistory(
         selectedAllocation.department_id,
-        categoryId
+        selectedAllocation.category_id
       );
     }
-  }
-}, [activeTab, selectedAllocation, categories]);
+  }, [activeTab, selectedAllocation]);
+
 
 
 
@@ -190,12 +180,18 @@ useEffect(() => {
     return {
       id: apiAllocation.id,
       department_id: apiAllocation.department,
-      department_name: department?.name || `Department ${apiAllocation.department}`,
+      department_name:
+        department?.name || `Department ${apiAllocation.department}`,
       category: category?.name || `Category ${apiAllocation.category}`,
+      category_id: apiAllocation.category,   // ✅ FIX
       allocated_budget: allocated,
       spent_budget: spent,
-      status: spent > allocated ? 'over_budget' : 
-              spent >= allocated * 0.8 ? 'warning' : 'active'
+      status:
+        spent > allocated
+          ? 'over_budget'
+          : spent >= allocated * 0.8
+          ? 'warning'
+          : 'active',
     };
   };
 
@@ -204,15 +200,22 @@ useEffect(() => {
     try {
       const response = await api.get('/budget-allocation/?all=true');
       const apiAllocations: ApiBudgetAllocation[] = response.data;
-      
-      // Map to UI type
+
       const uiAllocations = apiAllocations.map(mapApiAllocationToUi);
       setBudgetAllocations(uiAllocations);
+
+
+      if (uiAllocations.length > 0) {
+        setSelectedAllocation(
+          uiAllocations[uiAllocations.length - 1]
+        );
+      }
     } catch (error) {
       console.error('Error fetching budget allocations:', error);
       setError('Failed to load budget allocations');
     }
   };
+
 
   // Filter departments when business unit changes
   useEffect(() => {
@@ -242,8 +245,11 @@ useEffect(() => {
 
     setLoading(true);
     try {
-      // Find category ID from name
-      const categoryId = categories.find(c => c.name === childFormData.category)?.id;
+
+      const categoryId = categories.find(
+  c => c.name === childFormData.category
+      )?.id;
+
       if (!categoryId) {
         throw new Error('Invalid category selected');
       }
@@ -252,19 +258,22 @@ useEffect(() => {
         business_unit: childFormData.business_unit,
         department: childFormData.department,
         category: categoryId,
-        amount: budgetAmount, // Use the validated number
+        amount: budgetAmount,
         transaction_type: apiFormData.transaction_type,
-        remarks: apiFormData.remarks || `Budget ${apiFormData.transaction_type === 'CREDIT' ? 'allocated' : 'deducted'}`
+        remarks:
+          apiFormData.remarks ||
+          `Budget ${
+            apiFormData.transaction_type === 'CREDIT'
+              ? 'allocated'
+              : 'deducted'
+          }`,
       };
-
-      // Log current budget state for debugging
-      const currentAllocation = budgetAllocations.find(a => 
-        a.department_id === childFormData.department && 
-        a.category === childFormData.category
-      );
 
       await api.post('/budget-allocation/', allocationData);
       await fetchBudgetAllocations();
+
+      setActiveTab('transactions');
+
       
       // Reset form
       setChildFormData({

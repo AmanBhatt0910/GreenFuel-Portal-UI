@@ -14,6 +14,7 @@ export interface BudgetAllocation {
   department_id: number;
   department_name: string;
   category: string;
+  category_id: number;
   allocated_budget: number;
   spent_budget: number;
   status: 'active' | 'warning' | 'over_budget';
