@@ -74,6 +74,10 @@ const BudgetAllocationSystem = () => {
   
   const [loading, setLoading] = useState(false);
   const [filteredDepartments, setFilteredDepartments] = useState<Department[]>([]);
+  const [selectedAllocation, setSelectedAllocation] =
+  useState<BudgetAllocation | null>(null);
+
+
   const api = useAxios();
 
   // Format currency in INR
@@ -129,29 +133,25 @@ const BudgetAllocationSystem = () => {
   }, []);
 
 
-  useEffect(() => {
-    if (
-      activeTab === 'transactions' &&
-      budgetAllocations.length > 0 &&
-      categories.length > 0
-    ) {
-      const firstAllocation = budgetAllocations[0];
+useEffect(() => {
+  if (
+    activeTab === 'transactions' &&
+    selectedAllocation &&
+    categories.length > 0
+  ) {
+    const categoryId = categories.find(
+      c => c.name === selectedAllocation.category
+    )?.id;
 
-      const categoryId = categories.find(
-        c => c.name === firstAllocation.category
-      )?.id;
-
-      if (categoryId) {
-        fetchBudgetHistory(firstAllocation.department_id, categoryId);
-      }
+    if (categoryId) {
+      fetchBudgetHistory(
+        selectedAllocation.department_id,
+        categoryId
+      );
     }
-  }, [activeTab, budgetAllocations, categories]);
+  }
+}, [activeTab, selectedAllocation, categories]);
 
-  useEffect(() => {
-    if (activeTab !== 'transactions') {
-      setTransactions([]);
-    }
-  }, [activeTab]);
 
 
 
@@ -455,8 +455,12 @@ const BudgetAllocationSystem = () => {
               </div>
             </div>
             
-            <AllocationList 
+            <AllocationList
               budgetAllocations={budgetAllocations}
+              onSelect={(allocation) => {
+                setSelectedAllocation(allocation);
+                setActiveTab('transactions');
+              }}
             />
           </>
         }

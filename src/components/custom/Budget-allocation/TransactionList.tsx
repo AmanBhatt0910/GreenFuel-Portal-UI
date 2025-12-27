@@ -1,19 +1,17 @@
 import React from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Transaction } from './types';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+} from '@/components/ui/card';
 import { BudgetHistoryTransaction } from './types';
 
 interface TransactionListProps {
   transactions: BudgetHistoryTransaction[];
   loading: boolean;
 }
-
-interface TransactionListProps {
-  transactions: Transaction[];
-  loading: boolean;
-}
-
 
 export const TransactionList = ({
   transactions,
@@ -54,7 +52,9 @@ export const TransactionList = ({
                       {tx.remarks || '—'}
                     </p>
                     <p className="text-xs text-gray-500">
-                      {new Date(tx.created_at).toLocaleString()}
+                      {tx.created_at
+                        ? new Date(tx.created_at).toLocaleString()
+                        : '—'}
                     </p>
                   </div>
 
