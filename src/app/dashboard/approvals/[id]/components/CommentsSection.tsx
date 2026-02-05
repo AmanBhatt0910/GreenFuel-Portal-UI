@@ -1,10 +1,9 @@
-import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send } from "lucide-react";
-import { Comment } from '@/app/dashboard/approvals/components/interfaces';
+import { Comment } from "@/app/dashboard/approvals/components/interfaces";
 
 interface CommentsSectionProps {
   comments: Comment[];
@@ -19,10 +18,10 @@ export default function CommentsSection({
   newComment,
   setNewComment,
   handleAddComment,
-  loading
+  loading,
 }: CommentsSectionProps) {
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && e.ctrlKey) {
+    if (e.key === "Enter" && e.ctrlKey) {
       e.preventDefault();
       handleAddComment();
     }
@@ -103,7 +102,9 @@ export default function CommentsSection({
                     </span>
                   </div>
                   <div className="bg-muted dark:bg-gray-800 rounded-lg p-3">
-                    <p className="text-sm text-muted-foreground">{comment.text}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {comment.text}
+                    </p>
                   </div>
                 </div>
               </div>

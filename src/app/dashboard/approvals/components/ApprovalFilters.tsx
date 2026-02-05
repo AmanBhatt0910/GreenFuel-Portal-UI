@@ -1,13 +1,12 @@
-import React from 'react';
-import { Search, Filter } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { Search, Filter } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 interface ApprovalFiltersProps {
   filter: string;
@@ -57,4 +56,4 @@ export default function ApprovalFilters({
       </div>
     </div>
   );
-} 
+}

@@ -1,35 +1,30 @@
-import React from 'react';
-import { ExternalLink, FileDown } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { EnrichedApprovalForm } from './interfaces';
-import { getStatusColor, formatDate } from './utils';
-import { generateApprovalPDF } from '@/lib/pdf-generator';
+import { memo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { EnrichedApprovalForm } from "./interfaces";
+import { getStatusColor, formatDate } from "./utils";
 
 interface ApprovalListProps {
   forms: EnrichedApprovalForm[];
   onViewDetails: (id: string) => void;
 }
 
-export default function ApprovalList({ forms, onViewDetails }: ApprovalListProps) {
+const ApprovalList = memo(({ forms, onViewDetails }: ApprovalListProps) => {
   // Define a helper function to render the status icon
   const renderStatusIcon = (status: string) => {
-    if (status.toLowerCase() === 'approved') {
+    if (status.toLowerCase() === "approved") {
       return <span className="w-4 h-4 mr-1 text-green-600">✓</span>;
-    } else if (status.toLowerCase() === 'rejected') {
+    } else if (status.toLowerCase() === "rejected") {
       return <span className="w-4 h-4 mr-1 text-red-600">✗</span>;
-    } else if (status.toLowerCase() === 'pending') {
+    } else if (status.toLowerCase() === "pending") {
       return <span className="w-4 h-4 mr-1 text-yellow-600">⏱</span>;
     }
     return null;
   };
 
-
-
   return (
     <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-700">
       {forms.map((form) => (
-        <div 
+        <div
           key={form.id}
           className="py-4 px-4 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
           onClick={() => onViewDetails(form.id)}
@@ -40,9 +35,15 @@ export default function ApprovalList({ forms, onViewDetails }: ApprovalListProps
                 {form.budget_id || form.id}
               </div>
               <div className="mt-1">
-                <div className="text-sm font-medium">{form.user_name || form.user}</div>
-                <div className="text-xs text-gray-500">{form.user_email || "No email available"}</div>
-                <div className="text-xs text-gray-500 mt-1">{form.department_name || form.department}</div>
+                <div className="text-sm font-medium">
+                  {form.user_name || form.user}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {form.user_email || "No email available"}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {form.department_name || form.department}
+                </div>
               </div>
             </div>
             <Badge
@@ -52,16 +53,21 @@ export default function ApprovalList({ forms, onViewDetails }: ApprovalListProps
               {form.status}
             </Badge>
           </div>
-          
+
           <div className="flex items-center justify-between text-sm">
             <div className="text-gray-500">
               <div>{form.approval_category}</div>
-              <div className="text-xs text-gray-400 mt-1">{form.formatted_date || formatDate(form.date)}</div>
+              <div className="text-xs text-gray-400 mt-1">
+                {form.formatted_date || formatDate(form.date)}
+              </div>
             </div>
-            
           </div>
         </div>
       ))}
     </div>
   );
-} 
+});
+
+ApprovalList.displayName = "ApprovalList";
+
+export default ApprovalList;

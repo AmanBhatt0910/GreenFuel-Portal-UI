@@ -1,10 +1,16 @@
-import React, { useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { useRef, useEffect } from "react";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Send, MessageSquare } from "lucide-react";
-import { Comment } from '@/app/dashboard/approvals/components/interfaces';
+import { Comment } from "@/app/dashboard/approvals/components/interfaces";
 
 interface ChatSectionProps {
   newComment: string;
@@ -19,10 +25,10 @@ const formatDate = (timestamp: string | number | Date) => {
   if (!timestamp) return "";
   const date = new Date(timestamp);
   return date.toLocaleString(undefined, {
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
   });
 };
 
@@ -31,21 +37,20 @@ export default function ChatSection({
   setNewComment,
   isChatLoading,
   comments,
-  handleAddComment
+  handleAddComment,
 }: ChatSectionProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [comments]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && e.ctrlKey) {
+    if (e.key === "Enter" && e.ctrlKey) {
       e.preventDefault();
       handleAddComment();
     }
   };
-
 
   if (isChatLoading) {
     return (
@@ -103,7 +108,9 @@ export default function ChatSection({
                     </span>
                   </div>
                   <div className="bg-white rounded-lg p-3 border shadow-sm">
-                    <p className="text-sm whitespace-pre-line">{comment.text}</p>
+                    <p className="text-sm whitespace-pre-line">
+                      {comment.text}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -122,7 +129,7 @@ export default function ChatSection({
               className="min-h-[80px] flex-1"
               onKeyDown={handleKeyDown}
             />
-            <Button 
+            <Button
               className="self-end bg-indigo-600 hover:bg-indigo-700"
               onClick={handleAddComment}
               disabled={!newComment.trim()}
@@ -138,4 +145,4 @@ export default function ChatSection({
       </CardContent>
     </Card>
   );
-} 
+}

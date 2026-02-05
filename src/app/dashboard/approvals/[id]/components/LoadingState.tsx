@@ -1,6 +1,5 @@
-import React from 'react';
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 export default function LoadingState() {
   return (
@@ -41,7 +40,7 @@ export default function LoadingState() {
             </CardContent>
           </Card>
         </div>
-        
+
         <div className="md:col-span-1">
           <Card className="mb-6">
             <CardHeader>
@@ -66,4 +65,4 @@ export default function LoadingState() {
       </div>
     </div>
   );
-} 
+}
