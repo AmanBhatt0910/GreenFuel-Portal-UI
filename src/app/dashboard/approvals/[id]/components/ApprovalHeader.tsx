@@ -1,8 +1,14 @@
-import React from 'react';
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { formatDate } from '@/app/dashboard/approvals/components/utils';
-import { Clock, Landmark, Calendar, CheckCircle, XCircle, AlertTriangle } from "lucide-react";
+import { formatDate } from "@/app/dashboard/approvals/components/utils";
+import {
+  Clock,
+  Landmark,
+  Calendar,
+  CheckCircle,
+  XCircle,
+  AlertTriangle,
+} from "lucide-react";
 
 interface ApprovalHeaderProps {
   enrichedForm: any;
@@ -13,28 +19,34 @@ interface ApprovalHeaderProps {
 const getStatusClasses = (status: string | undefined) => {
   const lowerStatus = status?.toLowerCase();
   switch (lowerStatus) {
-    case 'approved':
+    case "approved":
       return {
-        bar: 'bg-green-500',
-        badge: 'bg-green-100 hover:bg-green-100/90 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/40',
-        icon: <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+        bar: "bg-green-500",
+        badge:
+          "bg-green-100 hover:bg-green-100/90 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:hover:bg-green-900/40",
+        icon: <CheckCircle className="h-4 w-4 mr-2 text-green-500" />,
       };
-    case 'rejected':
+    case "rejected":
       return {
-        bar: 'bg-red-500',
-        badge: 'bg-red-100 hover:bg-red-100/90 text-red-800 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/40',
-        icon: <XCircle className="h-4 w-4 mr-2 text-red-500" />
+        bar: "bg-red-500",
+        badge:
+          "bg-red-100 hover:bg-red-100/90 text-red-800 dark:bg-red-900/30 dark:text-red-400 dark:hover:bg-red-900/40",
+        icon: <XCircle className="h-4 w-4 mr-2 text-red-500" />,
       };
     default:
       return {
-        bar: 'bg-amber-500',
-        badge: 'bg-amber-100 hover:bg-amber-100/90 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/40',
-        icon: <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
+        bar: "bg-amber-500",
+        badge:
+          "bg-amber-100 hover:bg-amber-100/90 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 dark:hover:bg-amber-900/40",
+        icon: <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />,
       };
   }
 };
 
-export default function ApprovalHeader({ enrichedForm, loading }: ApprovalHeaderProps) {
+export default function ApprovalHeader({
+  enrichedForm,
+  loading,
+}: ApprovalHeaderProps) {
   if (loading || !enrichedForm) {
     return (
       <Card className="mb-6">
@@ -51,15 +63,18 @@ export default function ApprovalHeader({ enrichedForm, loading }: ApprovalHeader
     );
   }
 
-  const status = enrichedForm.status || 'Pending';
+  const status = enrichedForm.status || "Pending";
   const statusClasses = getStatusClasses(status);
 
-  const formattedDate =
-    enrichedForm.submission_date ? formatDate(enrichedForm.submission_date) :
-    enrichedForm.date ? formatDate(enrichedForm.date) :
-    enrichedForm.formatted_date ? formatDate(enrichedForm.formatted_date) :
-    enrichedForm.created_at ? formatDate(enrichedForm.created_at) :
-    "Recently submitted";
+  const formattedDate = enrichedForm.submission_date
+    ? formatDate(enrichedForm.submission_date)
+    : enrichedForm.date
+      ? formatDate(enrichedForm.date)
+      : enrichedForm.formatted_date
+        ? formatDate(enrichedForm.formatted_date)
+        : enrichedForm.created_at
+          ? formatDate(enrichedForm.created_at)
+          : "Recently submitted";
 
   const processingTime =
     enrichedForm.processing_time ||
@@ -78,11 +93,11 @@ export default function ApprovalHeader({ enrichedForm, loading }: ApprovalHeader
           </h2>
           <Badge
             variant={
-              status.toLowerCase() === 'approved'
-                ? 'secondary'
-                : status.toLowerCase() === 'rejected'
-                  ? 'destructive'
-                  : 'default'
+              status.toLowerCase() === "approved"
+                ? "secondary"
+                : status.toLowerCase() === "rejected"
+                  ? "destructive"
+                  : "default"
             }
             className={`text-sm py-1 px-3 flex items-center ${statusClasses.badge}`}
           >
@@ -96,7 +111,10 @@ export default function ApprovalHeader({ enrichedForm, loading }: ApprovalHeader
           <div className="flex items-center">
             <Landmark className="h-4 w-4 mr-2 text-blue-500" />
             <span>
-              Department: <span className="font-medium">{enrichedForm.department_name || "Unknown"}</span>
+              Department:{" "}
+              <span className="font-medium">
+                {enrichedForm.department_name || "Unknown"}
+              </span>
             </span>
           </div>
           <div className="flex items-center">
@@ -108,7 +126,8 @@ export default function ApprovalHeader({ enrichedForm, loading }: ApprovalHeader
           <div className="flex items-center">
             <Clock className="h-4 w-4 mr-2 text-indigo-500" />
             <span>
-              Processing Time: <span className="font-medium">{processingTime}</span>
+              Processing Time:{" "}
+              <span className="font-medium">{processingTime}</span>
             </span>
           </div>
         </div>

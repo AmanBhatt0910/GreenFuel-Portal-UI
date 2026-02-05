@@ -1,9 +1,7 @@
-import React, { useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EnrichedApprovalForm } from "./interfaces";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, Clock, XCircle, ArrowRight } from "lucide-react";
-import useAxios from "@/app/hooks/use-axios";
+import { CheckCircle, Clock, XCircle } from "lucide-react";
 
 /**
  * ApprovalTracker Component
@@ -19,7 +17,6 @@ interface ApprovalTrackerProps {
 }
 
 export default function ApprovalTracker({ forms }: ApprovalTrackerProps) {
-
   if (!forms || forms.length === 0) {
     return (
       <Card className="w-full">
@@ -62,16 +59,15 @@ export default function ApprovalTracker({ forms }: ApprovalTrackerProps) {
                     form.status?.toLowerCase() === "approved"
                       ? "default"
                       : form.status?.toLowerCase() === "rejected"
-                      ? "destructive"
-                      : "outline"
+                        ? "destructive"
+                        : "outline"
                   }
                   className={`${
                     form.status?.toLowerCase() === "pending"
                       ? "bg-amber-100 text-amber-800 hover:bg-amber-100/80 dark:bg-amber-900/20 dark:text-amber-400"
-                      : 
-                    form.status?.toLowerCase() === "approved"
-                      ? "bg-green-100 text-green-800 hover:bg-green-100/80 dark:bg-green-900/20 dark:text-green-400"
-                      : ""
+                      : form.status?.toLowerCase() === "approved"
+                        ? "bg-green-100 text-green-800 hover:bg-green-100/80 dark:bg-green-900/20 dark:text-green-400"
+                        : ""
                   }`}
                 >
                   {form.status?.toLowerCase() === "approved" ? (
@@ -105,18 +101,19 @@ export default function ApprovalTracker({ forms }: ApprovalTrackerProps) {
                     form.status?.toLowerCase() === "approved"
                       ? "bg-green-500"
                       : form.status?.toLowerCase() === "rejected"
-                      ? "bg-red-500"
-                      : "bg-blue-500"
+                        ? "bg-red-500"
+                        : "bg-blue-500"
                   }`}
                   style={{
                     width: `${
                       form.status?.toLowerCase() === "approved"
                         ? "100"
                         : form.status?.toLowerCase() === "rejected"
-                        ? ((form.current_form_level - 1) /
-                            form.form_max_level) *
-                          100
-                        : (form.current_form_level / form.form_max_level) * 100
+                          ? ((form.current_form_level - 1) /
+                              form.form_max_level) *
+                            100
+                          : (form.current_form_level / form.form_max_level) *
+                            100
                     }%`,
                   }}
                 ></div>
@@ -140,10 +137,10 @@ export default function ApprovalTracker({ forms }: ApprovalTrackerProps) {
                             isRejected
                               ? "bg-red-100 border-2 border-red-500 dark:bg-red-900/30"
                               : isCompleted
-                              ? "bg-green-500 dark:bg-green-600"
-                              : isCurrent
-                              ? "bg-blue-100 border-2 border-blue-500 dark:bg-blue-900/30"
-                              : "bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-700"
+                                ? "bg-green-500 dark:bg-green-600"
+                                : isCurrent
+                                  ? "bg-blue-100 border-2 border-blue-500 dark:bg-blue-900/30"
+                                  : "bg-gray-100 border-2 border-gray-300 dark:bg-gray-800 dark:border-gray-700"
                           }`}
                         >
                           {isCompleted && (
@@ -158,10 +155,10 @@ export default function ApprovalTracker({ forms }: ApprovalTrackerProps) {
                             isRejected
                               ? "text-red-500 font-medium"
                               : isCurrent
-                              ? "text-blue-500 font-medium"
-                              : isCompleted
-                              ? "text-green-500 font-medium"
-                              : "text-gray-500"
+                                ? "text-blue-500 font-medium"
+                                : isCompleted
+                                  ? "text-green-500 font-medium"
+                                  : "text-gray-500"
                           }`}
                         >
                           Level {levelNumber}
@@ -173,9 +170,7 @@ export default function ApprovalTracker({ forms }: ApprovalTrackerProps) {
               </div>
 
               {/* Approval path */}
-              <div className="mt-12 pt-1 flex items-center space-x-2 text-sm">
-                
-              </div>
+              <div className="mt-12 pt-1 flex items-center space-x-2 text-sm"></div>
 
               {/* Additional details about the current level */}
               <div className="mt-4 rounded-md bg-gray-50 dark:bg-gray-800/50 p-3 text-sm">
@@ -203,10 +198,10 @@ export default function ApprovalTracker({ forms }: ApprovalTrackerProps) {
                     {form.current_form_level === 1
                       ? "Team Lead"
                       : form.current_form_level === 2
-                      ? "Manager"
-                      : form.current_form_level === 3
-                      ? "Director"
-                      : "CFO"}
+                        ? "Manager"
+                        : form.current_form_level === 3
+                          ? "Director"
+                          : "CFO"}
                     ).
                   </p>
                 )}

@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
-import useAxios from '@/app/hooks/use-axios';
+import useAxios from "@/app/hooks/use-axios";
 
 /**
  * RequesterInfo Component
- * 
- * This component displays detailed information about the person who submitted 
+ *
+ * This component displays detailed information about the person who submitted
  * the approval request in a clean, two-column layout.
  */
 interface RequesterInfoProps {
@@ -32,9 +32,13 @@ interface User {
   date_joined: string;
 }
 
-export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoProps) {
+export default function RequesterInfo({
+  enrichedForm,
+  loading,
+}: RequesterInfoProps) {
   const [notifyToUsers, setNotifyToUsers] = useState<UserInfo[]>([]);
-  const [concernedDepartment, setConcernedDepartment] = useState<DepartmentInfo | null>(null);
+  const [concernedDepartment, setConcernedDepartment] =
+    useState<DepartmentInfo | null>(null);
   const [isLoadingUsers, setIsLoadingUsers] = useState(false);
   const [isLoadingDepartment, setIsLoadingDepartment] = useState(false);
   const [user, setUser] = useState<User | null>(null);
@@ -49,31 +53,35 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
         const response = await api.get(`/userInfo/${userId}`);
         return response.data;
       } catch (error) {
-        console.error('Error fetching user info:', error);
-        return { id: userId, name: `User ${userId}`, email: `user${userId}@example.com` };
+        console.error("Error fetching user info:", error);
+        return {
+          id: userId,
+          name: `User ${userId}`,
+          email: `user${userId}@example.com`,
+        };
       }
     };
 
     const getNotifyToUsers = async () => {
       let userIds: (string | number)[] = [];
-      
+
       if (Array.isArray(enrichedForm.notify_to)) {
         userIds = enrichedForm.notify_to;
       } else if (enrichedForm.notify_to) {
         userIds = [enrichedForm.notify_to];
       }
-      
+
       if (userIds.length === 0) return;
-      
+
       setIsLoadingUsers(true);
-      const userPromises = userIds.map(id => fetchUserInfo(id));
+      const userPromises = userIds.map((id) => fetchUserInfo(id));
       const users = await Promise.all(userPromises);
       setNotifyToUsers(users);
       setIsLoadingUsers(false);
     };
 
     getNotifyToUsers();
-  }, [enrichedForm?.notify_to]);
+  }, [enrichedForm?.notify_to, api]);
 
   // Fetch user information
   useEffect(() => {
@@ -84,13 +92,13 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
         const response = await api.get(`/userInfo/${enrichedForm.user}`);
         setUser(response?.data);
       } catch (error) {
-        console.error('Error fetching user details:', error);
+        console.error("Error fetching user details:", error);
         setUser(null);
       }
     };
 
     fetchUserDetails();
-  }, [enrichedForm?.user]);
+  }, [enrichedForm?.user, api]);
 
   // Fetch concerned department
   useEffect(() => {
@@ -103,7 +111,7 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
         const response = await api.get(`/departments/${deptId}`);
         setConcernedDepartment(response.data);
       } catch (error) {
-        console.error('Error fetching department info:', error);
+        console.error("Error fetching department info:", error);
         setConcernedDepartment(null);
       } finally {
         setIsLoadingDepartment(false);
@@ -111,7 +119,7 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
     };
 
     fetchDepartment();
-  }, [enrichedForm?.concerned_department]);
+  }, [enrichedForm?.concerned_department, api]);
 
   // Display a skeleton loading state when data is being fetched
   if (loading || !enrichedForm) {
@@ -142,27 +150,29 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
   const getInitials = (name: string) => {
     if (!name) return "??";
     return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
+      .split(" ")
+      .map((part) => part[0])
+      .join("")
       .toUpperCase()
       .substring(0, 2);
   };
 
-  const userInitials = enrichedForm.user_name ? getInitials(enrichedForm.user_name) : "??";
-  
+  const userInitials = enrichedForm.user_name
+    ? getInitials(enrichedForm.user_name)
+    : "??";
+
   const formatDate = (timestamp: string | number | Date) => {
     if (!timestamp) return "Not available";
     try {
       const date = new Date(timestamp);
       return date.toLocaleString(undefined, {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
-    } catch (error) {
+    } catch {
       return "Invalid date";
     }
   };
@@ -171,11 +181,11 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
     if (isLoadingUsers) {
       return "Loading users...";
     }
-    
+
     if (notifyToUsers.length > 0) {
-      return notifyToUsers.map(user => user.email || user.name).join(', ');
+      return notifyToUsers.map((user) => user.email || user.name).join(", ");
     }
-    
+
     return enrichedForm.notify_to || "Not specified";
   };
 
@@ -183,25 +193,40 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
     if (isLoadingDepartment) {
       return "Loading department...";
     }
-    
+
     if (concernedDepartment) {
       return concernedDepartment.name;
     }
-    
+
     return enrichedForm.concerned_department_name || "Not specified";
   };
 
   // Information rows definition - this makes it easy to maintain and modify
   const infoRows = [
     // { key: "Designation", value: enrichedForm.designation_name || "Not specified" },
-    { key: "Employee ID", value: enrichedForm.employee_code || "Not available" },
-    { key: "Department", value: enrichedForm.department_name || "Not specified" },
-    { key: "Business Unit", value: enrichedForm.business_unit_name || "Not specified" },
+    {
+      key: "Employee ID",
+      value: enrichedForm.employee_code || "Not available",
+    },
+    {
+      key: "Department",
+      value: enrichedForm.department_name || "Not specified",
+    },
+    {
+      key: "Business Unit",
+      value: enrichedForm.business_unit_name || "Not specified",
+    },
     { key: "Concerned Dept", value: concernedDepartmentDisplay() },
     { key: "Notify To", value: notifyToDisplay() },
-    { key: "Phone", value: user?.contact || enrichedForm.phone || "Not available" },
-    { key: "Location", value: user?.city || enrichedForm.location || "Not available" },
-    { key: "Joined", value: formatDate(user?.date_joined || "") }
+    {
+      key: "Phone",
+      value: user?.contact || enrichedForm.phone || "Not available",
+    },
+    {
+      key: "Location",
+      value: user?.city || enrichedForm.location || "Not available",
+    },
+    { key: "Joined", value: formatDate(user?.date_joined || "") },
   ];
 
   return (
@@ -223,14 +248,14 @@ export default function RequesterInfo({ enrichedForm, loading }: RequesterInfoPr
           <p className="text-sm text-gray-500 dark:text-gray-400">
             {enrichedForm.user_email || "No email available"}
           </p>
-          
+
           <div className="mt-2 bg-indigo-100 dark:bg-indigo-900/30 px-4 py-1 rounded-full text-sm font-medium text-indigo-700 dark:text-indigo-300">
             {enrichedForm.designation_name || "Employee"}
           </div>
         </div>
-        
+
         <Separator />
-        
+
         {/* Clean two-column information layout with proper text wrapping */}
         <div className="divide-y divide-gray-100 dark:divide-gray-800">
           {infoRows.map((row, index) => (

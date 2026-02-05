@@ -1,24 +1,29 @@
-import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle, XCircle, AlertTriangle, Loader2 } from "lucide-react";
-import { isPending } from '@/app/dashboard/approvals/components/utils';
+import { isPending } from "@/app/dashboard/approvals/components/utils";
 
 /**
  * ApprovalActions Component
- * 
+ *
  * This component provides action buttons and UI for approving or rejecting a request.
  * It displays differently based on the current status of the request and includes
  * a rejection dialog for capturing rejection reasons.
- * 
+ *
  * Features:
  * - Shows approve/reject buttons for pending requests
  * - Displays a status message for already processed requests
  * - Provides a modal dialog for entering rejection reasons
  * - Uses sticky positioning to ensure actions are always visible
  * - Appropriately styled buttons based on action type (approve/reject)
- * 
+ *
  * @param {Object} props - Component props
  * @param {Object} props.form - The approval form data
  * @param {string} props.rejectionReason - The current rejection reason text
@@ -52,7 +57,7 @@ export default function ApprovalActions({
   handleReject,
   loading,
   isApproving = false,
-  isRejecting = false
+  isRejecting = false,
 }: ApprovalActionsProps) {
   // Don't render anything if data is still loading
   if (loading || !form) {
@@ -62,27 +67,30 @@ export default function ApprovalActions({
   // Conditionally render based on the approval status
   // Only show actions if the form is pending
   if (!isPending(form.status)) {
-    // console.log(form.status);
     // Show a banner indicating the request has already been processed
     return (
       <div className="sticky bottom-0 p-4 shadow-lg z-10 rounded-md mt-4">
-        <div className={`rounded-md p-4 flex items-center border ${
-          form.status?.toLowerCase() === 'approved' 
-            ? 'bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/20' 
-            : 'bg-red-50 border-red-200 dark:bg-red-900/10 dark:border-red-900/20'
-        }`}>
+        <div
+          className={`rounded-md p-4 flex items-center border ${
+            form.status?.toLowerCase() === "approved"
+              ? "bg-green-50 border-green-200 dark:bg-green-900/10 dark:border-green-900/20"
+              : "bg-red-50 border-red-200 dark:bg-red-900/10 dark:border-red-900/20"
+          }`}
+        >
           {/* Status icon based on whether approved or rejected */}
-          {form.status?.toLowerCase() === 'approved' ? (
+          {form.status?.toLowerCase() === "approved" ? (
             <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
           ) : (
             <XCircle className="h-5 w-5 text-red-500 mr-3" />
           )}
           <div className="flex-1">
-            <p className={`font-medium ${
-              form.status?.toLowerCase() === 'approved'
-                ? 'text-green-800 dark:text-green-400'
-                : 'text-red-800 dark:text-red-400'
-            }`}>
+            <p
+              className={`font-medium ${
+                form.status?.toLowerCase() === "approved"
+                  ? "text-green-800 dark:text-green-400"
+                  : "text-red-800 dark:text-red-400"
+              }`}
+            >
               This request has been {form.status?.toLowerCase()}.
             </p>
             {/* Only show rejection reason if it exists */}
@@ -106,13 +114,15 @@ export default function ApprovalActions({
           {/* Warning message */}
           <div className="flex items-center text-sm text-muted-foreground">
             <AlertTriangle className="h-4 w-4 mr-2 text-amber-500" />
-            <span>Please review the request carefully before taking an action.</span>
+            <span>
+              Please review the request carefully before taking an action.
+            </span>
           </div>
           {/* Action buttons */}
           <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
             {/* Reject button - opens rejection dialog */}
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="lg"
               className="border-red-200 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800 dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400 dark:hover:bg-red-900/20 sm:w-auto w-full"
               onClick={() => setRejectionDialogOpen(true)}
@@ -126,8 +136,8 @@ export default function ApprovalActions({
               Reject Request
             </Button>
             {/* Approve button - immediately approves */}
-            <Button 
-              variant="default" 
+            <Button
+              variant="default"
               size="lg"
               className="bg-green-600 hover:bg-green-700 sm:w-auto w-full"
               onClick={handleApprove}
@@ -155,7 +165,8 @@ export default function ApprovalActions({
           </DialogHeader>
           <div className="py-4">
             <p className="text-sm text-muted-foreground mb-4">
-              Please provide a reason for rejecting this request. This will be visible to the requester.
+              Please provide a reason for rejecting this request. This will be
+              visible to the requester.
             </p>
             <Textarea
               value={rejectionReason}
@@ -166,16 +177,16 @@ export default function ApprovalActions({
             />
           </div>
           <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => setRejectionDialogOpen(false)}
             >
               Cancel
             </Button>
-            <Button 
-              type="button" 
-              variant="destructive" 
+            <Button
+              type="button"
+              variant="destructive"
               onClick={handleReject}
               disabled={!rejectionReason.trim() || isRejecting}
             >
@@ -193,4 +204,4 @@ export default function ApprovalActions({
       </Dialog>
     </>
   );
-} 
+}

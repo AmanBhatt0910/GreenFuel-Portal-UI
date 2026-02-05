@@ -1,11 +1,10 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React from "react";
 import { useRouter } from "next/navigation";
 
 // Custom hooks
 import useApprovals from "./hooks/useApprovals";
-
 
 // Components
 import ApprovalHeader from "./components/ApprovalHeader";
@@ -18,10 +17,10 @@ import BasicPagination from "@/components/ui/paginations";
 
 /**
  * ApprovalDashboard Component
- * 
+ *
  * This component serves as the main dashboard for approval requests.
  * It displays a list of approval requests in either a table (desktop) or list (mobile) format.
- * 
+ *
  * Key features:
  * - Fetches and displays all approval requests
  * - Provides filtering and search capabilities
@@ -31,29 +30,23 @@ import BasicPagination from "@/components/ui/paginations";
  */
 const ApprovalDashboard: React.FC = () => {
   const router = useRouter();
-  
+
   // Get approval data and related functionality from the custom hook
   // This hook handles data fetching, filtering, search functionality, and pagination
-  const { 
-    forms,           // All approval forms/requests
-    loading,         // Loading state indicator
-    error,           // Error state if any
-    filter,          // Current active filter (status filter)
-    setFilter,       // Function to update the filter
-    searchTerm,      // Current search term
-    setSearchTerm,   // Function to update search term
-    filteredForms,   // Forms after applying filters and search
+  const {
+    forms, // All approval forms/requests
+    loading, // Loading state indicator
+    filter, // Current active filter (status filter)
+    setFilter, // Function to update the filter
+    searchTerm, // Current search term
+    setSearchTerm, // Function to update search term
+    filteredForms, // Forms after applying filters and search
     // Pagination properties
     currentPage,
     totalPages,
     totalCount,
-    pageSize,
-    hasNextPage,
-    hasPreviousPage,
     // Pagination functions
-    nextPage,
-    previousPage,
-    goToPage
+    goToPage,
   } = useApprovals();
 
   /**
@@ -74,7 +67,7 @@ const ApprovalDashboard: React.FC = () => {
           {/* Main Content */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
             {/* Filters section - contains search and status filters */}
-            <ApprovalFilters 
+            <ApprovalFilters
               filter={filter}
               setFilter={setFilter}
               searchTerm={searchTerm}
@@ -93,24 +86,25 @@ const ApprovalDashboard: React.FC = () => {
               ) : (
                 <div>
                   {/* Desktop view - Table format with columns */}
-                  <ApprovalTable 
-                    forms={filteredForms} 
-                    onViewDetails={navigateToDetails} 
+                  <ApprovalTable
+                    forms={filteredForms}
+                    onViewDetails={navigateToDetails}
                   />
-                  
+
                   {/* Mobile view - Stacked list format */}
-                  <ApprovalList 
-                    forms={filteredForms} 
-                    onViewDetails={navigateToDetails} 
+                  <ApprovalList
+                    forms={filteredForms}
+                    onViewDetails={navigateToDetails}
                   />
-                  
+
                   {/* Pagination Section */}
                   {totalPages > 1 && (
                     <div className="flex flex-col sm:flex-row justify-between items-center mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="text-sm text-gray-700 dark:text-gray-300 mb-4 sm:mb-0">
-                        Showing page {currentPage} of {totalPages} ({totalCount} total approvals)
+                        Showing page {currentPage} of {totalPages} ({totalCount}{" "}
+                        total approvals)
                       </div>
-                      
+
                       <div className="flex items-center gap-4">
                         {/* Pagination controls */}
                         <BasicPagination

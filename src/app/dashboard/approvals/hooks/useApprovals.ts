@@ -1,6 +1,10 @@
-import { useState, useEffect, useCallback } from 'react';
-import useAxios from '@/app/hooks/use-axios';
-import { ApprovalForm, UserInfo, EnrichedApprovalForm, ApprovalLog } from '../components/interfaces';
+import { useState, useEffect, useCallback } from "react";
+import useAxios from "@/app/hooks/use-axios";
+import {
+  ApprovalForm,
+  UserInfo,
+  EnrichedApprovalForm,
+} from "../components/interfaces";
 
 interface UseApprovalsProps {
   initialFilter?: string;
@@ -16,7 +20,7 @@ interface UseApprovalsReturn {
   setSearchTerm: (term: string) => void;
   filteredForms: EnrichedApprovalForm[];
   refreshApprovals: () => Promise<void>;
-  assestDetail: (formId: number) => Promise<void>;
+  assetDetail: (formId: number) => Promise<void>;
   // Pagination properties
   currentPage: number;
   totalPages: number;
@@ -30,15 +34,13 @@ interface UseApprovalsReturn {
   goToPage: (page: number) => void;
 }
 
-
-
 /**
  * useApprovals Hook
- * 
+ *
  * A custom hook for managing approval request data in the application.
  * This hook handles fetching, filtering, and searching approval forms,
  * as well as managing the loading and error states.
- * 
+ *
  * Features:
  * - Fetches approval forms data from API
  * - Provides filtering by status and date range
@@ -46,7 +48,7 @@ interface UseApprovalsReturn {
  * - Manages loading, error, and empty states
  * - Supports view switching between table and list
  * - Handles pagination of results
- * 
+ *
  * @returns {Object} The approval state and control functions
  * @returns {Array<EnrichedApprovalForm>} returns.forms - The filtered approval forms
  * @returns {boolean} returns.loading - Whether data is being fetched
@@ -58,157 +60,173 @@ interface UseApprovalsReturn {
  * @returns {string} returns.viewMode - Current view mode (table/list)
  * @returns {Function} returns.setViewMode - Function to switch view modes
  */
-export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProps = {}): UseApprovalsReturn {
+export default function useApprovals({
+  initialFilter = "all",
+}: UseApprovalsProps = {}): UseApprovalsReturn {
   const [forms, setForms] = useState<EnrichedApprovalForm[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   const [filter, setFilter] = useState(initialFilter);
   const [searchTerm, setSearchTerm] = useState("");
   const [userCache, setUserCache] = useState<Record<string, UserInfo>>({});
-  const [departmentCache, setDepartmentCache] = useState<Record<string, string>>({});
-  
+  const [departmentCache, setDepartmentCache] = useState<
+    Record<string, string>
+  >({});
+
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
-  const [pageSize, setPageSize] = useState(10); // Set to 10 items per page
-  
+  const pageSize = 10;
+
   const api = useAxios();
 
   // Fetch user details by ID
-  const fetchUserDetails = async (userId: string | number): Promise<UserInfo> => {
-    const userIdStr = String(userId);
-    
-    // Check cache first
-    if (userCache[userIdStr]) {
-      return userCache[userIdStr];
-    }
-    
+  const fetchUserDetails = useCallback(
+    async (userId: string | number): Promise<UserInfo> => {
+      const userIdStr = String(userId);
+
+      // Check cache first
+      if (userCache[userIdStr]) {
+        return userCache[userIdStr];
+      }
+
+      try {
+        const response = await api.get(`/userInfo/${userIdStr}/`);
+        const userData = response.data;
+        const userInfo: UserInfo = {
+          id: Number(userIdStr),
+          name: userData.name || userData.username || userIdStr,
+          email: userData.email || "No email available",
+        };
+
+        // Update cache
+        setUserCache((prev) => ({
+          ...prev,
+          [userIdStr]: userInfo,
+        }));
+
+        return userInfo;
+      } catch (err) {
+        console.error(`Error fetching user details for ID ${userId}:`, err);
+        return {
+          id: Number(userIdStr),
+          name: String(userId),
+          email: "No email available",
+        };
+      }
+    },
+    [api, userCache],
+  );
+
+  const assetDetail = async (formId: number) => {
     try {
-      const response = await api.get(`/userInfo/${userIdStr}/`);
-      const userData = response.data;
-      const userInfo: UserInfo = {
-        id: Number(userIdStr),
-        name: userData.name || userData.username || userIdStr,
-        email: userData.email || 'No email available'
-      };
-      
-      // Update cache
-      setUserCache(prev => ({
-        ...prev,
-        [userIdStr]: userInfo
-      }));
-      
-      return userInfo;
-    } catch (err) {
-      console.error(`Error fetching user details for ID ${userId}:`, err);
-      return { 
-        id: Number(userIdStr),
-        name: String(userId), 
-        email: 'No email available'
-      };
+      await api.get(`/approval-items?form_id=${formId}/`);
+    } catch {
+      // Error handling
     }
   };
-
-  const assestDetail =async(formId : number) =>{
-    try {
-      
-      const response = await api.get(`/approval-items?form_id=${formId}/`);
-      // console.log(response)
-    
-    } catch (error) {
-      // console.log(error)
-    }
-
-  }
 
   // Fetch department details by ID
-  const fetchDepartmentDetails = async (deptId: string | number) => {
-    const deptIdStr = String(deptId);
-    
-    // Check cache first
-    if (departmentCache[deptIdStr]) {
-      return departmentCache[deptIdStr];
-    }
-    
-    try {
-      const response = await api.get(`/departments/${deptIdStr}/`);
-      const deptName = response.data.name || deptIdStr;
-      
-      // Update cache
-      setDepartmentCache(prev => ({
-        ...prev,
-        [deptIdStr]: deptName
-      }));
-      
-      return deptName;
-    } catch (err) {
-      console.error(`Error fetching department details for ID ${deptId}:`, err);
-      return String(deptId); // Return ID as fallback
-    }
-  };
+  const fetchDepartmentDetails = useCallback(
+    async (deptId: string | number) => {
+      const deptIdStr = String(deptId);
+
+      // Check cache first
+      if (departmentCache[deptIdStr]) {
+        return departmentCache[deptIdStr];
+      }
+
+      try {
+        const response = await api.get(`/departments/${deptIdStr}/`);
+        const deptName = response.data.name || deptIdStr;
+
+        // Update cache
+        setDepartmentCache((prev) => ({
+          ...prev,
+          [deptIdStr]: deptName,
+        }));
+
+        return deptName;
+      } catch (err) {
+        console.error(
+          `Error fetching department details for ID ${deptId}:`,
+          err,
+        );
+        return String(deptId); // Return ID as fallback
+      }
+    },
+    [api, departmentCache],
+  );
 
   // Enrich approval data with names
-  const enrichApprovalData = async (approvals: ApprovalForm[]) => {
-    const enrichedData = await Promise.all(
-      approvals.map(async (form) => {
-        const userInfo = await fetchUserDetails(form.user);
-        const departmentName = await fetchDepartmentDetails(form.department);
-        
-        return {
-          ...form,
-          user_name: userInfo.name,
-          user_email: userInfo.email,
-          department_name: departmentName,
-        } as EnrichedApprovalForm;
-      })
-    );
-    
-    return enrichedData;
-  };
+  const enrichApprovalData = useCallback(
+    async (approvals: ApprovalForm[]) => {
+      const enrichedData = await Promise.all(
+        approvals.map(async (form) => {
+          const userInfo = await fetchUserDetails(form.user);
+          const departmentName = await fetchDepartmentDetails(form.department);
 
-  // Fetch approval requests with pagination
-  const fetchApprovals = useCallback(async (page: number = currentPage) => {
-    try {
-      setLoading(true);
-      setError(null);
-      
-      // Fetch approval requests with pagination
-      const response = await api.get(`/approval-requests/?page=${page}&page_size=${pageSize}`);
-      // console.log('Approval requests response:', response.data);
-      
-      // Extract pagination data
-      const paginationData = response.data;
-      const approvalRequests = paginationData.results || [];
-      
-      // Set pagination info
-      setTotalCount(paginationData.count || 0);
-      setTotalPages(Math.ceil((paginationData.count || 0) / pageSize));
-      
-      // console.log('Pagination info:', {
-      //   currentPage: page,
-      //   totalCount: paginationData.count,
-      //   totalPages: Math.ceil((paginationData.count || 0) / pageSize),
-      //   pageSize: pageSize,
-      //   resultsCount: approvalRequests.length
-      // });
-      
-      // Enrich the approval requests with user and department names
-      const enrichedForms = await enrichApprovalData(approvalRequests);
-      
-      setForms(enrichedForms);
-      setCurrentPage(page);
-    } catch (err) {
-      console.error("Error fetching approvals:", err);
-      setError(err instanceof Error ? err : new Error('Failed to fetch approvals'));
-    } finally {
-      setLoading(false);
-    }
-  }, [currentPage, pageSize]);
+          return {
+            ...form,
+            user_name: userInfo.name,
+            user_email: userInfo.email,
+            department_name: departmentName,
+          } as EnrichedApprovalForm;
+        }),
+      );
+
+      return enrichedData;
+    },
+    [fetchUserDetails, fetchDepartmentDetails],
+  );
+
+  const fetchApprovals = useCallback(
+    async (page: number) => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Fetch approval requests with pagination
+        const response = await api.get(
+          `/approval-requests/?page=${page}&page_size=${pageSize}`,
+        );
+
+        let approvalRequests: ApprovalForm[] = [];
+        let total = 0;
+
+        // Handle both paginated and raw array responses
+        if (Array.isArray(response.data)) {
+          approvalRequests = response.data;
+          total = response.data.length;
+        } else if (response.data && response.data.results) {
+          approvalRequests = response.data.results;
+          total = response.data.count || 0;
+        }
+
+        setTotalCount(total);
+        setTotalPages(Math.ceil(total / pageSize));
+
+        // Enrich the approval requests with user and department names
+        const enrichedForms = await enrichApprovalData(approvalRequests);
+
+        setForms(enrichedForms);
+        setCurrentPage(page);
+      } catch (err) {
+        console.error("Error fetching approvals:", err);
+        setError(
+          err instanceof Error ? err : new Error("Failed to fetch approvals"),
+        );
+      } finally {
+        setLoading(false);
+      }
+    },
+    [api, pageSize, enrichApprovalData],
+  );
 
   useEffect(() => {
     fetchApprovals(1); // Start with page 1
-  }, [pageSize]); // Refetch when page size changes
+  }, [pageSize, fetchApprovals]); // Refetch when page size changes
 
   // Pagination functions
   const nextPage = () => {
@@ -237,7 +255,7 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
       setCurrentPage(1);
       fetchApprovals(1);
     }
-  }, [filter, searchTerm]);
+  }, [filter, searchTerm, currentPage, fetchApprovals]);
 
   // Computed pagination properties
   const hasNextPage = currentPage < totalPages;
@@ -253,9 +271,16 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     const search = searchTerm.toLowerCase();
     const searchMatch =
       searchTerm === "" ||
-      (form.budget_id?.toLowerCase() || form.id.toLowerCase()).includes(search) ||
-      (form.user_name?.toLowerCase() || String(form.user).toLowerCase()).includes(search) ||
-      (form.department_name?.toLowerCase() || String(form.department).toLowerCase()).includes(search) ||
+      (form.budget_id?.toLowerCase() || String(form.id).toLowerCase()).includes(
+        search,
+      ) ||
+      (
+        form.user_name?.toLowerCase() || String(form.user).toLowerCase()
+      ).includes(search) ||
+      (
+        form.department_name?.toLowerCase() ||
+        String(form.department).toLowerCase()
+      ).includes(search) ||
       form.approval_category.toLowerCase().includes(search);
 
     return statusMatch && searchMatch;
@@ -271,7 +296,7 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     setSearchTerm,
     filteredForms,
     refreshApprovals: () => fetchApprovals(currentPage),
-    assestDetail,
+    assetDetail,
     // Pagination properties
     currentPage,
     totalPages,
@@ -282,6 +307,6 @@ export default function useApprovals({ initialFilter = 'all' }: UseApprovalsProp
     // Pagination functions
     nextPage,
     previousPage,
-    goToPage
+    goToPage,
   };
-} 
+}
