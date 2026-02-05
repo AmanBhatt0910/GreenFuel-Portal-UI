@@ -3,17 +3,14 @@
 import React from "react";
 import { useRouter } from "next/navigation";
 
-// Custom hooks
 import useApprovals from "./hooks/useApprovals";
 
-// Components
 import ApprovalHeader from "./components/ApprovalHeader";
 import ApprovalFilters from "./components/ApprovalFilters";
 import ApprovalTable from "./components/ApprovalTable";
 import ApprovalList from "./components/ApprovalList";
 import NoResults from "./components/NoResults";
 import LoadingState from "./components/LoadingState";
-import BasicPagination from "@/components/ui/paginations";
 
 /**
  * ApprovalDashboard Component
@@ -41,12 +38,6 @@ const ApprovalDashboard: React.FC = () => {
     searchTerm, // Current search term
     setSearchTerm, // Function to update search term
     filteredForms, // Forms after applying filters and search
-    // Pagination properties
-    currentPage,
-    totalPages,
-    totalCount,
-    // Pagination functions
-    goToPage,
   } = useApprovals();
 
   /**
@@ -91,31 +82,10 @@ const ApprovalDashboard: React.FC = () => {
                     onViewDetails={navigateToDetails}
                   />
 
-                  {/* Mobile view - Stacked list format */}
                   <ApprovalList
                     forms={filteredForms}
                     onViewDetails={navigateToDetails}
                   />
-
-                  {/* Pagination Section */}
-                  {totalPages > 1 && (
-                    <div className="flex flex-col sm:flex-row justify-between items-center mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <div className="text-sm text-gray-700 dark:text-gray-300 mb-4 sm:mb-0">
-                        Showing page {currentPage} of {totalPages} ({totalCount}{" "}
-                        total approvals)
-                      </div>
-
-                      <div className="flex items-center gap-4">
-                        {/* Pagination controls */}
-                        <BasicPagination
-                          totalPages={totalPages}
-                          initialPage={currentPage}
-                          onPageChange={goToPage}
-                          className="ml-auto"
-                        />
-                      </div>
-                    </div>
-                  )}
                 </div>
               )}
             </div>

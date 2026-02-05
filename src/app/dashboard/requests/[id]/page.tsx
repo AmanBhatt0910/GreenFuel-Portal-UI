@@ -1,13 +1,12 @@
 "use client";
-import React, { useState, useCallback, useContext, useMemo, useEffect } from "react";
-import { useParams, useSearchParams } from "next/navigation";
+import React, { useState, useContext, useEffect } from "react";
+import { useParams } from "next/navigation";
 import {
   FileText,
   AlertCircle,
   MessageSquare,
   Paperclip,
   BarChart,
-  FileDown,
 } from "lucide-react";
 import {
   Card,
@@ -21,7 +20,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 
 import { GFContext } from "@/context/AuthContext";
 import AssetDetailsTable from "./components/AssetDetailsTable";
@@ -106,10 +104,10 @@ const RequestDetailsPage: React.FC = () => {
   const handleDownloadPDF = async () => {
     try {
       setIsGeneratingPDF(true);
-      
+
       // Dynamic import to avoid loading PDF libraries unless needed
-      const { generateApprovalPDF } = await import('@/lib/pdf-generator');
-      
+      const { generateApprovalPDF } = await import("@/lib/pdf-generator");
+
       // console.log('PDF Data Debug:', {
       //   approvalLevels: approvalLevels,
       //   currentLevel: request?.current_level,
@@ -118,94 +116,110 @@ const RequestDetailsPage: React.FC = () => {
       // });
 
       // Transform approval levels to match PDF generator interface
-      const transformedApprovalLevels = (approvalLevels || []).map((level: any) => ({
-        level: level.level || 1,
-        status: level.status || 'waiting',
-        approverName: level.approvedBy || level.title || `Level ${level.level} Approver`,
-        approvedAt: level.approvedAt,
-        comments: level.comments
-      }));
+      const transformedApprovalLevels = (approvalLevels || []).map(
+        (level: any) => ({
+          level: level.level || 1,
+          status: level.status || "waiting",
+          approverName:
+            level.approvedBy || level.title || `Level ${level.level} Approver`,
+          approvedAt: level.approvedAt,
+          comments: level.comments,
+        }),
+      );
 
       // If no approval levels data, create basic levels based on current and max level
       let finalApprovalLevels = transformedApprovalLevels;
       if (transformedApprovalLevels.length === 0 && request?.max_level) {
         const currentLevel = request?.current_level || 1;
         const maxLevel = request?.max_level || 1;
-        
+
         finalApprovalLevels = Array.from({ length: maxLevel }, (_, index) => {
           const level = index + 1;
-          let status: "approved" | "pending" | "waiting" | "rejected" = 'waiting';
-          
+          let status: "approved" | "pending" | "waiting" | "rejected" =
+            "waiting";
+
           if (level < currentLevel) {
-            status = 'approved';
+            status = "approved";
           } else if (level === currentLevel) {
             if (request?.rejected) {
-              status = 'rejected';
+              status = "rejected";
             } else {
-              status = 'pending';
+              status = "pending";
             }
           }
-          
+
           return {
             level,
             status,
             approverName: `Level ${level} Approver`,
-            approvedAt: level < currentLevel ? new Date().toISOString() : undefined,
-            comments: level === currentLevel && request?.rejection_reason ? request.rejection_reason : undefined
+            approvedAt:
+              level < currentLevel ? new Date().toISOString() : undefined,
+            comments:
+              level === currentLevel && request?.rejection_reason
+                ? request.rejection_reason
+                : undefined,
           };
         });
       }
-      
+
       const requestData = {
         ...request,
         assetDetails: assestDetails || [],
-        user_name: request?.user ? getUserName(request.user) : 'N/A',
-        business_unit_name: request?.business_unit ? businessUnitMap.get(request.business_unit)?.name || 'N/A' : 'N/A',
-        department_name: request?.department ? departmentMap.get(request.department)?.name || 'N/A' : 'N/A',
-        designation_name: request?.designation ? designationMap.get(request.designation)?.name || 'N/A' : 'N/A',
-        employee_code: request?.user ? (users?.find((u: any) => u.id === request.user)?.employee_code || 'N/A') : 'N/A',
+        user_name: request?.user ? getUserName(request.user) : "N/A",
+        business_unit_name: request?.business_unit
+          ? businessUnitMap.get(request.business_unit)?.name || "N/A"
+          : "N/A",
+        department_name: request?.department
+          ? departmentMap.get(request.department)?.name || "N/A"
+          : "N/A",
+        designation_name: request?.designation
+          ? designationMap.get(request.designation)?.name || "N/A"
+          : "N/A",
+        employee_code: request?.user
+          ? users?.find((u: any) => u.id === request.user)?.employee_code ||
+            "N/A"
+          : "N/A",
         // Approval levels for hierarchy display
         approval_levels: finalApprovalLevels,
         current_form_level: request?.current_level || 1,
         form_max_level: request?.max_level || 1,
         // Additional data for comprehensive PDF
-        benefit_to_organisation: request?.benefit_to_organisation || '',
-        payback_period: request?.payback_period || '',
-        document_enclosed_summary: request?.document_enclosed_summary || '',
+        benefit_to_organisation: request?.benefit_to_organisation || "",
+        payback_period: request?.payback_period || "",
+        document_enclosed_summary: request?.document_enclosed_summary || "",
         policy_agreement: request?.policy_agreement || false,
-        rejection_reason: request?.rejection_reason || '',
+        rejection_reason: request?.rejection_reason || "",
         rejected: request?.rejected || false,
       };
 
       await generateApprovalPDF(
         requestData,
-        request?.budget_id || request?.id || 'request',
+        request?.budget_id || request?.id || "request",
         undefined, // fetchEntityNames not needed
-        api // Pass the API instance
+        api, // Pass the API instance
       );
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Failed to generate PDF. Please try again.');
+      console.error("Error generating PDF:", error);
+      alert("Failed to generate PDF. Please try again.");
     } finally {
       setIsGeneratingPDF(false);
     }
   };
 
-    useEffect(() => {
-      const markChatsAsRead = async () => {
-        if (currentTab === "comments" && request?.id) {
-          try {
-            await api.put(`/chats/${request.id}/`);
-            // console.log("Marked chats as read with Axios");
-          } catch (err) {
-            console.error("Failed to mark chat as read:", err);
-          }
+  useEffect(() => {
+    const markChatsAsRead = async () => {
+      if (currentTab === "comments" && request?.id) {
+        try {
+          await api.put(`/chats/${request.id}/`);
+          // console.log("Marked chats as read with Axios");
+        } catch (err) {
+          console.error("Failed to mark chat as read:", err);
         }
-      };
+      }
+    };
 
-      markChatsAsRead();
-    }, [currentTab, request?.id]);
-
+    markChatsAsRead();
+  }, [currentTab, request?.id]);
 
   if (loading && !request) {
     return <LoadingIndicator />;
@@ -221,10 +235,9 @@ const RequestDetailsPage: React.FC = () => {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
-
       {/* Header */}
-      <RequestHeader 
-        request={request} 
+      <RequestHeader
+        request={request}
         onDownloadPDF={handleDownloadPDF}
         isGeneratingPDF={isGeneratingPDF}
       />
@@ -305,8 +318,8 @@ const RequestDetailsPage: React.FC = () => {
                         Array.isArray(assestDetails)
                           ? assestDetails
                           : assestDetails
-                          ? [assestDetails]
-                          : []
+                            ? [assestDetails]
+                            : []
                       }
                     />
                   </div>
