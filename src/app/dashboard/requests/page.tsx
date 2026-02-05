@@ -1,13 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
+import React, { useEffect, useState, useCallback } from "react";
+import { CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,7 +20,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  DollarSign,
   Calendar,
   CheckCircle,
   XCircle,
@@ -34,19 +27,16 @@ import {
   Search,
   Filter,
   PlusCircle,
-  ChevronDown,
-  ChevronRight,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Eye,
+  MessageSquare,
 } from "lucide-react";
 import useAxios from "@/app/hooks/use-axios";
 import CustomBreadcrumb from "@/components/custom/CustomBreadcrumb";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
-import { MessageSquare } from "lucide-react";
-import BasicPagination from "@/components/ui/paginations";
 
 // Interface for budget request data
 interface BudgetRequest {
@@ -56,7 +46,6 @@ interface BudgetRequest {
   total: string;
   reason: string;
   current_status: string;
-  benefit_to_organisation: string;
   approval_category: string;
   current_form_level: number;
   form_max_level: number;
@@ -65,7 +54,6 @@ interface BudgetRequest {
   user: number;
   business_unit: number;
   department: number;
-  notify_to: number;
   has_unread_chat?: boolean;
   pending_approver_name?: string;
 }
@@ -85,87 +73,121 @@ const BudgetRequestsList = () => {
   const [sortBy, setSortBy] = useState<"date" | "amount" | "id">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [businessUnits, setBusinessUnits] = useState<EntityInfo[]>([]);
-  const [departments, setDepartments] = useState<EntityInfo[]>([]);
-  const [users, setUsers] = useState<any[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
-  
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [nextPage, setNextPage] = useState<string | null>(null);
-  const [previousPage, setPreviousPage] = useState<string | null>(null);
 
-  const fetchRequestsData = async (page: number = 1) => {
+  // Pagination state
+
+  const fetchRelatedData = useCallback(async () => {
+    try {
+      const businessUnitsResponse = await api.get("business-units/");
+      if (businessUnitsResponse.data) {
+        setBusinessUnits(businessUnitsResponse.data);
+      }
+    } catch (error) {
+      console.error("Error fetching related data:", error);
+    }
+  }, []);
+
+  const fetchRequestsData = useCallback(async () => {
     try {
       setLoading(true);
 
-      const response = await api.get(`/approval-requests/?page=${page}`);
-      // Handle paginated response - extract the results array and pagination info
-      const paginationData = response.data;
-      const fetchedRequests: BudgetRequest[] = paginationData.results || [];
-      
-      // Set pagination info
-      setTotalCount(paginationData.count || 0);
-      setNextPage(paginationData.next);
-      setPreviousPage(paginationData.previous);
-      
-      // Calculate total pages based on the count and results length
-      const itemsPerPage = 20; // Default page size from Django Rest Framework
-      setTotalPages(Math.ceil((paginationData.count || 0) / itemsPerPage));
+      const response = await api.get("/approval-requests/");
 
-      const enrichedRequests = await Promise.all(
-        fetchedRequests.map(async (req) => {
-          let hasUnreadChat = false;
-          let pendingApproverName = undefined;
+      // Handle both raw array and paginated response
+      let fetchedRequests: BudgetRequest[] = [];
+      if (Array.isArray(response.data)) {
+        fetchedRequests = response.data;
+      } else if (response.data?.results) {
+        fetchedRequests = response.data.results;
+      }
 
-          try {
-            const unreadRes = await api.get("/chats", {
-              params: {
-                form_id: req.id,
-                unread: true,
-              },
-            });
-            hasUnreadChat = unreadRes?.data?.unread_chat === true;
-          } catch (error) {
-            console.error(`Can't fetch unread chat for request ${req.id}`, error);
-          }
-
-          try {
-            if (!req.rejected && req.current_status?.toLowerCase() === "pending") {
-              const approverRes = await api.get("/approver", {
-                params: {
-                  business_unit: req.business_unit,
-                  department: req.department,
-                  level: req.current_form_level,
-                },
-              });
-
-              pendingApproverName = approverRes?.data?.user?.name || undefined;
-            }
-          } catch (error) {
-            console.error(`Can't fetch approver for request ${req.id}`, error);
-          }
-
-          return {
-            ...req,
-            has_unread_chat: hasUnreadChat,
-            pending_approver_name: pendingApproverName,
-          };
-        })
+      // 1. Batch fetch approvers for pending requests
+      const pendingRequests = fetchedRequests.filter(
+        (req) =>
+          !req.rejected && req.current_status?.toLowerCase() === "pending",
       );
 
-      setRequests(enrichedRequests);
-      setFilteredRequests(enrichedRequests);
+      const uniqueApproverKeys = Array.from(
+        new Set(
+          pendingRequests.map(
+            (req) =>
+              `${req.business_unit}-${req.department}-${req.current_form_level}`,
+          ),
+        ),
+      );
 
+      const approverMap: Record<string, string> = {};
+      await Promise.all(
+        uniqueApproverKeys.map(async (key) => {
+          const [bu, dept, level] = key.split("-");
+          try {
+            const approverRes = await api.get("/approver", {
+              params: {
+                business_unit: bu,
+                department: dept,
+                level: level,
+              },
+            });
+            approverMap[key] = approverRes?.data?.user?.name || "Unknown";
+          } catch {
+            approverMap[key] = "Unknown";
+          }
+        }),
+      );
+
+      // 2. Initial enrichment (excluding chats for faster initial load)
+      const initialEnriched = fetchedRequests.map((req) => {
+        const key = `${req.business_unit}-${req.department}-${req.current_form_level}`;
+        return {
+          ...req,
+          pending_approver_name: approverMap[key],
+          has_unread_chat: false, // Updated in background
+        };
+      });
+
+      setRequests(initialEnriched);
+      setFilteredRequests(initialEnriched);
+      setLoading(false);
+
+      // 3. Background fetch unread chats (non-blocking)
+      const updateChatStatuses = async () => {
+        const results = await Promise.allSettled(
+          initialEnriched.map(async (req) => {
+            try {
+              const unreadRes = await api.get("/chats", {
+                params: { form_id: req.id, unread: true },
+              });
+              return {
+                id: req.id,
+                hasUnread: unreadRes?.data?.unread_chat === true,
+              };
+            } catch {
+              return { id: req.id, hasUnread: false };
+            }
+          }),
+        );
+
+        setRequests((prev) =>
+          prev.map((req) => {
+            const update = results.find(
+              (r) => r.status === "fulfilled" && r.value.id === req.id,
+            );
+            if (update && update.status === "fulfilled") {
+              return { ...req, has_unread_chat: update.value.hasUnread };
+            }
+            return req;
+          }),
+        );
+      };
+
+      updateChatStatuses();
+
+      // Fetch current user ID
       try {
         const userRes = await api.get("/userInfo/");
-        if (userRes.data?.id) {
-          setCurrentUserId(userRes.data.id);
-        }
-      } catch (userError) {
-        console.error("Error fetching user info", userError);
-      }
+        if (userRes.data?.id) setCurrentUserId(userRes.data.id);
+      } catch {}
 
       await fetchRelatedData();
     } catch (mainError) {
@@ -175,38 +197,15 @@ const BudgetRequestsList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [fetchRelatedData]);
 
   useEffect(() => {
-    fetchRequestsData(currentPage);
-  }, [currentPage]);
+    fetchRequestsData();
+  }, [fetchRequestsData]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
-
-  const fetchRelatedData = async () => {
-    try {
-      const businessUnitsResponse = await api.get("business-units/");
-      if (businessUnitsResponse.data) {
-        setBusinessUnits(businessUnitsResponse.data);
-      }
-
-      // Fetch departments
-      const departmentsResponse = await api.get("departments/");
-      if (departmentsResponse.data) {
-        setDepartments(departmentsResponse.data);
-      }
-
-      // Fetch users
-      const usersResponse = await api.get("userInfo/");
-      if (usersResponse.data) {
-        setUsers(usersResponse.data);
-      }
-    } catch (error) {
-      console.error("Error fetching related data:", error);
-    }
-  };
 
   useEffect(() => {
     let filtered = [...requests];
@@ -218,7 +217,7 @@ const BudgetRequestsList = () => {
           request.budget_id.toLowerCase().includes(search) ||
           request.reason.toLowerCase().includes(search) ||
           request.total.toString().includes(search) ||
-          request.approval_category.toLowerCase().includes(search)
+          request.approval_category.toLowerCase().includes(search),
       );
     }
 
@@ -227,14 +226,15 @@ const BudgetRequestsList = () => {
         (request) =>
           (statusFilter === "rejected" && request.rejected) ||
           (!request.rejected &&
-            request.current_status.toLowerCase() === statusFilter.toLowerCase())
+            request.current_status.toLowerCase() ===
+              statusFilter.toLowerCase()),
       );
     }
 
     // Sort requests
     filtered.sort((a, b) => {
-      let aValue: any, bValue: any;
-      
+      let aValue: string | number, bValue: string | number;
+
       switch (sortBy) {
         case "date":
           aValue = new Date(a.date).getTime();
@@ -252,7 +252,7 @@ const BudgetRequestsList = () => {
           aValue = new Date(a.date).getTime();
           bValue = new Date(b.date).getTime();
       }
-      
+
       if (sortOrder === "asc") {
         return aValue > bValue ? 1 : -1;
       } else {
@@ -264,9 +264,6 @@ const BudgetRequestsList = () => {
   }, [searchTerm, statusFilter, requests, sortBy, sortOrder]);
 
   // Handle pagination
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page);
-  };
 
   // Handle sorting
   const handleSort = (column: "date" | "amount" | "id") => {
@@ -283,7 +280,11 @@ const BudgetRequestsList = () => {
     if (sortBy !== column) {
       return <ArrowUpDown className="h-4 w-4" />;
     }
-    return sortOrder === "asc" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />;
+    return sortOrder === "asc" ? (
+      <ArrowUp className="h-4 w-4" />
+    ) : (
+      <ArrowDown className="h-4 w-4" />
+    );
   };
 
   // Format date
@@ -312,16 +313,6 @@ const BudgetRequestsList = () => {
   const getBusinessUnitName = (id: number) => {
     const unit = businessUnits.find((unit) => unit.id === id);
     return unit?.name || `Business Unit #${id}`;
-  };
-
-  const getDepartmentName = (id: number) => {
-    const department = departments.find((dept) => dept.id === id);
-    return department?.name || `Department #${id}`;
-  };
-
-  const getUserName = (id: number) => {
-    const user = users.find((u) => u.id === id);
-    return user?.name || `User #${id}`;
   };
 
   // Get status badge with appropriate colors
@@ -431,7 +422,9 @@ const BudgetRequestsList = () => {
             <div className="flex gap-2 flex-wrap">
               <Select
                 value={statusFilter || "all"}
-                onValueChange={(value) => setStatusFilter(value === "all" ? null : value)}
+                onValueChange={(value) =>
+                  setStatusFilter(value === "all" ? null : value)
+                }
               >
                 <SelectTrigger className="w-40 border-blue-200">
                   <SelectValue placeholder="Filter by status" />
@@ -446,7 +439,10 @@ const BudgetRequestsList = () => {
               <Select
                 value={`${sortBy}-${sortOrder}`}
                 onValueChange={(value) => {
-                  const [column, order] = value.split("-") as [typeof sortBy, typeof sortOrder];
+                  const [column, order] = value.split("-") as [
+                    typeof sortBy,
+                    typeof sortOrder,
+                  ];
                   setSortBy(column);
                   setSortOrder(order);
                 }}
@@ -477,12 +473,15 @@ const BudgetRequestsList = () => {
                 Budget Requests
               </h2>
               <p className="text-sm text-blue-500/80 mt-1">
-                Showing {filteredRequests.length} of {totalCount} request
-                {totalCount !== 1 ? "s" : ""}.
+                Showing {filteredRequests.length} request
+                {filteredRequests.length !== 1 ? "s" : ""}.
               </p>
             </div>
             <Link href="/dashboard/form">
-              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
                 <PlusCircle className="h-4 w-4 mr-1.5" />
                 New Request
               </Button>
@@ -495,7 +494,9 @@ const BudgetRequestsList = () => {
             <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
               <Search className="h-8 w-8 text-blue-400" />
             </div>
-            <h3 className="text-lg font-medium mb-1 text-blue-700">No requests found</h3>
+            <h3 className="text-lg font-medium mb-1 text-blue-700">
+              No requests found
+            </h3>
             <p className="text-sm text-blue-500/70 max-w-md mx-auto">
               Try adjusting your filters or search terms
             </p>
@@ -505,7 +506,7 @@ const BudgetRequestsList = () => {
             <Table>
               <TableHeader>
                 <TableRow className="border-blue-100">
-                  <TableHead 
+                  <TableHead
                     className="cursor-pointer hover:bg-blue-50 text-blue-700 font-semibold"
                     onClick={() => handleSort("id")}
                   >
@@ -514,8 +515,10 @@ const BudgetRequestsList = () => {
                       {getSortIcon("id")}
                     </div>
                   </TableHead>
-                  <TableHead className="text-blue-700 font-semibold">Reason</TableHead>
-                  <TableHead 
+                  <TableHead className="text-blue-700 font-semibold">
+                    Reason
+                  </TableHead>
+                  <TableHead
                     className="cursor-pointer hover:bg-blue-50 text-blue-700 font-semibold"
                     onClick={() => handleSort("amount")}
                   >
@@ -524,7 +527,7 @@ const BudgetRequestsList = () => {
                       {getSortIcon("amount")}
                     </div>
                   </TableHead>
-                  <TableHead 
+                  <TableHead
                     className="cursor-pointer hover:bg-blue-50 text-blue-700 font-semibold"
                     onClick={() => handleSort("date")}
                   >
@@ -533,16 +536,24 @@ const BudgetRequestsList = () => {
                       {getSortIcon("date")}
                     </div>
                   </TableHead>
-                  <TableHead className="text-blue-700 font-semibold">Status</TableHead>
-                  <TableHead className="text-blue-700 font-semibold">Category</TableHead>
-                  <TableHead className="text-blue-700 font-semibold">Business Unit</TableHead>
-                  <TableHead className="text-blue-700 font-semibold text-center">Actions</TableHead>
+                  <TableHead className="text-blue-700 font-semibold">
+                    Status
+                  </TableHead>
+                  <TableHead className="text-blue-700 font-semibold">
+                    Category
+                  </TableHead>
+                  <TableHead className="text-blue-700 font-semibold">
+                    Business Unit
+                  </TableHead>
+                  <TableHead className="text-blue-700 font-semibold text-center">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredRequests.map((request) => (
-                  <TableRow 
-                    key={request.id} 
+                  <TableRow
+                    key={request.id}
                     className="hover:bg-blue-50/50 border-blue-100/50"
                   >
                     <TableCell className="font-medium">
@@ -562,7 +573,10 @@ const BudgetRequestsList = () => {
                     </TableCell>
                     <TableCell>
                       <div className="max-w-xs">
-                        <p className="text-sm text-gray-700 line-clamp-2" title={request.reason}>
+                        <p
+                          className="text-sm text-gray-700 line-clamp-2"
+                          title={request.reason}
+                        >
                           {request.reason}
                         </p>
                       </div>
@@ -578,11 +592,11 @@ const BudgetRequestsList = () => {
                         {formatDate(request.date)}
                       </div>
                     </TableCell>
+                    <TableCell>{getStatusBadge(request)}</TableCell>
                     <TableCell>
-                      {getStatusBadge(request)}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`text-sm font-medium ${getCategoryColor(request.approval_category)}`}>
+                      <span
+                        className={`text-sm font-medium ${getCategoryColor(request.approval_category)}`}
+                      >
                         {request.approval_category}
                       </span>
                     </TableCell>
@@ -595,7 +609,11 @@ const BudgetRequestsList = () => {
                       <Link
                         href={`/dashboard/requests/${request.id}${currentUserId ? `?userId=${currentUserId}` : ""}`}
                       >
-                        <Button size="sm" variant="outline" className="border-blue-300 text-blue-600 hover:bg-blue-50">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-blue-300 text-blue-600 hover:bg-blue-50"
+                        >
                           <Eye className="h-4 w-4 mr-1" />
                           View
                         </Button>
@@ -611,7 +629,7 @@ const BudgetRequestsList = () => {
         <CardFooter className="flex justify-between items-center border-t border-blue-100 p-4">
           <div className="flex items-center gap-4">
             <p className="text-sm text-blue-500/70">
-              Showing page {currentPage} of {totalPages} (Total: {totalCount} requests)
+              Total: {filteredRequests.length} requests
             </p>
             {(searchTerm || statusFilter) && (
               <Button
@@ -628,16 +646,6 @@ const BudgetRequestsList = () => {
               </Button>
             )}
           </div>
-          
-          {/* Pagination Component */}
-          {totalPages > 1 && (
-            <BasicPagination
-              totalPages={totalPages}
-              initialPage={currentPage}
-              onPageChange={handlePageChange}
-              className="ml-auto"
-            />
-          )}
         </CardFooter>
       </div>
     </div>
