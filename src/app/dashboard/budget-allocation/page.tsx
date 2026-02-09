@@ -1,3 +1,5 @@
+// src/app/dashboard/budget-allocation/page.tsx
+
 'use client'
 import React, { useEffect, useState } from 'react';
 import useAxios from '@/app/hooks/use-axios';
@@ -55,6 +57,10 @@ const BudgetAllocationSystem = () => {
   const [transactions, setTransactions] =
     useState<BudgetHistoryTransaction[]>([]);
   const [txLoading, setTxLoading] = useState(false);
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const pageSize = 10;
 
 
   // Form state for AllocationForm
@@ -214,24 +220,26 @@ const BudgetAllocationSystem = () => {
   };
 
   // Fetch budget allocations
-  const fetchBudgetAllocations = async () => {
+  const fetchBudgetAllocations = async (page = 1) => {
     try {
-      const response = await api.get('/budget-allocation/?all=true');
-      const apiAllocations: ApiBudgetAllocation[] =
-        Array.isArray(response.data)
-          ? response.data
-          : response.data?.results || [];
+      const response = await api.get(
+        `/budget-allocation/?all=true&page=${page}`
+      );
 
-      const uiAllocations = apiAllocations.map(mapApiAllocationToUi);
+      const data = response.data;
+
+      setTotalCount(data.count);
+
+      const results = data.results || [];
+
+      const uiAllocations = results.map(mapApiAllocationToUi);
 
       setBudgetAllocations(uiAllocations);
 
-      if (uiAllocations.length > 0) {
-        setSelectedAllocation(uiAllocations[uiAllocations.length - 1]);
-      }
+      setCurrentPage(page);
+
     } catch (error) {
-      console.error('Error fetching budget allocations:', error);
-      setError('Failed to load budget allocations');
+      console.error(error);
     }
   };
 
@@ -490,6 +498,31 @@ const BudgetAllocationSystem = () => {
                 setActiveTab('transactions');
               }}
             />
+
+              {/* PAGINATION UI */}
+            <div className="flex justify-center mt-4 gap-2">
+
+              <button
+                disabled={currentPage === 1}
+                onClick={() => fetchBudgetAllocations(currentPage - 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Previous
+              </button>
+
+              <span className="px-3 py-1">
+                Page {currentPage} of {Math.ceil(totalCount / pageSize)}
+              </span>
+
+              <button
+                disabled={currentPage >= Math.ceil(totalCount / pageSize)}
+                onClick={() => fetchBudgetAllocations(currentPage + 1)}
+                className="px-3 py-1 border rounded disabled:opacity-50"
+              >
+                Next
+              </button>
+
+            </div>
           </>
         }
         analyticsContent={
