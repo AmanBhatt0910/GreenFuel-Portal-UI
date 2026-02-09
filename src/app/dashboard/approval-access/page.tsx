@@ -1,6 +1,8 @@
 // src/app/dashboard/approval-access/page.tsx
 
-'use client';
+"use client";
+
+export const dynamic = "force-dynamic";
 
 import React, { useState, useEffect, useRef } from 'react';
 import useAxios from '@/app/hooks/use-axios';
