@@ -1,3 +1,5 @@
+// src/contextAuthContext.tsx
+
 import { createContext, ReactNode, useEffect, useState } from "react";
 import { Dispatch, SetStateAction } from "react";
 import { useRouter } from "next/navigation";
@@ -95,7 +97,13 @@ const GFProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (typeof window !== "undefined") {
       const storedUserInfo = localStorage.getItem("userInfo");
       if (storedUserInfo) {
-        setUserInfo(JSON.parse(storedUserInfo));
+        const parsed = JSON.parse(storedUserInfo);
+        setUserInfo(parsed);
+
+        // ensure role cookie also exists (optional but useful)
+        if (parsed.role) {
+          document.cookie = `user_role=${encodeURIComponent(parsed.role)}; path=/`;
+        }
       }
     }
   }, []);

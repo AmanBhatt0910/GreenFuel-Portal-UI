@@ -5,6 +5,9 @@ import {
   UserInfo,
   EnrichedApprovalForm,
 } from "../components/interfaces";
+import { useContext } from "react";
+import { GFContext } from "@/context/AuthContext";
+
 
 interface UseApprovalsProps {
   initialFilter?: string;
@@ -23,79 +26,117 @@ export default function useApprovals({
   const [count, setCount] = useState(0);
   const [next, setNext] = useState<string | null>(null);
   const [previous, setPrevious] = useState<string | null>(null);
+  const { userInfo } = useContext(GFContext);
+
 
   const PAGE_SIZE = 10; // match backend
 
   const api = useAxios();
   const hasFetched = useRef(false);
 
+    const enrichForms = async (rawData: ApprovalForm[]) => {
+      if (!rawData.length) {
+        setForms([]);
+        return;
+      }
+    const uniqueUserIds = [
+      ...new Set(rawData.map(f => f.user).filter(Boolean))
+    ];
+
+    const uniqueDeptIds = [
+      ...new Set(rawData.map(f => f.department).filter(Boolean))
+    ];
+
+    const userMap: Record<string, UserInfo> = {};
+    const deptMap: Record<string, string> = {};
+
+    await Promise.all(
+      uniqueUserIds.map(async id => {
+        try {
+          const res = await api.get(`/userInfo/${id}/`);
+          userMap[String(id)] = {
+            id: Number(id),
+            name: res.data.name,
+            email: res.data.email
+          };
+        } catch {
+          userMap[String(id)] = {
+            id: Number(id),
+            name: `User ${id}`,
+            email: ""
+          };
+        }
+      })
+    );
+
+    await Promise.all(
+      uniqueDeptIds.map(async id => {
+        try {
+          const res = await api.get(`/departments/${id}/`);
+          deptMap[String(id)] = res.data.name;
+        } catch {
+          deptMap[String(id)] = `Dept ${id}`;
+        }
+      })
+    );
+
+    const enriched = rawData.map(form => ({
+      ...form,
+      user_name: userMap[String(form.user)]?.name || "Unknown",
+      user_email: userMap[String(form.user)]?.email || "",
+      department_name: deptMap[String(form.department)] || "Unknown"
+    }));
+
+    setForms(enriched as EnrichedApprovalForm[]);
+  };
+
   const fetchApprovals = useCallback(async (pageNumber = 1) => {
     try {
+      if (!userInfo?.role) {
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       setError(null);
 
-      const response = await api.get(`/approval-requests/?page=${pageNumber}`);
-      const rawData: ApprovalForm[] = Array.isArray(response.data)
-        ? response.data
-        : response.data?.results || [];
+      // get role from localStorage (or your auth context)
+      const role = userInfo?.role;
 
-        setCount(response.data.count || 0);
+      let response;
+
+      if (role === "APPROVER") {
+        // APPROVER API
+        response = await api.get(`/pending-approvals/?page=${pageNumber}`);
+
+        const nested = response.data?.results || {};
+
+        const rawData: ApprovalForm[] =
+          Array.isArray(nested.results)
+            ? nested.results
+            : [];
+
+        setCount(nested.total || rawData.length);
+        setNext(null);
+        setPrevious(null);
+
+        await enrichForms(rawData);
+
+      } else {
+        // ADMIN API
+        response = await api.get(`/approval-requests/?page=${pageNumber}`);
+
+        const rawData: ApprovalForm[] =
+          Array.isArray(response.data)
+            ? response.data
+            : response.data?.results || [];
+
+        setCount(response.data.count || rawData.length);
         setNext(response.data.next);
         setPrevious(response.data.previous);
 
-      const uniqueUserIds = [
-        ...new Set(
-          rawData.map((f) => f.user).filter((id) => id && id !== "null"),
-        ),
-      ];
-      const uniqueDeptIds = [
-        ...new Set(
-          rawData.map((f) => f.department).filter((id) => id && id !== "null"),
-        ),
-      ];
+        await enrichForms(rawData);
+      }
 
-      const userMap: Record<string, UserInfo> = {};
-      const deptMap: Record<string, string> = {};
-
-      await Promise.all(
-        uniqueUserIds.map(async (id) => {
-          try {
-            const res = await api.get(`/userInfo/${id}/`);
-            userMap[String(id)] = {
-              id: Number(id),
-              name: res.data.name || res.data.username || String(id),
-              email: res.data.email || "",
-            };
-          } catch {
-            userMap[String(id)] = {
-              id: Number(id),
-              name: `User ${id}`,
-              email: "",
-            };
-          }
-        }),
-      );
-
-      await Promise.all(
-        uniqueDeptIds.map(async (id) => {
-          try {
-            const res = await api.get(`/departments/${id}/`);
-            deptMap[String(id)] = res.data.name || String(id);
-          } catch {
-            deptMap[String(id)] = `Dept ${id}`;
-          }
-        }),
-      );
-
-      // 3. Enrich existing data
-      const enriched = rawData.map((form) => ({
-        ...form,
-        user_name: userMap[String(form.user)]?.name || "Unknown",
-        user_email: userMap[String(form.user)]?.email || "",
-        department_name: deptMap[String(form.department)] || "Unknown",
-      }));
-
-      setForms(enriched as EnrichedApprovalForm[]);
     } catch (err) {
       console.error("Approvals Fetch Error:", err);
       setError(
@@ -104,11 +145,16 @@ export default function useApprovals({
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [api, userInfo?.role]);
+
+
 
   useEffect(() => {
-    fetchApprovals(page);
-  }, [page]);
+    if (userInfo?.role) {
+      fetchApprovals(page);
+    }
+  }, [page, userInfo?.role, fetchApprovals]);
+
 
   // Client-side filtering and searching
   const filteredForms = useMemo(() => {
@@ -121,7 +167,7 @@ export default function useApprovals({
         form.budget_id?.toLowerCase().includes(search) ||
         String(form.id).toLowerCase().includes(search) ||
         form.user_name?.toLowerCase().includes(search) ||
-        form.approval_category.toLowerCase().includes(search);
+        (form.approval_category || "").toLowerCase().includes(search)
 
       return statusMatch && searchMatch;
     });
@@ -146,8 +192,9 @@ export default function useApprovals({
     previous,
     totalPages: Math.ceil(count / PAGE_SIZE),
 
-    assestDetail: async (id: number) => {
-      await api.get(`/approval-items?form_id=${id}/`);
-    },
+    assetDetail: async (id: number) => {
+      const res = await api.get(`/approval-items/?form_id=${id}`);
+      return res.data;
+    }
   };
 }
