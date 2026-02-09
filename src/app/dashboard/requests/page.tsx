@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -75,89 +75,121 @@ const BudgetRequestsList = () => {
   const [businessUnits, setBusinessUnits] = useState<EntityInfo[]>([]);
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
 
-  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10);
+
+  const [totalCount, setTotalCount] = useState(0);
+  const [nextPage, setNextPage] = useState<string | null>(null);
+  const [prevPage, setPrevPage] = useState<string | null>(null);
+
+  const [isFetchingPage, setIsFetchingPage] = useState(false);
+
+  const businessUnitsCache = useRef<EntityInfo[]>([]);
+
+  const prefetchNextPage = useCallback(async () => {
+    if (!nextPage) return;
+    try {
+      await api.get(nextPage);
+    } catch {}
+  }, [nextPage, api]);
+
 
   const fetchRelatedData = useCallback(async () => {
-    try {
-      const businessUnitsResponse = await api.get("business-units/");
-      if (businessUnitsResponse.data) {
-        setBusinessUnits(businessUnitsResponse.data);
-      }
-    } catch (error) {
-      console.error("Error fetching related data:", error);
+    if (businessUnitsCache.current.length) {
+      setBusinessUnits(businessUnitsCache.current);
+      return;
     }
-  }, []);
-
-  const fetchRequestsData = useCallback(async () => {
     try {
-      setLoading(true);
+      const res = await api.get("business-units/");
+      businessUnitsCache.current = res.data;
+      setBusinessUnits(res.data);
+    } catch (error) {
+      console.error(error);
+    }
+  }, [api]);
 
-      const response = await api.get("/approval-requests/");
+  const fetchRequestsData = useCallback(
+    async (page = 1, preserve = false) => {
+      try {
+        if (!preserve) setLoading(true);
+        else setIsFetchingPage(true);
 
-      // Handle both raw array and paginated response
-      let fetchedRequests: BudgetRequest[] = [];
-      if (Array.isArray(response.data)) {
-        fetchedRequests = response.data;
-      } else if (response.data?.results) {
-        fetchedRequests = response.data.results;
+        const response = await api.get("/approval-requests/", {
+          params: {
+            page,
+            page_size: pageSize,
+          },
+        });
+
+        const data = response.data;
+
+        const fetchedRequests: BudgetRequest[] = data?.results || [];
+
+        // pagination info
+        setTotalCount(data.count || 0);
+        setNextPage(data.next);
+        setPrevPage(data.previous);
+
+        // enrich approvers (same logic)
+        const pendingRequests = fetchedRequests.filter(
+          (req) =>
+            !req.rejected && req.current_status?.toLowerCase() === "pending",
+        );
+
+        const uniqueApproverKeys = Array.from(
+          new Set(
+            pendingRequests.map(
+              (req) =>
+                `${req.business_unit}-${req.department}-${req.current_form_level}`,
+            ),
+          ),
+        );
+
+        const approverMap: Record<string, string> = {};
+
+        if (uniqueApproverKeys.length) {
+          await Promise.all(
+            uniqueApproverKeys.map(async (key) => {
+              const [bu, dept, level] = key.split("-");
+              try {
+                const approverRes = await api.get("/approver", {
+                  params: {
+                    business_unit: bu,
+                    department: dept,
+                    level,
+                  },
+                });
+
+                approverMap[key] =
+                  approverRes?.data?.user?.name || "Unknown";
+              } catch {
+                approverMap[key] = "Unknown";
+              }
+            }),
+          );
       }
 
-      // 1. Batch fetch approvers for pending requests
-      const pendingRequests = fetchedRequests.filter(
-        (req) =>
-          !req.rejected && req.current_status?.toLowerCase() === "pending",
-      );
+        const enriched = fetchedRequests.map((req) => {
+          const key = `${req.business_unit}-${req.department}-${req.current_form_level}`;
 
-      const uniqueApproverKeys = Array.from(
-        new Set(
-          pendingRequests.map(
-            (req) =>
-              `${req.business_unit}-${req.department}-${req.current_form_level}`,
-          ),
-        ),
-      );
+          return {
+            ...req,
+            pending_approver_name: approverMap[key],
+            has_unread_chat: false,
+          };
+        });
 
-      const approverMap: Record<string, string> = {};
-      await Promise.all(
-        uniqueApproverKeys.map(async (key) => {
-          const [bu, dept, level] = key.split("-");
-          try {
-            const approverRes = await api.get("/approver", {
-              params: {
-                business_unit: bu,
-                department: dept,
-                level: level,
-              },
-            });
-            approverMap[key] = approverRes?.data?.user?.name || "Unknown";
-          } catch {
-            approverMap[key] = "Unknown";
-          }
-        }),
-      );
+        setRequests(enriched);
+        setFilteredRequests(enriched);
 
-      // 2. Initial enrichment (excluding chats for faster initial load)
-      const initialEnriched = fetchedRequests.map((req) => {
-        const key = `${req.business_unit}-${req.department}-${req.current_form_level}`;
-        return {
-          ...req,
-          pending_approver_name: approverMap[key],
-          has_unread_chat: false, // Updated in background
-        };
-      });
-
-      setRequests(initialEnriched);
-      setFilteredRequests(initialEnriched);
-      setLoading(false);
-
-      // 3. Background fetch unread chats (non-blocking)
-      const updateChatStatuses = async () => {
-        const results = await Promise.allSettled(
-          initialEnriched.map(async (req) => {
+        // background chat check
+        Promise.allSettled(
+          enriched.map(async (req) => {
             try {
               const unreadRes = await api.get("/chats", {
                 params: { form_id: req.id, unread: true },
               });
+
               return {
                 id: req.id,
                 hasUnread: unreadRes?.data?.unread_chat === true,
@@ -166,42 +198,60 @@ const BudgetRequestsList = () => {
               return { id: req.id, hasUnread: false };
             }
           }),
-        );
-
-        setRequests((prev) =>
-          prev.map((req) => {
+        ).then((results) => {
+          setRequests((prev) => {
+            const updated = prev.map((req) => {
             const update = results.find(
-              (r) => r.status === "fulfilled" && r.value.id === req.id,
+              (r) => r.status === "fulfilled" && r.value.id === req.id
             );
-            if (update && update.status === "fulfilled") {
-              return { ...req, has_unread_chat: update.value.hasUnread };
-            }
-            return req;
-          }),
-        );
-      };
+            return update && update.status === "fulfilled"
+              ? { ...req, has_unread_chat: update.value.hasUnread }
+              : req;
+          });
 
-      updateChatStatuses();
+          setFilteredRequests(updated);
 
-      // Fetch current user ID
-      try {
-        const userRes = await api.get("/userInfo/");
-        if (userRes.data?.id) setCurrentUserId(userRes.data.id);
-      } catch {}
+          return updated;
+          }
+          );
+        });
 
-      await fetchRelatedData();
-    } catch (mainError) {
-      console.error("Error loading budget requests:", mainError);
-      setRequests([]);
-      setFilteredRequests([]);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchRelatedData]);
+        setCurrentPage(page);
+        if (data.next) {
+          prefetchNextPage();
+        }
+
+        await fetchRelatedData();
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+        setIsFetchingPage(false);
+      }
+    },
+    [api, pageSize, fetchRelatedData, prefetchNextPage],
+  );
 
   useEffect(() => {
-    fetchRequestsData();
+    fetchRequestsData(1);
   }, [fetchRequestsData]);
+
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+
+  const goToPage = (page: number) => {
+    if (page < 1 || page > totalPages) return;
+    fetchRequestsData(page, true);
+  };
+
+  const goNext = () => {
+    if (nextPage) goToPage(currentPage + 1);
+  };
+
+  const goPrev = () => {
+    if (prevPage) goToPage(currentPage - 1);
+  };
+
+
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -473,7 +523,7 @@ const BudgetRequestsList = () => {
                 Budget Requests
               </h2>
               <p className="text-sm text-blue-500/80 mt-1">
-                Showing {filteredRequests.length} request
+                Showing {requests.length} of {totalCount} request
                 {filteredRequests.length !== 1 ? "s" : ""}.
               </p>
             </div>
@@ -627,25 +677,64 @@ const BudgetRequestsList = () => {
         )}
 
         <CardFooter className="flex justify-between items-center border-t border-blue-100 p-4">
-          <div className="flex items-center gap-4">
-            <p className="text-sm text-blue-500/70">
-              Total: {filteredRequests.length} requests
-            </p>
-            {(searchTerm || statusFilter) && (
-              <Button
-                size="sm"
-                variant="outline"
-                className="border-blue-300 text-blue-600 hover:bg-blue-50"
-                onClick={() => {
-                  setSearchTerm("");
-                  setStatusFilter(null);
-                }}
-              >
-                <Filter className="h-4 w-4 mr-1.5" />
-                Clear Filters
-              </Button>
-            )}
+          <div className="text-sm text-blue-500">
+            Showing page {currentPage} of {totalPages}  
+            ({totalCount} total requests)
           </div>
+
+          <div className="flex items-center gap-2">
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={goPrev}
+              disabled={!prevPage || isFetchingPage}
+            >
+              Previous
+            </Button>
+
+            {[...Array(totalPages)].map((_, i) => {
+              const page = i + 1;
+
+              if (
+                page === 1 ||
+                page === totalPages ||
+                Math.abs(page - currentPage) <= 1
+              ) {
+                return (
+                  <Button
+                    key={page}
+                    size="sm"
+                    variant={page === currentPage ? "default" : "outline"}
+                    onClick={() => goToPage(page)}
+                    disabled={isFetchingPage}
+                  >
+                    {page}
+                  </Button>
+                );
+              }
+
+              if (
+                page === currentPage - 2 ||
+                page === currentPage + 2
+              ) {
+                return <span key={page}>...</span>;
+              }
+
+              return null;
+            })}
+
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={goNext}
+              disabled={!nextPage || isFetchingPage}
+            >
+              Next
+            </Button>
+
+          </div>
+
         </CardFooter>
       </div>
     </div>
