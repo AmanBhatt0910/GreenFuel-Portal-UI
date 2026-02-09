@@ -59,69 +59,76 @@ axiosInstance.interceptors.request.use(
 );
 
 // Add response interceptor for token refresh and error handling
-axiosInstance.interceptors.response.use(
-  (response) => response,
-  async (error: AxiosError) => {
-    const originalRequest = error.config as AxiosRequestConfig & {
-      _retry?: boolean;
-    };
+  axiosInstance.interceptors.response.use(
+    (response) => response,
 
-    // Handle 401 Unauthorized errors (token expired)
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    async (error: AxiosError) => {
+      const originalRequest = error.config as AxiosRequestConfig & {
+        _retry?: boolean;
+      };
 
-      try {
-        // Get refresh token from localStorage
-        const authTokenString = localStorage.getItem("authToken");
+      const status = error.response?.status;
+      const errorData: any = error.response?.data;
 
-        if (authTokenString) {
-          const authToken = JSON.parse(authTokenString);
+      /*
+      ✅ IGNORE harmless 404 cases
+      */
+      if (
+        status === 404 &&
+        errorData &&
+        typeof errorData === "object" &&
+        (
+          errorData.error === "No approval requests found." ||
+          errorData.error === "No pending approvals found." ||
+          errorData.error === "No records found."
+        )
+      ) {
+        return Promise.reject({
+          isHandledEmpty: true,
+          response: error.response,
+        });
+      }
 
-          if (authToken?.refreshToken) {
-            // Call refresh token API endpoint
-            const response = await axios.post(
-              `${process.env.NEXT_PUBLIC_API_URL}/api/auth/refresh-token/`,
-              { refreshToken: authToken.refreshToken }
-            );
+      /*
+      Handle 401 token refresh
+      */
+      if (status === 401 && !originalRequest._retry) {
+        originalRequest._retry = true;
 
-            const { accessToken, refreshToken } = response.data;
+        try {
+          const authTokenString = localStorage.getItem("authToken");
 
-            // Update token in localStorage
-            localStorage.setItem(
-              "authToken",
-              JSON.stringify({ accessToken, refreshToken })
-            );
+          if (authTokenString) {
+            const authToken = JSON.parse(authTokenString);
 
-            // Update Authorization header
-            if (originalRequest.headers) {
-              originalRequest.headers.Authorization = `Bearer ${accessToken}`;
-            } else {
+            if (authToken?.refreshToken) {
+              const refreshResponse = await axios.post(
+                `${baseURL}/auth/token/refresh/`,
+                { refresh: authToken.refreshToken }
+              );
+
+              const newToken = refreshResponse.data;
+
+              localStorage.setItem("authToken", JSON.stringify(newToken));
+
               originalRequest.headers = {
-                Authorization: `Bearer ${accessToken}`,
+                ...originalRequest.headers,
+                Authorization: `Bearer ${newToken.access}`,
               };
+
+              return axiosInstance(originalRequest);
             }
-
-            // Retry the original request with new token
-            return axiosInstance(originalRequest);
           }
-        }
-      } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
+        } catch (refreshError) {
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("userInfo");
 
-        // If refresh token fails, logout the user
-        localStorage.removeItem("authToken");
-        localStorage.removeItem("user");
-
-        // Redirect to login page if in browser context
-        if (typeof window !== "undefined") {
           window.location.href = "/auth/login";
         }
       }
-    }
 
-    // If error is not related to auth or refresh token failed
-    return Promise.reject(error);
-  }
-);
+      return Promise.reject(error);
+    }
+  );
 
 export default axiosInstance;

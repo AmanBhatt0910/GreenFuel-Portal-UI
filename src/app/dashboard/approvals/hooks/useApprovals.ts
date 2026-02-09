@@ -141,7 +141,7 @@ export default function useApprovals({
     } catch (err: any) {
       console.error("Approvals Fetch Error:", err?.response);
 
-      if (err?.response?.status === 404) {
+      if (err?.isHandledEmpty || err?.response?.status === 404) {
         setForms([]);
         setCount(0);
         setNext(null);
