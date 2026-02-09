@@ -81,17 +81,15 @@ const ApprovalAccessPage = () => {
         
         const usersResponse = await api.get('/userInfo/');
 
-        const userData = Array.isArray(usersResponse.data) 
-          ? usersResponse.data 
-          : [usersResponse.data];
-        
-        const formattedUsers = userData.map(user => ({
-          id: user.id,
-          name: user.name || user.username || `User ${user.id}`,
-          email: user.email
-        }));
-        
-        setUsers(formattedUsers);
+      const userData = usersResponse.data.results || [];
+
+      const formattedUsers = userData.map(user => ({
+        id: user.id,
+        name: user.name || user.username || `User ${user.id}`,
+        email: user.email
+      }));
+
+      setUsers(formattedUsers);
         
         const businessUnitsResponse = await api.get('/business-units/');
         setBusinessUnits(businessUnitsResponse.data);
