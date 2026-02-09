@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useContext } from "react";
+import { useState, useEffect, useCallback, useContext, useRef } from "react";
 import useAxios from "@/app/hooks/use-axios";
 import {
   ApprovalForm,
@@ -96,14 +96,10 @@ export default function useApprovalDetails({
   const [enrichedForm, setEnrichedForm] = useState<any>(null);
 
   // Cache states
-  const [userCache, setUserCache] = useState<UserCache>({});
-  const [departmentCache, setDepartmentCache] = useState<DepartmentCache>({});
-  const [businessUnitCache, setBusinessUnitCache] = useState<BusinessUnitCache>(
-    {}
-  );
-  const [designationCache, setDesignationCache] = useState<DesignationCache>(
-    {}
-  );
+  const userCache = useRef<UserCache>({});
+  const departmentCache = useRef<DepartmentCache>({});
+  const businessUnitCache = useRef<BusinessUnitCache>({});
+  const designationCache = useRef<DesignationCache>({});
 
   const api = useAxios();
 
@@ -112,9 +108,10 @@ export default function useApprovalDetails({
     const userKey = userId.toString();
 
     // Check cache first
-    if (userCache[userKey]) {
-      return userCache[userKey];
+    if (userCache.current[userKey]) {
+      return userCache.current[userKey];
     }
+
 
     try {
       const response = await api.get(`/userInfo/${userId}/`);
@@ -129,10 +126,7 @@ export default function useApprovalDetails({
       };
 
       // Update cache
-      setUserCache((prev: UserCache) => ({
-        ...prev,
-        [userKey]: userInfo,
-      }));
+      userCache.current[userKey] = userInfo;
 
       return userInfo;
     } catch (err) {
@@ -147,32 +141,28 @@ export default function useApprovalDetails({
   };
 
   // Fetch department details
-  const fetchDepartmentDetails = async (
-    deptId: number
-  ): Promise<Department> => {
+  const fetchDepartmentDetails = async (deptId: number): Promise<Department> => {
     const deptKey = deptId.toString();
 
-    // Check cache first
-    if (departmentCache[deptKey]) {
-      return departmentCache[deptKey] as Department;
+    if (departmentCache.current[deptKey]) {
+      return departmentCache.current[deptKey];
     }
 
     try {
       const response = await api.get(`/departments/${deptId}/`);
+
       const department: Department = {
         id: deptId,
         name: response.data.name || `Department ${deptId}`,
       };
 
-      // Update cache
-      setDepartmentCache((prev: DepartmentCache) => ({
-        ...prev,
-        [deptKey]: department,
-      }));
+      departmentCache.current[deptKey] = department;
 
       return department;
+
     } catch (err) {
-      console.error(`Error fetching department details for ID ${deptId}:`, err);
+      console.error(`Error fetching department ${deptId}:`, err);
+
       return {
         id: deptId,
         name: `Department ${deptId}`,
@@ -180,36 +170,30 @@ export default function useApprovalDetails({
     }
   };
 
+
   // Fetch business unit details
-  const fetchBusinessUnitDetails = async (
-    buId: number
-  ): Promise<BusinessUnit> => {
+  const fetchBusinessUnitDetails = async (buId: number): Promise<BusinessUnit> => {
     const buKey = buId.toString();
 
-    // Check cache first
-    if (businessUnitCache[buKey]) {
-      return businessUnitCache[buKey];
+    if (businessUnitCache.current[buKey]) {
+      return businessUnitCache.current[buKey];
     }
 
     try {
       const response = await api.get(`/business-units/${buId}/`);
+
       const businessUnit: BusinessUnit = {
         id: buId,
         name: response.data.name || `Business Unit ${buId}`,
       };
 
-      // Update cache
-      setBusinessUnitCache((prev: BusinessUnitCache) => ({
-        ...prev,
-        [buKey]: businessUnit,
-      }));
+      businessUnitCache.current[buKey] = businessUnit;
 
       return businessUnit;
+
     } catch (err) {
-      console.error(
-        `Error fetching business unit details for ID ${buId}:`,
-        err
-      );
+      console.error(`Error fetching business unit ${buId}:`, err);
+
       return {
         id: buId,
         name: `Business Unit ${buId}`,
@@ -217,42 +201,37 @@ export default function useApprovalDetails({
     }
   };
 
+
   // Fetch designation details
-  const fetchDesignationDetails = async (
-    designationId: number
-  ): Promise<Designation> => {
+  const fetchDesignationDetails = async (designationId: number): Promise<Designation> => {
     const designationKey = designationId.toString();
 
-    // Check cache first
-    if (designationCache[designationKey]) {
-      return designationCache[designationKey];
+    if (designationCache.current[designationKey]) {
+      return designationCache.current[designationKey];
     }
 
     try {
       const response = await api.get(`/designations/${designationId}/`);
+
       const designation: Designation = {
         id: designationId,
         name: response.data.name || `Designation ${designationId}`,
       };
 
-      // Update cache
-      setDesignationCache((prev: DesignationCache) => ({
-        ...prev,
-        [designationKey]: designation,
-      }));
+      designationCache.current[designationKey] = designation;
 
       return designation;
+
     } catch (err) {
-      console.error(
-        `Error fetching designation details for ID ${designationId}:`,
-        err
-      );
+      console.error(`Error fetching designation ${designationId}:`, err);
+
       return {
         id: designationId,
         name: `Designation ${designationId}`,
       };
     }
   };
+
 
   // Enrich approval data with names
   const enrichApprovalData = async (form: ApprovalForm) => {
@@ -316,7 +295,7 @@ export default function useApprovalDetails({
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, api]);
 
   // Renamed and updated fetch asset details function
   const fetchAssetDetails = async (formId: number) => {
@@ -380,7 +359,7 @@ export default function useApprovalDetails({
     if (id) {
       fetchApprovalDetails();
     }
-  }, [id, fetchApprovalDetails]);
+  }, [id]);
 
   // Handle approve action
   const handleApprove = async () => {
