@@ -108,7 +108,7 @@ export default function useApprovals({
         // APPROVER API
         response = await api.get(`/pending-approvals/?page=${pageNumber}`);
 
-        const nested = response.data?.results || {};
+        const nested = response?.data?.results ?? { results: [], total: 0 };
 
         const rawData: ApprovalForm[] =
           Array.isArray(nested.results)
@@ -126,9 +126,10 @@ export default function useApprovals({
         response = await api.get(`/approval-requests/?page=${pageNumber}`);
 
         const rawData: ApprovalForm[] =
-          Array.isArray(response.data)
-            ? response.data
-            : response.data?.results || [];
+        Array.isArray(response?.data?.results)
+          ? response.data.results
+          : [];
+
 
         setCount(response.data.count || rawData.length);
         setNext(response.data.next);
@@ -137,10 +138,22 @@ export default function useApprovals({
         await enrichForms(rawData);
       }
 
-    } catch (err) {
-      console.error("Approvals Fetch Error:", err);
+    } catch (err: any) {
+      console.error("Approvals Fetch Error:", err?.response);
+
+      if (err?.response?.status === 404) {
+        setForms([]);
+        setCount(0);
+        setNext(null);
+        setPrevious(null);
+        setError(null);
+        return;
+      }
+
       setError(
-        err instanceof Error ? err : new Error("Failed to fetch approvals"),
+        err instanceof Error
+          ? err
+          : new Error(err?.response?.data?.error || "Failed to fetch approvals")
       );
     } finally {
       setLoading(false);
