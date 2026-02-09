@@ -155,23 +155,35 @@ export default function AssetRequestForm() {
     const fetchBudgetAllocations = async () => {
       try {
         const response = await api.get("/budget-allocation/?all=true");
-        setBudgetAllocations(response.data.results || []);
+
+        const allocations = Array.isArray(response.data)
+          ? response.data
+          : Array.isArray(response.data?.results)
+          ? response.data.results
+          : [];
+
+        setBudgetAllocations(allocations);
+
       } catch (error) {
         console.error("Error fetching budget allocations:", error);
+        setBudgetAllocations([]); // prevent crash
       }
     };
 
     fetchBudgetAllocations();
-  }, []);
+  }, [api]);
 
   useEffect(() => {
     if (formData.plant && formData.initiateDept && formData.category && budgetAllocations.length > 0) {
-      const allocation = budgetAllocations.find(
-        (a) => 
-          a.business_unit === formData.plant && 
-          a.department === formData.initiateDept && 
-          a.category === formData.category
-      );
+      const allocation = Array.isArray(budgetAllocations)
+      ? budgetAllocations.find(
+          (a) =>
+            a.business_unit === formData.plant &&
+            a.department === formData.initiateDept &&
+            a.category === formData.category
+        )
+      : undefined;
+
 
       if (allocation) {
         setRemainingBudget(Number(allocation.remaining_budget));
