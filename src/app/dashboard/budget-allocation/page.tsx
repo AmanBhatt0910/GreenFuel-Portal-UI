@@ -109,15 +109,28 @@ const BudgetAllocationSystem = () => {
         
         // Fetch business units
         const businessUnitsResponse = await api.get('/business-units/');
-        setBusinessUnits(businessUnitsResponse.data);
+        setBusinessUnits(
+          Array.isArray(businessUnitsResponse.data)
+            ? businessUnitsResponse.data
+            : businessUnitsResponse.data?.results || []
+        );
         
         // Fetch departments
         const departmentsResponse = await api.get('/departments/');
-        setDepartments(departmentsResponse.data);
+        setDepartments(
+            Array.isArray(departmentsResponse.data)
+            ? departmentsResponse.data
+            : departmentsResponse.data?.results || []
+        );
         
         // Fetch categories
         const categoriesRes = await api.get("/approval-request-category/");
-        setCategories(categoriesRes.data);
+        setCategories(
+          Array.isArray(categoriesRes.data)
+            ? categoriesRes.data
+            : categoriesRes.data?.results || []
+        );
+
         
         // Fetch budget allocations
         await fetchBudgetAllocations();
@@ -169,13 +182,18 @@ const BudgetAllocationSystem = () => {
   };
 
 
-
   // Map API allocation to UI type
   const mapApiAllocationToUi = (apiAllocation: ApiBudgetAllocation): BudgetAllocation => {
     const allocated = parseFloat(apiAllocation.budget);
     const spent = allocated - parseFloat(apiAllocation.remaining_budget);
-    const department = departments.find(d => d.id === apiAllocation.department);
-    const category = categories.find(c => c.id === apiAllocation.category);
+    const department = departments?.find?.(
+      d => d.id === apiAllocation.department
+    );
+
+    const category = categories?.find?.(
+      c => c.id === apiAllocation.category
+    );
+
     
     return {
       id: apiAllocation.id,
@@ -199,16 +217,17 @@ const BudgetAllocationSystem = () => {
   const fetchBudgetAllocations = async () => {
     try {
       const response = await api.get('/budget-allocation/?all=true');
-      const apiAllocations: ApiBudgetAllocation[] = response.data;
+      const apiAllocations: ApiBudgetAllocation[] =
+        Array.isArray(response.data)
+          ? response.data
+          : response.data?.results || [];
 
       const uiAllocations = apiAllocations.map(mapApiAllocationToUi);
+
       setBudgetAllocations(uiAllocations);
 
-
       if (uiAllocations.length > 0) {
-        setSelectedAllocation(
-          uiAllocations[uiAllocations.length - 1]
-        );
+        setSelectedAllocation(uiAllocations[uiAllocations.length - 1]);
       }
     } catch (error) {
       console.error('Error fetching budget allocations:', error);
@@ -247,7 +266,7 @@ const BudgetAllocationSystem = () => {
     try {
 
       const categoryId = categories.find(
-  c => c.name === childFormData.category
+        c => String(c.name) === String(childFormData.category)
       )?.id;
 
       if (!categoryId) {

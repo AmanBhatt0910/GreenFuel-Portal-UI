@@ -127,9 +127,12 @@ export default function AssetRequestForm() {
     const fetchData = async () => {
       try {
         const response = await api.get("/userInfo/");
-        const userData = response.data;
-        
+        const userData = Array.isArray(response.data)
+          ? response.data[0]
+          : response.data?.results?.[0] || response.data;
+
         setUser(userData);
+
 
         setFormData((prevData) => ({
           ...prevData,
@@ -156,13 +159,15 @@ export default function AssetRequestForm() {
       try {
         const response = await api.get("/budget-allocation/?all=true");
 
-        const allocations = Array.isArray(response.data)
+        const allocations: BudgetAllocation[] =
+        Array.isArray(response.data)
           ? response.data
           : Array.isArray(response.data?.results)
           ? response.data.results
           : [];
 
-        setBudgetAllocations(allocations);
+      setBudgetAllocations(allocations);
+
 
       } catch (error) {
         console.error("Error fetching budget allocations:", error);
@@ -175,27 +180,30 @@ export default function AssetRequestForm() {
 
   useEffect(() => {
     if (formData.plant && formData.initiateDept && formData.category && budgetAllocations.length > 0) {
-      const allocation = Array.isArray(budgetAllocations)
-      ? budgetAllocations.find(
-          (a) =>
-            a.business_unit === formData.plant &&
-            a.department === formData.initiateDept &&
-            a.category === formData.category
-        )
-      : undefined;
 
+      const allocation = budgetAllocations.find((a) =>
+        Number(a.business_unit) === Number(formData.plant) &&
+        Number(a.department) === Number(formData.initiateDept) &&
+        Number(a.category) === Number(formData.category)
+      );
 
       if (allocation) {
-        setRemainingBudget(Number(allocation.remaining_budget));
+        setRemainingBudget(
+          allocation.remaining_budget != null
+            ? parseFloat(allocation.remaining_budget)
+            : 0
+        );
         setBudgetError("");
       } else {
         setRemainingBudget(null);
         setBudgetError("No budget allocation found for this combination");
       }
+
     } else {
       setRemainingBudget(null);
     }
   }, [formData.plant, formData.initiateDept, formData.category, budgetAllocations]);
+
 
   const [currentAsset, setCurrentAsset] = useState<AssetItem>({
     title: "",
