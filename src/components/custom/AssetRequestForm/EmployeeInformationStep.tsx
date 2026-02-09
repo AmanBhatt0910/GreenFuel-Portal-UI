@@ -60,6 +60,9 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = React.memo(({
     return formData.date ? new Date(formData.date) : new Date();
   });
 
+  const ensureArray = (data: any) =>
+  Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
+
   const handleSelectChange = (name: string, value: string) => {
     // console.log(`Dropdown selection changed: ${name} = ${value}`);
     
@@ -95,6 +98,8 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = React.memo(({
       setLoading(true);
       try {
         const response = await api.get("business-units/");
+        setBusinessUnits(ensureArray(response.data));
+
         setBusinessUnits(response.data);
       } catch (error) {
         console.error("Error fetching business units:", error);
@@ -116,7 +121,7 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = React.memo(({
       setLoadingDepts(true);
       try {
         const response = await api.get(`/departments/?business_unit=${formData.plant}`);
-        setDepartments(response.data);
+        setDepartments(ensureArray(response.data));
       } catch (error) {
         console.error("Error fetching departments:", error);
         setDepartments([]);
@@ -139,7 +144,7 @@ export const EmployeeInformationStep: React.FC<FormStepProps> = React.memo(({
       setLoadingDesigs(true);
       try {
         const response = await api.get(`/designations/?department=${formData.initiateDept}`);
-        setDesignations(response.data);
+        setDesignations(ensureArray(response.data));
       } catch (error) {
         console.error("Error fetching designations:", error);
         setDesignations([]);

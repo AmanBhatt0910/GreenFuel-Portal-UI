@@ -63,6 +63,13 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   const departmentDropdownRef = useRef<HTMLDivElement>(null);
   const api = useAxios();
 
+  const ensureArray = (data: any) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.results)) return data.results;
+    return [];
+  };
+
+
   const totalAmount = Number(formData.assetAmount) || 0;
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat("en-IN", {
@@ -73,35 +80,42 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
   };
 
   // Find the selected user's name for display
-  const selectedUser = user.find(
+  const safeUsers = ensureArray(user);
+
+  const selectedUser = safeUsers.find(
     (u: any) => u.id === formData.notifyTo && u.name
   );
 
-  // Find the selected category name for display
-  const selectedCategory = categories.find(
-    (c) => c.id === Number(formData.category)
-  );
-
-  // Find the selected department name for display
-  const selectedDepartment = departments.find(
-    (d) => d.id === Number(formData.concerned_department)
-  );
-
-  // Filter users based on search term
-  const filteredUsers = user.filter(
+  const filteredUsers = safeUsers.filter(
     (u: any) =>
       u.name && u.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Filter categories based on search term
-  const filteredCategories = categories.filter((c) =>
-    c.name.toLowerCase().includes(categorySearchTerm.toLowerCase())
+
+  const safeCategories = ensureArray(categories);
+  const safeDepartments = ensureArray(departments);
+
+  const selectedCategory = safeCategories.find(
+    (c) => c.id === Number(formData.category)
   );
 
-  // Filter departments based on search term
-  const filteredDepartments = departments.filter((d) =>
-    d.name.toLowerCase().includes(departmentSearchTerm.toLowerCase())
+  const selectedDepartment = safeDepartments.find(
+    (d) => d.id === Number(formData.concerned_department)
   );
+
+
+  const filteredCategories = safeCategories.filter(
+    (c) =>
+      c.name &&
+      c.name.toLowerCase().includes(categorySearchTerm.toLowerCase())
+  );
+
+  const filteredDepartments = safeDepartments.filter(
+    (d) =>
+      d.name &&
+      d.name.toLowerCase().includes(departmentSearchTerm.toLowerCase())
+  );
+
 
   // Fetch categories from API
   useEffect(() => {
@@ -109,7 +123,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
       try {
         setIsLoadingCategories(true);
         const response = await api.get("/approval-request-category/");
-        setCategories(response.data);
+        setCategories(ensureArray(response.data));
       } catch (error) {
         console.error("Error fetching categories:", error);
       } finally {
@@ -118,7 +132,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
     };
 
     fetchCategories();
-  }, []);
+  }, [api]);
 
   // Fetch departments from API
   useEffect(() => {
@@ -126,7 +140,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
       try {
         setIsLoadingDepartments(true);
         const response = await api.get("/departments/");
-        setDepartments(response.data);
+        setDepartments(ensureArray(response.data));
       } catch (error) {
         console.error("Error fetching departments:", error);
       } finally {
@@ -135,7 +149,7 @@ export const AssetDetailsStep: React.FC<AssetDetailsProps> = ({
     };
 
     fetchDepartments();
-  }, []);
+  }, [api]);
 
   const handleFormAttachmentsChange = (
     e: React.ChangeEvent<HTMLInputElement>
