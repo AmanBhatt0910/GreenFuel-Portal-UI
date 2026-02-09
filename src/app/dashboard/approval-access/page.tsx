@@ -39,15 +39,6 @@ import { Approver, BusinessUnit, Department, User } from './types';
 
 import useApprovalAccess from './hooks/useApprovalAccess';
 
-const {
-  users,
-  businessUnits,
-  approvers,
-  loading,
-  fetchDepartmentsByBU,
-  setApprovers
-} = useApprovalAccess();
-
 // Type definitions
 
 const ApprovalAccessPage = () => {
@@ -56,13 +47,6 @@ const ApprovalAccessPage = () => {
   // State for user selection dropdown
   const [isUserDropdownOpen, setIsUserDropdownOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-
-  // Data states
-  const [users, setUsers] = useState<User[]>([]);
-  const [businessUnits, setBusinessUnits] = useState<BusinessUnit[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [approvers, setApprovers] = useState<Approver[]>([]);
-  const [loading, setLoading] = useState(false);
   
   // Filter states
   const [filters, setFilters] = useState<{
@@ -85,96 +69,39 @@ const ApprovalAccessPage = () => {
     level: 1
   });
 
+  const [departments, setDepartments] = useState<Department[]>([]);
+  
+  const {
+    users,
+    businessUnits,
+    approvers,
+    loading,
+    fetchDepartmentsByBU,
+    setApprovers
+  } = useApprovalAccess();
+  
   // Selected user for display
   const selectedUser = users.find(u => u.id === formData.user);
-  
-  // Load initial data
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        
-        const usersResponse = await api.get('/userInfo/');
-
-      const userData = usersResponse.data.results || [];
-
-      const formattedUsers = userData.map(user => ({
-        id: user.id,
-        name: user.name || user.username || `User ${user.id}`,
-        email: user.email
-      }));
-
-      setUsers(formattedUsers);
-        
-        const businessUnitsResponse = await api.get('/business-units/');
-        setBusinessUnits(businessUnitsResponse.data);
-        
-        const allDepartmentsPromises = businessUnitsResponse.data.map(async (bu: BusinessUnit) => {
-          try {
-            const deptResponse = await api.get(`/departments/?business_unit=${bu.id}`);
-            return deptResponse.data;
-          } catch (error) {
-            console.error(`Error fetching departments for business unit ${bu.id}:`, error);
-            return [];
-          }
-        });
-        
-        const allDepartmentsArrays = await Promise.all(allDepartmentsPromises);
-        const allDepartments = allDepartmentsArrays.flat();
-
-        
-        const approversResponse = await api.get('/approver/' , {
-          params: {
-            type: "approver"
-          }
-        });
-       
-        // Enrich approvers with user, business unit, and department details
-        const enrichedApprovers = Array.isArray(approversResponse.data) 
-          ? approversResponse.data.map(approver => ({
-              ...approver,
-              user_details: formattedUsers.find(u => u.id === approver.user),
-              business_unit_details: businessUnitsResponse.data.find((bu: BusinessUnit) => bu.id === approver.business_unit),
-              department_details: allDepartments.find((dept: Department) => dept.id === approver.department)
-            }))
-          : [];
-
-        setApprovers(enrichedApprovers);
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        toast.error('Failed to load data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchData();
-  }, []);
   
   // Update departments when business unit changes
   useEffect(() => {
     const fetchDepartments = async () => {
       if (!formData.business_unit) return;
-      
-      setLoading(true);
       try {
         const data = await fetchDepartmentsByBU(formData.business_unit);
         setDepartments(data);
-        
         setFormData(prev => ({
           ...prev,
           department: 0,
-          level: 1 
+          level: 1
         }));
       } catch (error) {
         console.error('Error fetching departments:', error);
-      } finally {
-        setLoading(false);
       }
     };
-    
     fetchDepartments();
-  }, [formData.business_unit]);
+  }, [formData.business_unit, fetchDepartmentsByBU]);
+
   
   useEffect(() => {
     if (!formData.department || formData.department === 0) return;
@@ -213,7 +140,6 @@ const ApprovalAccessPage = () => {
       return;
     }
     
-    setLoading(true);
     try {
       const response = await api.post('/approver/', formData);
       
@@ -270,14 +196,12 @@ const ApprovalAccessPage = () => {
       console.error('Error adding approver:', error);
       toast.error('Failed to add approver. Please try again.');
     } finally {
-      setLoading(false);
     }
   };
   
   const handleRemoveApprover = async (id: number) => {
     if (!window.confirm('Are you sure you want to remove this approver?')) return;
     
-    setLoading(true);
     try {
       await api.delete(`/approver/${id}/`);
       
@@ -288,7 +212,6 @@ const ApprovalAccessPage = () => {
       console.error('Error removing approver:', error);
       toast.error('Failed to remove approver. Please try again.');
     } finally {
-      setLoading(false);
     }
   };
   
@@ -374,7 +297,7 @@ const ApprovalAccessPage = () => {
                       <div className="flex items-center gap-2 w-full overflow-hidden">
                         <Avatar className="h-6 w-6">
                           <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300 text-xs">
-                            {selectedUser.name.charAt(0).toUpperCase()}
+                            {selectedUser?.name?.charAt(0) || '?'.toUpperCase()}
                           </AvatarFallback>
                         </Avatar>
                         <span className="truncate">{selectedUser.name}</span>
