@@ -218,8 +218,11 @@ const BudgetRequestsList = () => {
 
         setCurrentPage(page);
         if (data.next) {
-          prefetchNextPage();
+          try {
+            api.get(data.next);
+          } catch {}
         }
+
 
         await fetchRelatedData();
       } catch (err) {
@@ -229,7 +232,7 @@ const BudgetRequestsList = () => {
         setIsFetchingPage(false);
       }
     },
-    [api, pageSize, fetchRelatedData, prefetchNextPage],
+    [api, pageSize, fetchRelatedData],
   );
 
   useEffect(() => {
