@@ -157,42 +157,57 @@ export default function AssetRequestForm() {
   useEffect(() => {
     const fetchBudgetAllocations = async () => {
       try {
-        const response = await api.get("/budget-allocation/?all=true");
+        let url = "/budget-allocation/?all=true";
+        let allAllocations: BudgetAllocation[] = [];
 
-        const allocations: BudgetAllocation[] =
-        Array.isArray(response.data)
-          ? response.data
-          : Array.isArray(response.data?.results)
-          ? response.data.results
-          : [];
+        while (url) {
+          const response = await api.get(url);
 
-      setBudgetAllocations(allocations);
+          const data = response.data;
 
+          const results =
+            Array.isArray(data)
+              ? data
+              : Array.isArray(data?.results)
+              ? data.results
+              : [];
+
+          allAllocations = [...allAllocations, ...results];
+
+          url = data?.next
+            ? data.next.replace("http://api.sugamgreenfuel.in", "")
+            : null;
+        }
+
+        setBudgetAllocations(allAllocations);
+
+        console.log("All allocations:", allAllocations);
 
       } catch (error) {
         console.error("Error fetching budget allocations:", error);
-        setBudgetAllocations([]); // prevent crash
+        setBudgetAllocations([]);
       }
     };
 
     fetchBudgetAllocations();
-  }, [api]);
+  }, []);
+
 
   useEffect(() => {
-    if (formData.plant && formData.initiateDept && formData.category && budgetAllocations.length > 0) {
-
+    if (
+      formData.plant &&
+      formData.concerned_department &&
+      formData.category &&
+      budgetAllocations.length > 0
+    ) {
       const allocation = budgetAllocations.find((a) =>
         Number(a.business_unit) === Number(formData.plant) &&
-        Number(a.department) === Number(formData.initiateDept) &&
+        Number(a.department) === Number(formData.concerned_department) &&
         Number(a.category) === Number(formData.category)
       );
 
       if (allocation) {
-        setRemainingBudget(
-          allocation.remaining_budget != null
-            ? parseFloat(allocation.remaining_budget)
-            : 0
-        );
+        setRemainingBudget(parseFloat(allocation.remaining_budget || "0"));
         setBudgetError("");
       } else {
         setRemainingBudget(null);
@@ -201,8 +216,15 @@ export default function AssetRequestForm() {
 
     } else {
       setRemainingBudget(null);
+      setBudgetError("");
     }
-  }, [formData.plant, formData.initiateDept, formData.category, budgetAllocations]);
+  }, [
+    formData.plant,
+    formData.concerned_department,
+    formData.category,
+    budgetAllocations,
+  ]);
+
 
 
   const [currentAsset, setCurrentAsset] = useState<AssetItem>({
