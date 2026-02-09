@@ -155,7 +155,7 @@ export default function AssetRequestForm() {
     const fetchBudgetAllocations = async () => {
       try {
         const response = await api.get("/budget-allocation/?all=true");
-        setBudgetAllocations(response.data);
+        setBudgetAllocations(response.data.results || []);
       } catch (error) {
         console.error("Error fetching budget allocations:", error);
       }
