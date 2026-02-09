@@ -1,3 +1,5 @@
+// src/app/dashboard/approval-access/page.tsx
+
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
@@ -32,6 +34,17 @@ import {
 } from "@/components/ui/popover";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Approver, BusinessUnit, Department, User } from './types';
+
+import useApprovalAccess from './hooks/useApprovalAccess';
+
+const {
+  users,
+  businessUnits,
+  approvers,
+  loading,
+  fetchDepartmentsByBU,
+  setApprovers
+} = useApprovalAccess();
 
 // Type definitions
 
@@ -143,8 +156,8 @@ const ApprovalAccessPage = () => {
       
       setLoading(true);
       try {
-        const response = await api.get(`/departments/?business_unit=${formData.business_unit}`);
-        setDepartments(response.data);
+        const data = await fetchDepartmentsByBU(formData.business_unit);
+        setDepartments(data);
         
         setFormData(prev => ({
           ...prev,
