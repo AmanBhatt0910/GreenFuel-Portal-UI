@@ -14,6 +14,12 @@ export const useApprovalRequest = (
   requestId?: string,
   userIdParam?: string
 ) => {
+  const ensureArray = (data: any) => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray(data?.results)) return data.results;
+    return [];
+  };
+
   const [request, setRequest] = useState<BudgetRequest | null>(null);
   const [userInfos, setUserInfo] = useState<any>(null);
   const [users, setUsers] = useState<any[]>([]);
@@ -23,6 +29,8 @@ export const useApprovalRequest = (
   const [departments, setDepartments] = useState<EntityInfo[]>([]);
   const [designations, setDesignations] = useState<Designation[]>([]);
   const [businessUnits, setBusinessUnits] = useState<EntityInfo[]>([]);
+
+  const [loading, setLoading] = useState(true);
 
   const [businessUnitMap, setBusinessUnitMap] = useState<
     Map<number, EntityInfo>
@@ -37,7 +45,6 @@ export const useApprovalRequest = (
   const [approvalLevels, setApprovalLevels] = useState<any[]>([]);
   const [chatMessages, setChatMessages] = useState<any[]>([]);
 
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const api = useAxios();
@@ -74,11 +81,15 @@ export const useApprovalRequest = (
         // console.log("Fetching user info from:", endpoint);
         const response = await api.get(endpoint);
 
-        setUserInfo(response.data);
+        setUserInfo(
+          Array.isArray(response.data)
+            ? response.data[0]
+            : response.data?.results?.[0] || response.data
+        );
         // console.log("User info loaded:", response.data);
 
         const designationsRes = await api.get("/designations/");
-        setDesignations(designationsRes.data);
+        setDesignations(ensureArray(designationsRes.data));
       } catch (err) {
         console.error("Error fetching user info:", err);
         setError("Failed to load user information");
@@ -86,74 +97,52 @@ export const useApprovalRequest = (
     };
 
     fetchUserInfo();
-  }, [userIdParam]);
+  }, [userIdParam, api]);
 
   // Fetch request data
   useEffect(() => {
     const fetchRequestData = async () => {
       if (!requestId) return;
-      
+
       try {
         setLoading(true);
+
         const response = await api.get(`/approval-requests/${requestId}/`);
-        // console.log("response", response);
         const requestData = response.data;
+
         setRequest(requestData);
 
-        const [businessUnitsRes, departmentsRes, designationsRes, usersRes] =
-          await Promise.all([
-            api.get("/business-units/"),
-            api.get("/departments/"),
-            api.get("/designations/"),
-            api.get("/userInfo/"),
-          ]);
+        const [
+          businessUnitsRes,
+          departmentsRes,
+          designationsRes,
+          usersRes,
+        ] = await Promise.all([
+          api.get("/business-units/"),
+          api.get("/departments/"),
+          api.get("/designations/"),
+          api.get("/userInfo/"),
+        ]);
 
-        const businessUnitsData = businessUnitsRes.data;
-        const businessUnitsMapObj = new Map();
-        businessUnitsData.forEach((unit: EntityInfo) => {
-          businessUnitsMapObj.set(unit.id, unit);
-        });
-        setBusinessUnitMap(businessUnitsMapObj);
+        const businessUnitsData = ensureArray(businessUnitsRes.data);
+        const departmentsData = ensureArray(departmentsRes.data);
+        const designationsData = ensureArray(designationsRes.data);
+
         setBusinessUnits(businessUnitsData);
-
-        const departmentsData = departmentsRes.data;
-        const departmentsMapObj = new Map();
-        departmentsData.forEach((dept: EntityInfo) => {
-          departmentsMapObj.set(dept.id, dept);
-        });
-        setDepartmentMap(departmentsMapObj);
         setDepartments(departmentsData);
-
-        const designationsData = designationsRes.data;
-        const designationsMapObj = new Map();
-        designationsData.forEach((desig: Designation) => {
-          designationsMapObj.set(desig.id, desig);
-        });
-        setDesignationMap(designationsMapObj);
         setDesignations(designationsData);
+        setUsers(ensureArray(usersRes.data));
 
-        setUsers(usersRes.data);
+        setBusinessUnitMap(new Map(businessUnitsData.map(u => [u.id, u])));
+        setDepartmentMap(new Map(departmentsData.map(d => [d.id, d])));
+        setDesignationMap(new Map(designationsData.map(d => [d.id, d])));
 
-        if (requestData.approval_levels) {
-          setApprovalLevels(requestData.approval_levels);
-        }
-
-        if (requestData.documents) {
-          // console.log("requestData.documents" , requestData.documents)
-          setDocuments(requestData.documents);
-        }
-
-        if (requestData.comments) {
-          setComments(requestData.comments);
-        }
-
-        if (requestData.chatMessages) {
-          setChatMessages(requestData.chatMessages);
-        }
+        setApprovalLevels(requestData.approval_levels || []);
 
         setError(null);
+
       } catch (err) {
-        console.error("Error fetching request data:", err);
+        console.error(err);
         setError("Failed to load request data");
       } finally {
         setLoading(false);
@@ -161,7 +150,9 @@ export const useApprovalRequest = (
     };
 
     fetchRequestData();
-  }, [requestId]);
+
+  }, [requestId, api]);
+
 
   // Fetch comments
   useEffect(() => {
@@ -169,36 +160,29 @@ export const useApprovalRequest = (
       if (!request?.id) return;
 
       try {
-        setLoading(true);
-
         const response = await api.get(`/chats?form_id=${request.id}`);
 
-        const mappedComments = response.data.map((chat: any) => {
-          const authorName = chat.sender?.name || "Unknown";
+        const chats = ensureArray(response.data);
 
-          return {
-            id: chat.id,
-            author: authorName,
-            text: chat.message,
-            timestamp: chat.timestamp,
-            read: chat.read,
-            authorId: chat.sender?.id,
-          };
-        });
+        const mappedComments = chats.map((chat: any) => ({
+          id: chat.id,
+          author: chat.sender?.name || "Unknown",
+          text: chat.message,
+          timestamp: chat.timestamp,
+          read: chat.read,
+          authorId: chat.sender?.id,
+        }));
 
-        if (JSON.stringify(mappedComments) !== JSON.stringify(comments)) {
-          setComments(mappedComments);
-        }
+        setComments(mappedComments);
+
       } catch (error) {
-        console.error("Error fetching comments:", error);
-        setError("Failed to fetch comments");
-      } finally {
-        setLoading(false);
+        console.error(error);
       }
     };
 
     fetchComments();
-  }, [request?.id, comments]);
+  }, [request?.id, api]);
+
 
   // Fetch documents
   useEffect(() => {
@@ -206,13 +190,11 @@ export const useApprovalRequest = (
       if (!request?.id) return;
 
       try {
-        setLoading(true);
+        const response = await api.get(`/approval-attachments?form_id=${request.id}`);
 
-        const response = await api.get(
-          `/approval-attachments?form_id=${request.id}`
-        );
+        const docs = ensureArray(response.data);
 
-        const mappedDocuments = response.data.map((doc: ApiDocument) => ({
+        const mappedDocuments = docs.map((doc: ApiDocument) => ({
           id: doc.id,
           name: doc.file.split("/").pop() || "Document",
           type: doc.type || "Unknown",
@@ -220,22 +202,16 @@ export const useApprovalRequest = (
           url: doc.file,
         }));
 
-        // console.log("response for doc" , response.data);
+        setDocuments(mappedDocuments);
 
-        // Only update state if documents have changed
-        if (JSON.stringify(mappedDocuments) !== JSON.stringify(documents)) {
-          setDocuments(mappedDocuments);
-        }
       } catch (error) {
-        console.error("Error fetching documents:", error);
-        setError("Failed to fetch documents");
-      } finally {
-        setLoading(false);
+        console.error(error);
       }
     };
 
     fetchDocuments();
-  }, [request?.id, documents]);
+  }, [request?.id, api]);
+
 
   // Fetch asset details
   useEffect(() => {
@@ -245,14 +221,15 @@ export const useApprovalRequest = (
       try {
         const response = await api.get(`/approval-items/?form_id=${request.id}`);
         // console.log("Asset details response:", response);
-        setassestDetails(response.data);
+        setassestDetails(ensureArray(response.data));
+
       } catch (error: any) {
         console.error("Error fetching asset details:", error?.message);
       }
     };
 
     fetchAssetDetails();
-  }, [request?.id]);
+  }, [request?.id, api]);
 
   const handleAddComment = useCallback(
     async (commentText: string) => {
