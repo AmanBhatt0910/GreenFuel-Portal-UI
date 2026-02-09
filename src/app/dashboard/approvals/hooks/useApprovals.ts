@@ -19,18 +19,29 @@ export default function useApprovals({
   const [filter, setFilter] = useState(initialFilter);
   const [searchTerm, setSearchTerm] = useState("");
 
+  const [page, setPage] = useState(1);
+  const [count, setCount] = useState(0);
+  const [next, setNext] = useState<string | null>(null);
+  const [previous, setPrevious] = useState<string | null>(null);
+
+  const PAGE_SIZE = 10; // match backend
+
   const api = useAxios();
   const hasFetched = useRef(false);
 
-  const fetchApprovals = useCallback(async () => {
+  const fetchApprovals = useCallback(async (pageNumber = 1) => {
     try {
       setLoading(true);
       setError(null);
 
-      const response = await api.get("/approval-requests/");
+      const response = await api.get(`/approval-requests/?page=${pageNumber}`);
       const rawData: ApprovalForm[] = Array.isArray(response.data)
         ? response.data
         : response.data?.results || [];
+
+        setCount(response.data.count || 0);
+        setNext(response.data.next);
+        setPrevious(response.data.previous);
 
       const uniqueUserIds = [
         ...new Set(
@@ -96,11 +107,8 @@ export default function useApprovals({
   }, []);
 
   useEffect(() => {
-    if (!hasFetched.current) {
-      fetchApprovals();
-      hasFetched.current = true;
-    }
-  }, [fetchApprovals]);
+    fetchApprovals(page);
+  }, [page]);
 
   // Client-side filtering and searching
   const filteredForms = useMemo(() => {
@@ -120,15 +128,24 @@ export default function useApprovals({
   }, [forms, filter, searchTerm]);
 
   return {
-    forms, // Raw forms for stats
+    forms,
     loading,
     error,
     filter,
     setFilter,
     searchTerm,
     setSearchTerm,
-    filteredForms, // Results for display
+    filteredForms,
     refreshApprovals: fetchApprovals,
+
+    // pagination
+    page,
+    setPage,
+    count,
+    next,
+    previous,
+    totalPages: Math.ceil(count / PAGE_SIZE),
+
     assestDetail: async (id: number) => {
       await api.get(`/approval-items?form_id=${id}/`);
     },

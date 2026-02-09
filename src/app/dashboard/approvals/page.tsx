@@ -1,3 +1,5 @@
+// src/app/dashboard/approvals/page.tsx
+
 "use client";
 
 import React from "react";
@@ -38,6 +40,10 @@ const ApprovalDashboard: React.FC = () => {
     searchTerm, // Current search term
     setSearchTerm, // Function to update search term
     filteredForms, // Forms after applying filters and search
+
+     page,
+    setPage,
+    totalPages
   } = useApprovals();
 
   /**
@@ -86,6 +92,28 @@ const ApprovalDashboard: React.FC = () => {
                     forms={filteredForms}
                     onViewDetails={navigateToDetails}
                   />
+
+                  <div className="flex justify-center items-center gap-4 mt-4">
+                    <button
+                      onClick={() => setPage(page - 1)}
+                      disabled={page === 1}
+                      className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                      Previous
+                    </button>
+
+                    <span>
+                      Page {page} of {totalPages}
+                    </span>
+
+                    <button
+                      onClick={() => setPage(page + 1)}
+                      disabled={page === totalPages}
+                      className="px-3 py-1 border rounded disabled:opacity-50"
+                    >
+                      Next
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
