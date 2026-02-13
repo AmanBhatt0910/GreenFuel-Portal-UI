@@ -81,6 +81,15 @@ const BudgetAllocationSystem = () => {
   const [filteredDepartments, setFilteredDepartments] = useState<Department[]>([]);
   const [selectedAllocation, setSelectedAllocation] =
   useState<BudgetAllocation | null>(null);
+  const [historyCache, setHistoryCache] = useState<
+    Record<string, BudgetHistoryTransaction[]>
+  >({});
+
+  const [allocationPage, setAllocationPage] = useState(1);
+  const [allocationCount, setAllocationCount] = useState(0);
+
+  const [historyPage, setHistoryPage] = useState(1);
+  const [historyCount, setHistoryCount] = useState(0);
 
 
   const api = useAxios();
@@ -112,41 +121,51 @@ const BudgetAllocationSystem = () => {
     const fetchInitialData = async () => {
       try {
         setError(null);
-        
-        // Fetch business units
-        const businessUnitsResponse = await api.get('/business-units/');
+
+        const [
+          businessUnitsResponse,
+          departmentsResponse,
+          categoriesRes,
+          allocationsRes
+        ] = await Promise.all([
+          api.get('/business-units/'),
+          api.get('/departments/'),
+          api.get('/approval-request-category/'),
+          api.get('/budget-allocation/?all=true&page=1')
+        ]);
+
         setBusinessUnits(
-          Array.isArray(businessUnitsResponse.data)
-            ? businessUnitsResponse.data
-            : businessUnitsResponse.data?.results || []
-        );
-        
-        // Fetch departments
-        const departmentsResponse = await api.get('/departments/');
-        setDepartments(
-            Array.isArray(departmentsResponse.data)
-            ? departmentsResponse.data
-            : departmentsResponse.data?.results || []
-        );
-        
-        // Fetch categories
-        const categoriesRes = await api.get("/approval-request-category/");
-        setCategories(
-          Array.isArray(categoriesRes.data)
-            ? categoriesRes.data
-            : categoriesRes.data?.results || []
+          businessUnitsResponse.data?.results || businessUnitsResponse.data || []
         );
 
-        
-        // Fetch budget allocations
-        await fetchBudgetAllocations();
-        
+        setDepartments(
+          departmentsResponse.data?.results || departmentsResponse.data || []
+        );
+
+        setCategories(
+          categoriesRes.data?.results || categoriesRes.data || []
+        );
+
+        const results = allocationsRes.data.results || [];
+        const mapped = results.map(mapApiAllocationToUi);
+
+        setBudgetAllocations(mapped);
+        setAllocationCount(allocationsRes.data.count || 0);
+
+        // preload first allocation history
+        if (mapped.length > 0 && activeTab === 'transactions') {
+          fetchBudgetHistory(
+            mapped[0].department_id,
+            mapped[0].category_id,
+            1
+          );
+        }
+
       } catch (error) {
-        console.error('Error fetching initial data:', error);
-        setError('Failed to load data. Please try refreshing the page.');
+        console.error(error);
       }
     };
-    
+
     fetchInitialData();
   }, []);
 
@@ -157,27 +176,42 @@ const BudgetAllocationSystem = () => {
       !selectedAllocation &&
       budgetAllocations.length > 0
     ) {
-      const firstAllocation = budgetAllocations[0];
+      setSelectedAllocation(budgetAllocations[0]);
+    }
+  }, [activeTab, budgetAllocations, selectedAllocation]);
 
-      setSelectedAllocation(firstAllocation);
-
+    useEffect(() => {
+    if (
+      activeTab === 'transactions' &&
+      selectedAllocation?.department_id &&
+      selectedAllocation?.category_id
+    ) {
       fetchBudgetHistory(
-        firstAllocation.department_id,
-        firstAllocation.category_id,
+        selectedAllocation.department_id,
+        selectedAllocation.category_id,
         1
       );
     }
-  }, [activeTab, budgetAllocations]);
+  }, [activeTab, selectedAllocation]);
 
-
-
-
+  useEffect(() => {
+    setTransactions([]);
+    setHistoryPage(1);
+  }, [selectedAllocation]);
 
   const fetchBudgetHistory = async (
     departmentId: number,
     categoryId: number,
     page = 1
   ) => {
+    const cacheKey = `${departmentId}-${categoryId}-${page}`;
+
+    if (historyCache[cacheKey]) {
+      setTransactions(historyCache[cacheKey]);
+      setHistoryPage(page);
+      return;
+    }
+
     try {
       setTxLoading(true);
       setError(null);
@@ -188,30 +222,32 @@ const BudgetAllocationSystem = () => {
 
       const data = res.data;
 
-      // Correct handling of paginated response
-      setTransactions(data.results || []);
+      const mappedTransactions = (data.results || []).map((tx: any) => ({
+        id: tx.id,
+        transaction_type: tx.transaction_type,
+        amount: parseFloat(tx.amount),
+        remarks: tx.remarks,
+        created_at: tx.date,
+        budget_allocation: tx.budget_allocation,
+      }));
 
-      // optional if you want pagination later
-      setTotalCount(data.count || 0);
-      setCurrentPage(page);
+      setTransactions(mappedTransactions);
 
-    } catch (err: any) {
-      console.error('Failed to load budget history', err);
+      setHistoryCache(prev => ({
+        ...prev,
+        [cacheKey]: mappedTransactions,
+      }));
 
-      if (err.response?.status === 404) {
-        setTransactions([]);
-      } else {
-        setError(
-          err.response?.data?.error ||
-          'Failed to load transaction history'
-        );
-      }
+      // ✅ correct state
+      setHistoryCount(data.count || 0);
+      setHistoryPage(page);
 
+    } catch (err) {
+      console.error(err);
     } finally {
       setTxLoading(false);
     }
   };
-
 
   // Map API allocation to UI type
   const mapApiAllocationToUi = (apiAllocation: ApiBudgetAllocation): BudgetAllocation => {
@@ -253,7 +289,7 @@ const BudgetAllocationSystem = () => {
 
       const data = response.data;
 
-      setTotalCount(data.count);
+      setAllocationCount(data.count);
 
       const results = data.results || [];
 
@@ -261,7 +297,7 @@ const BudgetAllocationSystem = () => {
 
       setBudgetAllocations(uiAllocations);
 
-      setCurrentPage(page);
+      setAllocationPage(page);
 
     } catch (error) {
       console.error(error);
@@ -521,27 +557,34 @@ const BudgetAllocationSystem = () => {
               onSelect={(allocation) => {
                 setSelectedAllocation(allocation);
                 setActiveTab('transactions');
+
+                // fetch immediately
+                fetchBudgetHistory(
+                  allocation.department_id,
+                  allocation.category_id,
+                  1
+                );
               }}
             />
+
 
               {/* PAGINATION UI */}
             <div className="flex justify-center mt-4 gap-2">
 
               <button
-                disabled={currentPage === 1}
-                onClick={() => fetchBudgetAllocations(currentPage - 1)}
-                className="px-3 py-1 border rounded disabled:opacity-50"
+                disabled={allocationPage === 1}
+                onClick={() => fetchBudgetAllocations(allocationPage - 1)}
               >
                 Previous
               </button>
 
               <span className="px-3 py-1">
-                Page {currentPage} of {Math.ceil(totalCount / pageSize)}
+                Page {allocationPage} of {Math.ceil(allocationCount / pageSize)}
               </span>
 
               <button
-                disabled={currentPage >= Math.ceil(totalCount / pageSize)}
-                onClick={() => fetchBudgetAllocations(currentPage + 1)}
+                disabled={allocationPage >= Math.ceil(allocationCount / pageSize)}
+                onClick={() => fetchBudgetAllocations(allocationPage + 1)}
                 className="px-3 py-1 border rounded disabled:opacity-50"
               >
                 Next
@@ -561,8 +604,8 @@ const BudgetAllocationSystem = () => {
           <TransactionList
             transactions={transactions}
             loading={txLoading}
-            currentPage={currentPage}
-            totalCount={totalCount}
+            currentPage={historyPage}
+            totalCount={historyCount}
             pageSize={pageSize}
             onPageChange={(page) =>
               fetchBudgetHistory(
