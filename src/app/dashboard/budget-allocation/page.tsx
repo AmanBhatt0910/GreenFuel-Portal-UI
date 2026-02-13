@@ -152,13 +152,22 @@ const BudgetAllocationSystem = () => {
 
 
   useEffect(() => {
-    if (activeTab === 'transactions' && selectedAllocation) {
+    if (
+      activeTab === 'transactions' &&
+      !selectedAllocation &&
+      budgetAllocations.length > 0
+    ) {
+      const firstAllocation = budgetAllocations[0];
+
+      setSelectedAllocation(firstAllocation);
+
       fetchBudgetHistory(
-        selectedAllocation.department_id,
-        selectedAllocation.category_id
+        firstAllocation.department_id,
+        firstAllocation.category_id,
+        1
       );
     }
-  }, [activeTab, selectedAllocation]);
+  }, [activeTab, budgetAllocations]);
 
 
 
