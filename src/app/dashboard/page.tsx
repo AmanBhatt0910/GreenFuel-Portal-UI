@@ -1,3 +1,5 @@
+// src/app/dashboard/page.tsx
+
 "use client";
 import React, {
   useContext,
@@ -330,6 +332,7 @@ const DashboardPage: React.FC = () => {
   const [requestsCurrentPage, setRequestsCurrentPage] = useState(1);
   const [requestsTotalPages, setRequestsTotalPages] = useState(1);
   const [requestsTotalCount, setRequestsTotalCount] = useState(0);
+  const dashboardCache = useRef<any>(null);
 
   useEffect(() => {
     if (userInfo?.role) {
@@ -470,14 +473,101 @@ const DashboardPage: React.FC = () => {
   useEffect(() => {
     const fetchData = async (): Promise<void> => {
       setIsLoaded(false);
+      if (dashboardCache.current) {
+        const cached = dashboardCache.current;
+        setUserInfo(cached.user);
+        setRequestsData(cached.requests);
+        setYearlyStats(cached.stats);
+        setIsLoaded(true);
+        return;
+      }
+
       try {
-        await getUserDashboardData();
-        await getRequestData();
-        await fetchYearlyStats();
+        const currentYear = new Date().getFullYear();
+
+        const [
+          userResponse,
+          requestsResponse,
+          statsResponse
+        ] = await Promise.all([
+          api.get("/userInfo/?self=true"),
+          api.get("/approval-requests/?page=1"),
+          api.get(`/yearly-stats?year=${currentYear}`)
+        ]);
+
+        // ---------- USER ----------
+        const userData = userResponse.data;
+        setUserInfo(userData);
+
+        localStorage.setItem("userInfo", JSON.stringify(userData));
+
+        // fetch related data in parallel
+        const relatedCalls = [];
+
+        if (userData.business_unit)
+          relatedCalls.push(api.get(`business-units/${userData.business_unit}/`));
+
+        if (userData.department)
+          relatedCalls.push(api.get(`/departments/${userData.department}/`));
+
+        if (userData.designation)
+          relatedCalls.push(api.get(`/designations/${userData.designation}/`));
+
+        const relatedResults = await Promise.all(relatedCalls);
+
+        relatedResults.forEach((res) => {
+          if (res.config.url?.includes("business-units"))
+            setBusinessUnit(res.data);
+
+          if (res.config.url?.includes("departments"))
+            setDepartment(res.data);
+
+          if (res.config.url?.includes("designations"))
+            setDesignation(res.data);
+        });
+
+        // ---------- REQUESTS ----------
+        const paginationData = requestsResponse.data;
+
+        setRequestsTotalCount(paginationData.count || 0);
+
+        const itemsPerPage = 20;
+        setRequestsTotalPages(
+          Math.ceil((paginationData.count || 0) / itemsPerPage)
+        );
+
+        const mappedRequests = (paginationData.results || []).map(
+          (request: Partial<RequestType>) => ({
+            ...request,
+            current_status:
+              request.current_status || request.status || "Pending",
+            budget_id: request.budget_id || `BUD-${request.id}`,
+            approval_category: request.approval_category || "N/A",
+            current_form_level: request.current_form_level || 1,
+            form_max_level: request.form_max_level || 3,
+          })
+        ) as RequestType[];
+
+        setRequestsData(
+          mappedRequests.sort(
+            (a, b) =>
+              new Date(b.date).getTime() - new Date(a.date).getTime()
+          )
+        );
+
+        // ---------- STATS ----------
+        setYearlyStats(statsResponse.data);
+
+        dashboardCache.current = {
+        user: userData,
+        requests: mappedRequests,
+        stats: statsResponse.data
+      };
+
       } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error("Dashboard fetch error:", error);
       } finally {
-        setTimeout(() => setIsLoaded(true), 800);
+        setIsLoaded(true); // no artificial delay
       }
     };
 
