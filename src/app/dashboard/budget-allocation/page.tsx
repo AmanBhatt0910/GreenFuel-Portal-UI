@@ -166,22 +166,38 @@ const BudgetAllocationSystem = () => {
 
   const fetchBudgetHistory = async (
     departmentId: number,
-    categoryId: number
+    categoryId: number,
+    page = 1
   ) => {
     try {
       setTxLoading(true);
       setError(null);
 
       const res = await api.get(
-        `/budget-history/?department=${departmentId}&category=${categoryId}`
+        `/budget-history/?department=${departmentId}&category=${categoryId}&page=${page}`
       );
 
-      // backend returns ARRAY
-      setTransactions(Array.isArray(res.data) ? res.data : []);
-    } catch (err) {
+      const data = res.data;
+
+      // Correct handling of paginated response
+      setTransactions(data.results || []);
+
+      // optional if you want pagination later
+      setTotalCount(data.count || 0);
+      setCurrentPage(page);
+
+    } catch (err: any) {
       console.error('Failed to load budget history', err);
-      setTransactions([]);
-      setError('Failed to load transaction history');
+
+      if (err.response?.status === 404) {
+        setTransactions([]);
+      } else {
+        setError(
+          err.response?.data?.error ||
+          'Failed to load transaction history'
+        );
+      }
+
     } finally {
       setTxLoading(false);
     }
@@ -536,8 +552,17 @@ const BudgetAllocationSystem = () => {
           <TransactionList
             transactions={transactions}
             loading={txLoading}
+            currentPage={currentPage}
+            totalCount={totalCount}
+            pageSize={pageSize}
+            onPageChange={(page) =>
+              fetchBudgetHistory(
+                selectedAllocation!.department_id,
+                selectedAllocation!.category_id,
+                page
+              )
+            }
           />
-
         }
 
         reportsContent={
